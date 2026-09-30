@@ -3,14 +3,22 @@ import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { searchArenaCards } from '../services/scryfallService';
 import { Search, Plus, Sparkles, BookOpen, X, ShieldAlert, Loader2, Globe } from 'lucide-react';
 
+import { FunctionalRole } from '../utils/roleClassifier';
+
 interface CardSearchPanelProps {
   currentFormat: FormatType;
+  commander?: Card;
+  activeRoleFilter?: FunctionalRole | 'lands' | null;
+  onClearRoleFilter?: () => void;
   onAddCard: (card: Card, toSideboard?: boolean) => void;
   onSelectCardDetail: (card: Card) => void;
 }
 
 export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
   currentFormat,
+  commander,
+  activeRoleFilter,
+  onClearRoleFilter,
   onAddCard,
   onSelectCardDetail
 }) => {
@@ -52,7 +60,9 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
           color: selectedColor,
           type: selectedType,
           rarity: selectedRarity,
-          digitalOnly: digitalOnly
+          digitalOnly: digitalOnly,
+          commanderColorIdentity: (selectedFormat === 'brawl' && commander) ? commander.colorIdentity : undefined,
+          roleFilter: activeRoleFilter
         });
         setCards(result.cards);
         setTotalCount(result.totalCards);
@@ -68,7 +78,7 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm, selectedFormat, selectedColor, selectedType, selectedRarity, digitalOnly]);
+  }, [searchTerm, selectedFormat, selectedColor, selectedType, selectedRarity, digitalOnly, commander, activeRoleFilter]);
 
   return (
     <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col h-full">
@@ -115,6 +125,23 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
             </button>
           )}
         </div>
+
+        {/* Active Role Filter Banner */}
+        {activeRoleFilter && (
+          <div className="flex items-center justify-between bg-amber-500/10 border border-amber-500/30 px-3 py-1.5 rounded-lg text-xs">
+            <span className="text-amber-300 font-semibold flex items-center gap-1.5 capitalize">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Role: {activeRoleFilter.replace('_', ' ')} {commander ? `(${commander.colorIdentity.join('/') || 'Colorless'} Identity)` : ''}
+            </span>
+            <button
+              onClick={onClearRoleFilter}
+              className="text-xs text-amber-400 hover:text-white flex items-center gap-1"
+            >
+              <span>Clear Filter</span>
+              <X className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Format Selector Pills */}
         <div className="flex items-center gap-1.5 overflow-x-auto pb-1 text-xs no-scrollbar">

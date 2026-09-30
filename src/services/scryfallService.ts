@@ -1,5 +1,6 @@
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { ARENA_CARDS } from '../data/arenaCards';
+import { FunctionalRole } from '../utils/roleClassifier';
 
 // In-memory cache for search queries to provide 0ms instant response on repeat searches
 const searchCache = new Map<string, { cards: Card[]; totalCards: number; timestamp: number }>();
@@ -20,6 +21,8 @@ export interface SearchArenaParams {
   type?: CardTypeCategory | null;
   rarity?: CardRarity | null;
   digitalOnly?: boolean;
+  commanderColorIdentity?: string[];
+  roleFilter?: FunctionalRole | 'lands' | null;
   page?: number;
 }
 
@@ -187,6 +190,32 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
   // Rarity filter
   if (params.rarity) {
     parts.push(`r:${params.rarity}`);
+  }
+
+  // Commander Color Identity constraint (Brawl)
+  if (params.commanderColorIdentity !== undefined) {
+    if (params.commanderColorIdentity.length === 0) {
+      parts.push('id:c');
+    } else {
+      parts.push(`id<=${params.commanderColorIdentity.join('').toLowerCase()}`);
+    }
+  }
+
+  // Functional Role filter
+  if (params.roleFilter) {
+    if (params.roleFilter === 'ramp') {
+      parts.push('((t:artifact o:"add ") or (o:"search your library for a" o:"land") or (t:creature o:"{t}: add") or o:"create a treasure token") -t:land');
+    } else if (params.roleFilter === 'protection') {
+      parts.push('(o:hexproof or o:indestructible or o:"phase out" or o:"ward {" or o:"protection from")');
+    } else if (params.roleFilter === 'removal') {
+      parts.push('((o:"destroy target" or o:"exile target" or o:"counter target" or o:"deals 3 damage to any target") and -o:"destroy all" and -o:"exile all")');
+    } else if (params.roleFilter === 'board_wipe') {
+      parts.push('(o:"destroy all" or o:"exile all" or o:"each creature gets -" or o:"all creatures get -")');
+    } else if (params.roleFilter === 'card_advantage') {
+      parts.push('(o:"draw a card" or o:"draw two cards" or o:"draws a card" or o:investigate or (o:"exile the top" o:"you may play"))');
+    } else if (params.roleFilter === 'lands') {
+      parts.push('t:land');
+    }
   }
 
   // Search term

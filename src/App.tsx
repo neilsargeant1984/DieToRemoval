@@ -15,6 +15,9 @@ import { MetaDecksModal } from './components/MetaDecksModal';
 import { ExportImportModal } from './components/ExportImportModal';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
+import { BrawlDeckDoctor } from './components/BrawlDeckDoctor';
+import { CommanderPickerModal } from './components/CommanderPickerModal';
+import { FunctionalRole } from './utils/roleClassifier';
 
 export const App: React.FC = () => {
   // Active Deck State
@@ -61,6 +64,8 @@ export const App: React.FC = () => {
   const [isGoldfishOpen, setIsGoldfishOpen] = useState(false);
   const [isSyncOpen, setIsSyncOpen] = useState(false);
   const [isMetaOpen, setIsMetaOpen] = useState(false);
+  const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
+  const [activeRoleFilter, setActiveRoleFilter] = useState<FunctionalRole | 'lands' | null>(null);
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
 
@@ -157,6 +162,16 @@ export const App: React.FC = () => {
     }));
   };
 
+  const handleSelectCommander = (card: Card) => {
+    setActiveDeck(prev => ({
+      ...prev,
+      name: `${card.name} Brawl`,
+      format: 'brawl',
+      commander: { card, quantity: 1 },
+      updatedAt: new Date().toISOString()
+    }));
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
       {/* Top Navigation */}
@@ -183,12 +198,24 @@ export const App: React.FC = () => {
           hasCollectionLoaded={hasCollectionLoaded}
         />
 
+        {/* If format is brawl or commander is assigned, show Brawl Deck Doctor */}
+        {(activeDeck.format === 'brawl' || activeDeck.commander) && (
+          <BrawlDeckDoctor
+            deck={activeDeck}
+            onSelectRoleFilter={role => setActiveRoleFilter(activeRoleFilter === role ? null : role)}
+            onOpenCommanderPicker={() => setIsCommanderPickerOpen(true)}
+          />
+        )}
+
         {/* Dual Panel Workspace */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 items-start">
           {/* Left Column: Instant Arena Card Explorer */}
           <div className="lg:col-span-5 h-[calc(100vh-210px)] sticky top-20">
             <CardSearchPanel
               currentFormat={activeDeck.format}
+              commander={activeDeck.commander?.card}
+              activeRoleFilter={activeRoleFilter}
+              onClearRoleFilter={() => setActiveRoleFilter(null)}
               onAddCard={handleAddCard}
               onSelectCardDetail={setSelectedCardDetail}
             />
@@ -245,6 +272,12 @@ export const App: React.FC = () => {
         mode={exportImportMode || 'export'}
         onClose={() => setExportImportMode(null)}
         onImportDeck={handleImportDeck}
+      />
+
+      <CommanderPickerModal
+        isOpen={isCommanderPickerOpen}
+        onClose={() => setIsCommanderPickerOpen(false)}
+        onSelectCommander={handleSelectCommander}
       />
     </div>
   );
