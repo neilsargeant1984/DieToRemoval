@@ -23,6 +23,7 @@ import { fetchArenaCommunityMeta, EDHRECCardView } from '../services/edhrecServi
 
 export type SynergyCategoryTab = 
   | 'meta_consensus'
+  | 'meta_staples'
   | 'creatures' 
   | 'instants' 
   | 'sorceries' 
@@ -205,10 +206,83 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
       });
     }
 
+    if (activeTab === 'meta_staples') {
+      // Build elite iconic staples combining community play + causal synergy + archetype pillars
+      const stapleMap = new Map<string, { card: Card; score: number; badge: string; reason: string }>();
+
+      const universalStaples = new Set([
+        'Arcane Signet', 'Mind Stone', 'Coldsteel Heart', 'Swiftfoot Boots', 
+        'Lightning Greaves', 'Command Tower'
+      ]);
+
+      const archetypeStapleArtifacts = new Set([
+        'Skullclamp', 'Ashnod\'s Altar', 'Phyrexian Altar', 'Altar of Dementia'
+      ]);
+
+      for (const item of communityMeta) {
+        const c = item.card;
+        const causal = calculateSynergy(commander, c);
+        const isOnColor = c.colors.some(col => commander.colorIdentity.includes(col));
+        const isIconic = universalStaples.has(c.name) || archetypeStapleArtifacts.has(c.name);
+
+        // Skip generic colorless artifact creatures without high direct synergy from staples
+        if (c.types.includes('Artifact') && c.types.includes('Creature') && c.colors.length === 0 && (!causal || causal.score < 50)) {
+          continue;
+        }
+
+        const causalScore = causal ? causal.score : 40;
+        const inclusionScore = item.inclusion;
+        const bonus = isOnColor ? 15 : (isIconic ? 15 : 0);
+
+        const stapleScore = Math.min(99, Math.round((inclusionScore * 0.45) + (causalScore * 0.45) + bonus));
+
+        if (stapleScore >= 52) {
+          stapleMap.set(c.id, {
+            card: c,
+            score: stapleScore,
+            badge: `⭐ ${stapleScore}% Staple`,
+            reason: causal ? explainSynergy(commander, causal) : `Iconic community staple (${item.inclusion}% deck inclusion)`
+          });
+        }
+      }
+
+      // Also include high causal synergy cards that score >= 70
+      for (const item of scoredSynergies) {
+        const c = item.card;
+        if (stapleMap.has(c.id)) continue;
+        if (item.score >= 70) {
+          const isOnColor = c.colors.some(col => commander.colorIdentity.includes(col));
+          if (isOnColor || universalStaples.has(c.name) || archetypeStapleArtifacts.has(c.name)) {
+            stapleMap.set(c.id, {
+              card: c,
+              score: item.score,
+              badge: `⭐ ${item.score}% Synergy Core`,
+              reason: explainSynergy(commander, item)
+            });
+          }
+        }
+      }
+
+      const stapleList = Array.from(stapleMap.values());
+      stapleList.sort((a, b) => b.score - a.score);
+      return stapleList;
+    }
+
+    const isArtifactCommander = commander.types.includes('Artifact') || 
+      commander.oracleText.toLowerCase().includes('artifact');
+
     return scoredSynergies
       .filter(item => {
         const c = item.card;
-        if (activeTab === 'creatures') return c.types.includes('Creature');
+        if (activeTab === 'creatures') {
+          if (!c.types.includes('Creature')) return false;
+          // Filter out generic colorless artifact creatures unless commander cares about artifacts or card has high synergy
+          const isColorlessArtifactCreature = c.types.includes('Artifact') && c.colors.length === 0;
+          if (isColorlessArtifactCreature && !isArtifactCommander) {
+            if (item.score < 55) return false;
+          }
+          return true;
+        }
         if (activeTab === 'instants') return c.types.includes('Instant');
         if (activeTab === 'sorceries') return c.types.includes('Sorcery');
         if (activeTab === 'artifacts') return c.types.includes('Artifact') && !c.types.includes('Creature');
@@ -230,7 +304,16 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         score: item.score,
         badge: `${item.score}% Match`,
         reason: explainSynergy(commander, item)
-      }));
+      }))
+      .sort((a, b) => {
+        if (activeTab === 'creatures') {
+          // Sort on-color creatures before colorless creatures
+          const aColorless = a.card.colors.length === 0 ? 1 : 0;
+          const bColorless = b.card.colors.length === 0 ? 1 : 0;
+          if (aColorless !== bColorless) return aColorless - bColorless;
+        }
+        return b.score - a.score;
+      });
   };
 
   const currentTabList = getTabResults();
@@ -242,6 +325,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
   const tabs: { id: SynergyCategoryTab; label: string; icon: string }[] = [
     { id: 'meta_consensus', label: 'What People Are Playing', icon: '🔥' },
+    { id: 'meta_staples', label: 'Staple Cards', icon: '⭐' },
     { id: 'creatures', label: 'Creatures', icon: '🗡️' },
     { id: 'instants', label: 'Instants', icon: '⚡' },
     { id: 'sorceries', label: 'Sorceries', icon: '📜' },
