@@ -182,13 +182,31 @@ export function calculateSynergy(
       matchReasons.push(`Creature entry triggers ${commanderCard.name}`);
     }
     if (dem === 'death_sacrifice') {
-      if (p2.supplies.includes('creates_tokens') || candidateText.includes('sacrifice a creature') || candidateText.includes('as an additional cost to cast this spell, sacrifice')) {
-        score += 35;
-        matchReasons.push(`Provides sacrifice fodder and death triggers for ${commanderCard.name}`);
+      // 1. Death Triggers & Aristocrat Drains (Blood Artist, Zulaport, Bastion, Meathook)
+      if (
+        /(whenever|if).*(another)?.*(creature|permanent).*dies.*(lose|draw|gain|create|deals)/i.test(candidateText) ||
+        /\bwhenever a creature you control dies\b/i.test(candidateText)
+      ) {
+        score += 50;
+        matchReasons.push(`Drains opponents and triggers value whenever creatures die`);
       }
+      // 2. Sac Outlets (Deadly Dispute, Village Rites, Tower, Ashnod's Altar, Diabolic Intent)
+      if (
+        /sacrifice (a|an|another)?\s*(creature|permanent|artifact)/i.test(candidateText) ||
+        /as an additional cost.*sacrifice/i.test(candidateText)
+      ) {
+        score += 45;
+        matchReasons.push(`Instant/repeatable sacrifice outlet to trigger ${commanderCard.name}`);
+      }
+      // 3. Sacrifice Fodder & Recursive creatures (Gravecrawler, Bitterblossom)
+      if (p2.supplies.includes('creates_tokens') || /from your graveyard to (your hand|the battlefield)/i.test(candidateText)) {
+        score += 35;
+        matchReasons.push(`Provides sacrifice fodder and recurring bodies for ${commanderCard.name}`);
+      }
+      // 4. Reanimation (Reanimate, Victimize)
       if (p2.supplies.includes('reanimates')) {
-        score += 30;
-        matchReasons.push(`Recur sacrificed creatures back to the battlefield`);
+        score += 40;
+        matchReasons.push(`Reanimates sacrificed creatures back to the battlefield`);
       }
     }
     if (dem === 'discard') {
@@ -205,6 +223,12 @@ export function calculateSynergy(
       score += 35;
       matchReasons.push(`Adds counters to trigger ${commanderCard.name}'s counter abilities`);
     }
+  }
+
+  // Mono-color Devotion Finisher (Gray Merchant of Asphodel, Nykthos)
+  if (commanderCard.colorIdentity.length === 1 && /devotion to/i.test(candidateText)) {
+    score += 45;
+    matchReasons.push(`Devotion finisher capitalizing on mono-${commanderCard.colorIdentity[0]} permanents`);
   }
 
   // Match 2: Commander supplies what Candidate demands (Two-way synergy!)

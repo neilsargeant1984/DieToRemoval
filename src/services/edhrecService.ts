@@ -1,5 +1,5 @@
 import { Card } from '../types/card';
-import { searchArenaCards } from './scryfallService';
+import { searchArenaCards, transformScryfallCard } from './scryfallService';
 import { ARENA_CARDS } from '../data/arenaCards';
 
 export interface EDHRECCardView {
@@ -108,7 +108,47 @@ export async function fetchArenaCommunityMeta(
     }
 
     // Now, cross-reference with MTG Arena legality!
-    // Fetch Brawl-legal cards for this Commander's color identity from Scryfall / local cache
+    const rawList = Array.from(rawCardsMap.values());
+    const idsToLookup = rawList.filter(c => c.id).map(c => ({ id: c.id }));
+
+    const arenaCardIndex = new Map<string, Card>();
+
+    // Check local ARENA_CARDS dataset first
+    for (const c of ARENA_CARDS) {
+      if (c.legalities.brawl) {
+        const isLegalIdentity = c.colorIdentity.every(col => commander.colorIdentity.includes(col));
+        if (isLegalIdentity) {
+          arenaCardIndex.set(c.name.toLowerCase(), c);
+          if (c.id) arenaCardIndex.set(c.id, c);
+        }
+      }
+    }
+
+    // Lookup in batches of 75 from Scryfall collection API
+    for (let i = 0; i < idsToLookup.length; i += 75) {
+      const batch = idsToLookup.slice(i, i + 75);
+      try {
+        const collRes = await fetch('https://api.scryfall.com/cards/collection', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({ identifiers: batch })
+        });
+        if (collRes.ok) {
+          const collData = await collRes.json();
+          for (const raw of collData.data || []) {
+            if (raw.games?.includes('arena') && (raw.legalities?.brawl === 'legal' || raw.legalities?.historic === 'legal')) {
+              const card = transformScryfallCard(raw);
+              arenaCardIndex.set(card.name.toLowerCase(), card);
+              if (card.id) arenaCardIndex.set(card.id, card);
+            }
+          }
+        }
+      } catch (e) {
+        console.warn('Batch collection lookup failed:', e);
+      }
+    }
+
+    // Also fetch general Brawl-legal cards for this Commander's color identity
     const arenaResult = await searchArenaCards({
       format: 'brawl',
       commanderColorIdentity: commander.colorIdentity,
@@ -116,21 +156,12 @@ export async function fetchArenaCommunityMeta(
       order: 'edhrec'
     });
 
-    // Create lookup index by name and by ID
-    const arenaCardIndex = new Map<string, Card>();
     for (const c of arenaResult.cards) {
-      arenaCardIndex.set(c.name.toLowerCase(), c);
-      if (c.id) arenaCardIndex.set(c.id, c);
-    }
-    // Also include local ARENA_CARDS dataset
-    for (const c of ARENA_CARDS) {
-      const lower = c.name.toLowerCase();
-      if (!arenaCardIndex.has(lower) && c.legalities.brawl) {
-        // verify color identity legality
-        const isLegalIdentity = c.colorIdentity.every(col => commander.colorIdentity.includes(col));
-        if (isLegalIdentity) {
-          arenaCardIndex.set(lower, c);
-        }
+      if (!arenaCardIndex.has(c.name.toLowerCase())) {
+        arenaCardIndex.set(c.name.toLowerCase(), c);
+      }
+      if (c.id && !arenaCardIndex.has(c.id)) {
+        arenaCardIndex.set(c.id, c);
       }
     }
 

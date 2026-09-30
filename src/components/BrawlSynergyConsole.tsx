@@ -212,7 +212,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
       const universalStaples = new Set([
         'Arcane Signet', 'Mind Stone', 'Coldsteel Heart', 'Swiftfoot Boots', 
-        'Lightning Greaves', 'Command Tower'
+        'Lightning Greaves', 'Command Tower', 'Dark Ritual', 'Jet Medallion',
+        'Toxic Deluge', 'The Meathook Massacre', 'Phyrexian Tower', 'Demonic Tutor'
       ]);
 
       const archetypeStapleArtifacts = new Set([
@@ -236,7 +237,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
         const stapleScore = Math.min(99, Math.round((inclusionScore * 0.45) + (causalScore * 0.45) + bonus));
 
-        if (stapleScore >= 52) {
+        if (stapleScore >= 45) {
           stapleMap.set(c.id, {
             card: c,
             score: stapleScore,
@@ -246,11 +247,11 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         }
       }
 
-      // Also include high causal synergy cards that score >= 70
+      // Also include high causal synergy cards that score >= 50
       for (const item of scoredSynergies) {
         const c = item.card;
         if (stapleMap.has(c.id)) continue;
-        if (item.score >= 70) {
+        if (item.score >= 50) {
           const isOnColor = c.colors.some(col => commander.colorIdentity.includes(col));
           if (isOnColor || universalStaples.has(c.name) || archetypeStapleArtifacts.has(c.name)) {
             stapleMap.set(c.id, {
