@@ -4,7 +4,7 @@ import { Deck } from './types/deck';
 import { UserCollection, WildcardInventory } from './types/collection';
 import { ArenaNavbar, MainNavTab } from './components/ArenaNavbar';
 import { BrawlCommandZone, BrawlSubMode } from './components/BrawlCommandZone';
-import { BrawlSynergyConsole } from './components/BrawlSynergyConsole';
+import { BrawlSynergyConsole, SynergyCategoryTab } from './components/BrawlSynergyConsole';
 import { DeckDrawer } from './components/DeckDrawer';
 import { CardLibraryView } from './components/CardLibraryView';
 import { CardSearchPanel } from './components/CardSearchPanel';
@@ -24,6 +24,7 @@ export const App: React.FC = () => {
   // Navigation State
   const [navTab, setNavTab] = useState<MainNavTab>('deck_builder');
   const [brawlSubMode, setBrawlSubMode] = useState<BrawlSubMode>('brawl_historic');
+  const [synergyTab, setSynergyTab] = useState<SynergyCategoryTab>('creatures');
   const [isDeckDrawerOpen, setIsDeckDrawerOpen] = useState(false);
 
   // Active Deck State
@@ -225,6 +226,15 @@ export const App: React.FC = () => {
               isDeckDrawerOpen={isDeckDrawerOpen}
               activeSubMode={brawlSubMode}
               onSelectSubMode={setBrawlSubMode}
+              selectedRoleTab={synergyTab}
+              onSelectRoleFilter={(role) => {
+                if (role === 'ramp') setSynergyTab('ramp');
+                else if (role === 'protection') setSynergyTab('protection');
+                else if (role === 'removal') setSynergyTab('removal');
+                else if (role === 'board_wipe') setSynergyTab('board_wipe');
+                else if (role === 'card_advantage') setSynergyTab('card_draw');
+                else if (role === 'lands') setSynergyTab('lands');
+              }}
             />
 
             {/* Multi-Tabbed Synergy Console Directly Below */}
@@ -235,6 +245,8 @@ export const App: React.FC = () => {
                 onSelectCardDetail={setSelectedCardDetail}
                 userCollection={userCollection}
                 deckCardIds={deckCardIds}
+                activeTab={synergyTab}
+                onSelectTab={setSynergyTab}
               />
             )}
           </div>

@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Card } from '../types/card';
 import { Deck } from '../types/deck';
 import { DeckWildcardCost } from '../types/collection';
+import { analyzeBrawlDeckHealth } from '../utils/rampAdvisor';
+import { FunctionalRole } from '../utils/roleClassifier';
 import { 
   Crown, 
   Sparkles, 
@@ -12,7 +14,12 @@ import {
   ExternalLink,
   Shield,
   Zap,
-  Flame
+  Target,
+  Bomb,
+  BookOpen,
+  Mountain,
+  Flame,
+  ChevronRight
 } from 'lucide-react';
 
 export type BrawlSubMode = 'brawl_historic' | 'competitive_brawl' | 'standard_brawl';
@@ -27,6 +34,8 @@ interface BrawlCommandZoneProps {
   isDeckDrawerOpen: boolean;
   activeSubMode: BrawlSubMode;
   onSelectSubMode: (mode: BrawlSubMode) => void;
+  selectedRoleTab?: string;
+  onSelectRoleFilter?: (role: FunctionalRole | 'lands') => void;
 }
 
 export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
@@ -38,11 +47,84 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   onToggleDeckDrawer,
   isDeckDrawerOpen,
   activeSubMode,
-  onSelectSubMode
+  onSelectSubMode,
+  selectedRoleTab,
+  onSelectRoleFilter
 }) => {
   const mainCount = deck.mainboard.reduce((a, b) => a + b.quantity, 0);
   const totalDeckCount = mainCount + (commander ? 1 : 0);
   const targetDeckSize = activeSubMode === 'standard_brawl' ? 60 : 100;
+
+  const health = analyzeBrawlDeckHealth(deck.mainboard, commander);
+
+  const roles = [
+    {
+      id: 'ramp' as FunctionalRole,
+      label: 'Ramp',
+      icon: Zap,
+      current: health.counts.ramp,
+      target: health.targets.ramp.optimal,
+      color: 'text-amber-400',
+      bgColor: 'bg-amber-400',
+      tabKey: 'ramp',
+      tag: `Target ${health.targets.ramp.targetRampCmc}-CMC`
+    },
+    {
+      id: 'protection' as FunctionalRole,
+      label: 'Protection',
+      icon: Shield,
+      current: health.counts.protection,
+      target: health.targets.protection.optimal,
+      color: 'text-sky-400',
+      bgColor: 'bg-sky-400',
+      tabKey: 'protection',
+      tag: 'Hexproof/Ward'
+    },
+    {
+      id: 'removal' as FunctionalRole,
+      label: 'Removal',
+      icon: Target,
+      current: health.counts.removal,
+      target: health.targets.removal.optimal,
+      color: 'text-rose-400',
+      bgColor: 'bg-rose-400',
+      tabKey: 'removal',
+      tag: 'Spot Removal'
+    },
+    {
+      id: 'board_wipe' as FunctionalRole,
+      label: 'Board Wipes',
+      icon: Bomb,
+      current: health.counts.board_wipe,
+      target: health.targets.board_wipe.optimal,
+      color: 'text-orange-400',
+      bgColor: 'bg-orange-400',
+      tabKey: 'board_wipe',
+      tag: 'Mass Sweepers'
+    },
+    {
+      id: 'card_advantage' as FunctionalRole,
+      label: 'Card Advantage',
+      icon: BookOpen,
+      current: health.counts.card_advantage,
+      target: health.targets.card_advantage.optimal,
+      color: 'text-indigo-400',
+      bgColor: 'bg-indigo-400',
+      tabKey: 'card_draw',
+      tag: 'Draw Engines'
+    },
+    {
+      id: 'lands' as const,
+      label: 'Lands',
+      icon: Mountain,
+      current: health.counts.lands,
+      target: health.targets.lands.optimal,
+      color: 'text-emerald-400',
+      bgColor: 'bg-emerald-400',
+      tabKey: 'lands',
+      tag: 'Mana Base'
+    }
+  ];
 
   return (
     <div className="relative bg-[#10141d]/90 border border-[#232b3d] rounded-2xl p-5 shadow-2xl backdrop-blur-md overflow-hidden">
@@ -222,6 +304,83 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                     <span>Clear Deck</span>
                   </button>
                 </div>
+              </div>
+
+              {/* Dynamic Karsten Advisor Strip */}
+              <div className="bg-[#0e121a] border border-[#232b3d] rounded-xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
+                <div className="flex items-center gap-3">
+                  <div className="bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg text-center min-w-[70px]">
+                    <span className="text-[10px] text-slate-400 uppercase block font-bold">T3/T4 Cast</span>
+                    <span className="text-base font-extrabold text-amber-300">{health.turnAcceleratedProbability}%</span>
+                  </div>
+                  <div>
+                    <span className="font-extrabold text-slate-200 block text-xs flex items-center gap-1.5">
+                      <span>Frank Karsten Mana Tuning</span>
+                      <span className="text-[10px] text-amber-400 font-semibold bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20">Brawl Curve</span>
+                    </span>
+                    <p className="text-[11px] text-slate-400 leading-snug mt-0.5">
+                      Avg Non-Land CMC: <strong className="text-slate-200">{health.averageNonLandCmc}</strong> • 
+                      Commander: <strong className="text-slate-200">{health.commanderCmc} CMC</strong>
+                    </p>
+                  </div>
+                </div>
+
+                {health.coachingAdvice.length > 0 && (
+                  <div className="flex-1 md:max-w-md bg-[#161c28] p-2 rounded-lg border border-[#2a3449] text-[11px] text-amber-200/90 flex items-start gap-2 shadow-sm">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
+                    <span>{health.coachingAdvice[0]}</span>
+                  </div>
+                )}
+              </div>
+
+              {/* 6 Deck Skeleton Health Progress Meters */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
+                {roles.map(r => {
+                  const Icon = r.icon;
+                  const pct = Math.min(100, Math.round((r.current / r.target) * 100));
+                  const isOptimal = r.current >= r.target;
+                  const isSelected = selectedRoleTab === r.tabKey;
+
+                  return (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => onSelectRoleFilter?.(r.id)}
+                      className={`p-2.5 rounded-xl text-left transition flex flex-col justify-between group border relative ${
+                        isSelected
+                          ? 'bg-[#182030] border-amber-400 shadow-md ring-1 ring-amber-400/50'
+                          : 'bg-[#0f131c]/80 hover:bg-[#161c29] border-[#222a3d] hover:border-slate-600'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <div className="flex items-center gap-1.5 text-slate-300 group-hover:text-amber-300 transition">
+                            <Icon className={`w-3.5 h-3.5 ${r.color}`} />
+                            <span className="text-xs font-bold">{r.label}</span>
+                          </div>
+                          <span className="text-[11px] font-mono font-extrabold text-slate-200">
+                            {r.current}/{r.target}
+                          </span>
+                        </div>
+
+                        {/* Progress bar */}
+                        <div className="w-full h-1.5 bg-[#1b2230] rounded-full overflow-hidden">
+                          <div
+                            style={{ width: `${pct}%` }}
+                            className={`h-full transition-all duration-300 ${
+                              isOptimal ? 'bg-emerald-400' : r.bgColor
+                            }`}
+                          />
+                        </div>
+                      </div>
+
+                      <div className="mt-2 flex items-center justify-between text-[10px] text-slate-400">
+                        <span className="truncate">{r.tag}</span>
+                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition text-amber-400" />
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           ) : (

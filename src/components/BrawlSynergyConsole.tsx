@@ -27,7 +27,11 @@ export type SynergyCategoryTab =
   | 'enchantments' 
   | 'planeswalkers' 
   | 'lands' 
-  | 'ramp';
+  | 'ramp'
+  | 'protection'
+  | 'removal'
+  | 'board_wipe'
+  | 'card_draw';
 
 interface BrawlSynergyConsoleProps {
   commander?: Card;
@@ -35,6 +39,8 @@ interface BrawlSynergyConsoleProps {
   onSelectCardDetail: (card: Card) => void;
   userCollection: UserCollection;
   deckCardIds: Set<string>;
+  activeTab?: SynergyCategoryTab;
+  onSelectTab?: (tab: SynergyCategoryTab) => void;
 }
 
 export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
@@ -42,14 +48,26 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   onAddCard,
   onSelectCardDetail,
   userCollection,
-  deckCardIds
+  deckCardIds,
+  activeTab: controlledTab,
+  onSelectTab
 }) => {
-  const [activeTab, setActiveTab] = useState<SynergyCategoryTab>('creatures');
+  const [internalTab, setInternalTab] = useState<SynergyCategoryTab>('creatures');
+  const activeTab = controlledTab || internalTab;
+
+  const handleTabChange = (tab: SynergyCategoryTab) => {
+    if (onSelectTab) {
+      onSelectTab(tab);
+    } else {
+      setInternalTab(tab);
+    }
+  };
+
   const [candidates, setCandidates] = useState<Card[]>([]);
   const [scoredSynergies, setScoredSynergies] = useState<SynergyMatchResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch candidate cards for the Commander's Color Identity
+  // Fetch candidate cards for the Commander's Color Identity across all functional archetypes
   useEffect(() => {
     if (!commander) {
       setCandidates([]);
@@ -61,23 +79,64 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
     const fetchPool = async () => {
       try {
-        // Query legal cards in Commander's Color Identity on MTG Arena
-        const result = await searchArenaCards({
-          format: 'brawl',
-          commanderColorIdentity: commander.colorIdentity,
-          query: '-t:basic'
-        });
+        // Query general legal cards + specific role pools concurrently
+        const [generalRes, rampRes, removalRes, wipeRes, protRes] = await Promise.allSettled([
+          searchArenaCards({
+            format: 'brawl',
+            commanderColorIdentity: commander.colorIdentity,
+            query: '-t:basic'
+          }),
+          searchArenaCards({
+            format: 'brawl',
+            commanderColorIdentity: commander.colorIdentity,
+            roleFilter: 'ramp'
+          }),
+          searchArenaCards({
+            format: 'brawl',
+            commanderColorIdentity: commander.colorIdentity,
+            roleFilter: 'removal'
+          }),
+          searchArenaCards({
+            format: 'brawl',
+            commanderColorIdentity: commander.colorIdentity,
+            roleFilter: 'board_wipe'
+          }),
+          searchArenaCards({
+            format: 'brawl',
+            commanderColorIdentity: commander.colorIdentity,
+            roleFilter: 'protection'
+          })
+        ]);
 
-        setCandidates(result.cards);
+        const cardMap = new Map<string, Card>();
+
+        const addCards = (res: PromiseSettledResult<{ cards: Card[] }>) => {
+          if (res.status === 'fulfilled' && res.value?.cards) {
+            for (const c of res.value.cards) {
+              if (!cardMap.has(c.id)) {
+                cardMap.set(c.id, c);
+              }
+            }
+          }
+        };
+
+        addCards(generalRes);
+        addCards(rampRes);
+        addCards(removalRes);
+        addCards(wipeRes);
+        addCards(protRes);
+
+        const allCards = Array.from(cardMap.values());
+        setCandidates(allCards);
 
         // Run Causal Synergy Graph
         const scored: SynergyMatchResult[] = [];
-        for (const c of result.cards) {
+        for (const c of allCards) {
           const match = calculateSynergy(commander, c);
           if (match) {
             scored.push(match);
           } else {
-            // Also include functional role staples (e.g. Arcane Signet, Ramp, Removal)
+            // Also include functional role staples (e.g. Arcane Signet, Ramp, Removal, Wipes)
             const role = classifyCardRoles(c);
             if (role.roles.length > 0) {
               scored.push({
@@ -119,10 +178,14 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         if (activeTab === 'enchantments') return c.types.includes('Enchantment') && !c.types.includes('Creature');
         if (activeTab === 'planeswalkers') return c.types.includes('Planeswalker');
         if (activeTab === 'lands') return c.types.includes('Land');
-        if (activeTab === 'ramp') {
-          const roles = classifyCardRoles(c);
-          return roles.roles.includes('ramp');
-        }
+        
+        const roles = classifyCardRoles(c);
+        if (activeTab === 'ramp') return roles.roles.includes('ramp');
+        if (activeTab === 'protection') return roles.roles.includes('protection');
+        if (activeTab === 'removal') return roles.roles.includes('removal');
+        if (activeTab === 'board_wipe') return roles.roles.includes('board_wipe');
+        if (activeTab === 'card_draw') return roles.roles.includes('card_advantage');
+        
         return false;
       })
       .map(item => ({
@@ -147,7 +210,11 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     { id: 'enchantments', label: 'Enchantments', icon: '✨' },
     { id: 'planeswalkers', label: 'Planeswalkers', icon: '👑' },
     { id: 'lands', label: 'Lands', icon: '🏔️' },
-    { id: 'ramp', label: 'Ramp & Rocks', icon: '💎' }
+    { id: 'ramp', label: 'Ramp', icon: '💎' },
+    { id: 'protection', label: 'Protection', icon: '🛡️' },
+    { id: 'removal', label: 'Removal', icon: '🎯' },
+    { id: 'board_wipe', label: 'Board Wipes', icon: '💣' },
+    { id: 'card_draw', label: 'Card Draw', icon: '📖' }
   ];
 
   return (
@@ -181,7 +248,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           return (
             <button
               key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
+              onClick={() => handleTabChange(tab.id)}
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                 isActive
                   ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
