@@ -2,9 +2,11 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Card, FormatType } from './types/card';
 import { Deck } from './types/deck';
 import { UserCollection, WildcardInventory } from './types/collection';
-import { META_DECKS } from './data/metaDecks';
-import { Header } from './components/Header';
-import { WildcardBar } from './components/WildcardBar';
+import { ArenaNavbar, MainNavTab } from './components/ArenaNavbar';
+import { BrawlCommandZone, BrawlSubMode } from './components/BrawlCommandZone';
+import { BrawlSynergyConsole } from './components/BrawlSynergyConsole';
+import { DeckDrawer } from './components/DeckDrawer';
+import { CardLibraryView } from './components/CardLibraryView';
 import { CardSearchPanel } from './components/CardSearchPanel';
 import { DeckListWorkspace } from './components/DeckListWorkspace';
 import { CardDetailModal } from './components/CardDetailModal';
@@ -13,14 +15,17 @@ import { GoldfishModal } from './components/GoldfishModal';
 import { CollectionSyncModal } from './components/CollectionSyncModal';
 import { MetaDecksModal } from './components/MetaDecksModal';
 import { ExportImportModal } from './components/ExportImportModal';
+import { CommanderPickerModal } from './components/CommanderPickerModal';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
-import { BrawlDeckDoctor } from './components/BrawlDeckDoctor';
-import { CommanderPickerModal } from './components/CommanderPickerModal';
-import { SynergyMatrixDrawer } from './components/SynergyMatrixDrawer';
-import { FunctionalRole } from './utils/roleClassifier';
+import { ARENA_CARDS } from './data/arenaCards';
 
 export const App: React.FC = () => {
+  // Navigation State
+  const [navTab, setNavTab] = useState<MainNavTab>('deck_builder');
+  const [brawlSubMode, setBrawlSubMode] = useState<BrawlSubMode>('brawl_historic');
+  const [isDeckDrawerOpen, setIsDeckDrawerOpen] = useState(false);
+
   // Active Deck State
   const [activeDeck, setActiveDeck] = useState<Deck>(() => {
     const saved = localStorage.getItem('arenaforge_active_deck');
@@ -31,7 +36,18 @@ export const App: React.FC = () => {
         // Fallback
       }
     }
-    return META_DECKS[0]; // Start with Timeless Boros Energy
+    // Default to Brawl format with Liliana or clean commander
+    const defaultCommander = ARENA_CARDS.find(c => c.name.includes('Liliana')) || ARENA_CARDS[0];
+    return {
+      id: 'default-brawl-deck',
+      name: `${defaultCommander.name} Brawl`,
+      format: 'brawl',
+      commander: { card: defaultCommander, quantity: 1 },
+      mainboard: [],
+      sideboard: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
   });
 
   // User Wildcard Inventory
@@ -60,14 +76,12 @@ export const App: React.FC = () => {
     return {};
   });
 
-  // Modal States
+  // Modals
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [isGoldfishOpen, setIsGoldfishOpen] = useState(false);
   const [isSyncOpen, setIsSyncOpen] = useState(false);
   const [isMetaOpen, setIsMetaOpen] = useState(false);
   const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
-  const [isSynergyMatrixOpen, setIsSynergyMatrixOpen] = useState(false);
-  const [activeRoleFilter, setActiveRoleFilter] = useState<FunctionalRole | 'lands' | null>(null);
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
 
@@ -99,18 +113,26 @@ export const App: React.FC = () => {
     return calculateDeckStats(activeDeck.mainboard);
   }, [activeDeck.mainboard]);
 
-  const hasCollectionLoaded = Object.keys(userCollection).length > 0;
+  const deckCardIds = useMemo(() => {
+    return new Set(activeDeck.mainboard.map(c => c.card.id));
+  }, [activeDeck.mainboard]);
 
-  // Deck Modification Handlers
+  // Deck Manipulation Handlers
   const handleAddCard = (card: Card, toSideboard: boolean = false) => {
+    const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'].includes(card.name);
     const list = toSideboard ? [...activeDeck.sideboard] : [...activeDeck.mainboard];
     const index = list.findIndex(c => c.card.id === card.id);
 
-    const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'].includes(card.name);
+    if (activeDeck.format === 'brawl') {
+      // Strict Brawl Singleton Enforcement: Max 1 copy for non-basic lands!
+      if (!isBasic && index >= 0) {
+        return;
+      }
+    }
 
     if (index >= 0) {
       if (!isBasic && list[index].quantity >= 4) {
-        return; // Enforce Arena 4-of max
+        return;
       }
       list[index] = { ...list[index], quantity: list[index].quantity + 1 };
     } else {
@@ -136,24 +158,27 @@ export const App: React.FC = () => {
     }));
   };
 
-  const handleNewDeck = () => {
-    setActiveDeck({
-      id: `deck-${Date.now()}`,
-      name: 'Untitled Arena Brew',
-      format: activeDeck.format,
+  const handleClearDeck = () => {
+    setActiveDeck(prev => ({
+      ...prev,
       mainboard: [],
+      sideboard: [],
+      updatedAt: new Date().toISOString()
+    }));
+  };
+
+  // Auto-Clean on Commander Pick (Item #1 from user request)
+  const handleSelectCommander = (card: Card) => {
+    setActiveDeck({
+      id: `brawl-${card.id}-${Date.now()}`,
+      name: `${card.name} Brawl`,
+      format: 'brawl',
+      commander: { card, quantity: 1 },
+      mainboard: [], // Starts with a clean singleton list
       sideboard: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
-  };
-
-  const handleLoadMetaDeck = (deck: Deck) => {
-    setActiveDeck({ ...deck });
-  };
-
-  const handleSyncCollection = (newCollection: UserCollection) => {
-    setUserCollection(newCollection);
   };
 
   const handleImportDeck = (imported: Partial<Deck>) => {
@@ -164,79 +189,96 @@ export const App: React.FC = () => {
     }));
   };
 
-  const handleSelectCommander = (card: Card) => {
-    setActiveDeck(prev => ({
-      ...prev,
-      name: `${card.name} Brawl`,
-      format: 'brawl',
-      commander: { card, quantity: 1 },
-      updatedAt: new Date().toISOString()
-    }));
-  };
-
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
-      {/* Top Navigation */}
-      <Header
+    <div className="min-h-screen bg-[#0b0e14] text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
+      {/* Top Navigation Shell */}
+      <ArenaNavbar
+        currentTab={navTab}
+        onSelectTab={setNavTab}
         currentFormat={activeDeck.format}
-        onChangeFormat={handleChangeFormat}
-        onOpenMetaDecks={() => setIsMetaOpen(true)}
-        onOpenSyncCollection={() => setIsSyncOpen(true)}
-        onOpenAnalytics={() => setIsAnalyticsOpen(true)}
-        onOpenGoldfish={() => setIsGoldfishOpen(true)}
+        onSelectFormat={handleChangeFormat}
+        inventory={wildcardInventory}
+        onOpenSync={() => setIsSyncOpen(true)}
         onOpenExport={() => setExportImportMode('export')}
-        onOpenImport={() => setExportImportMode('import')}
-        onNewDeck={handleNewDeck}
-        collectionCount={Object.keys(userCollection).length}
+        hasCommander={!!activeDeck.commander}
       />
 
-      {/* Main Container */}
-      <main className="max-w-7xl mx-auto w-full px-4 py-4 flex-1 flex flex-col space-y-4">
-        {/* Wildcard Crafting Status Banner */}
-        <WildcardBar
-          cost={wildcardCost}
-          inventory={wildcardInventory}
-          onUpdateInventory={setWildcardInventory}
-          hasCollectionLoaded={hasCollectionLoaded}
-        />
-
-        {/* If format is brawl or commander is assigned, show Brawl Deck Doctor */}
-        {(activeDeck.format === 'brawl' || activeDeck.commander) && (
-          <BrawlDeckDoctor
-            deck={activeDeck}
-            onSelectRoleFilter={role => setActiveRoleFilter(activeRoleFilter === role ? null : role)}
-            onOpenCommanderPicker={() => setIsCommanderPickerOpen(true)}
-            onOpenSynergyMatrix={() => setIsSynergyMatrixOpen(true)}
+      {/* Main App Content */}
+      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 flex flex-col space-y-6">
+        {navTab === 'card_library' ? (
+          /* Full Screen Card Library View */
+          <CardLibraryView
+            onSelectCardDetail={setSelectedCardDetail}
+            onAddCardToDeck={card => handleAddCard(card, false)}
           />
-        )}
-
-        {/* Dual Panel Workspace */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 flex-1 items-start">
-          {/* Left Column: Instant Arena Card Explorer */}
-          <div className="lg:col-span-5 h-[calc(100vh-210px)] sticky top-20">
-            <CardSearchPanel
-              currentFormat={activeDeck.format}
+        ) : activeDeck.format === 'brawl' ? (
+          /* Dedicated Brawl Hero Experience */
+          <div className="space-y-6">
+            {/* Command Zone (Hero In-Game Art Presentation) */}
+            <BrawlCommandZone
               commander={activeDeck.commander?.card}
-              activeRoleFilter={activeRoleFilter}
-              onClearRoleFilter={() => setActiveRoleFilter(null)}
-              onAddCard={handleAddCard}
-              onSelectCardDetail={setSelectedCardDetail}
-            />
-          </div>
-
-          {/* Right Column: Deckbuilder Workspace */}
-          <div className="lg:col-span-7 h-[calc(100vh-210px)] sticky top-20">
-            <DeckListWorkspace
               deck={activeDeck}
-              userCollection={userCollection}
-              onUpdateDeck={handleUpdateDeck}
-              onSelectCardDetail={setSelectedCardDetail}
+              wildcardCost={wildcardCost}
+              onOpenCommanderPicker={() => setIsCommanderPickerOpen(true)}
+              onClearDeck={handleClearDeck}
+              onToggleDeckDrawer={() => setIsDeckDrawerOpen(!isDeckDrawerOpen)}
+              isDeckDrawerOpen={isDeckDrawerOpen}
+              activeSubMode={brawlSubMode}
+              onSelectSubMode={setBrawlSubMode}
             />
+
+            {/* Multi-Tabbed Synergy Console Directly Below */}
+            {activeDeck.commander && (
+              <BrawlSynergyConsole
+                commander={activeDeck.commander.card}
+                onAddCard={card => handleAddCard(card, false)}
+                onSelectCardDetail={setSelectedCardDetail}
+                userCollection={userCollection}
+                deckCardIds={deckCardIds}
+              />
+            )}
           </div>
-        </div>
+        ) : (
+          /* Constructed Formats (Standard / Pioneer) Dual Panel */
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            <div className="lg:col-span-5 h-[calc(100vh-180px)] sticky top-20">
+              <CardSearchPanel
+                currentFormat={activeDeck.format}
+                onAddCard={handleAddCard}
+                onSelectCardDetail={setSelectedCardDetail}
+              />
+            </div>
+            <div className="lg:col-span-7 h-[calc(100vh-180px)] sticky top-20">
+              <DeckListWorkspace
+                deck={activeDeck}
+                userCollection={userCollection}
+                onUpdateDeck={handleUpdateDeck}
+                onSelectCardDetail={setSelectedCardDetail}
+              />
+            </div>
+          </div>
+        )}
       </main>
 
+      {/* Slide-out Deck Tray (Drawer) */}
+      <DeckDrawer
+        isOpen={isDeckDrawerOpen}
+        onClose={() => setIsDeckDrawerOpen(false)}
+        deck={activeDeck}
+        onUpdateDeck={handleUpdateDeck}
+        onSelectCardDetail={setSelectedCardDetail}
+        onOpenExport={() => setExportImportMode('export')}
+        wildcardCost={wildcardCost}
+        userCollection={userCollection}
+      />
+
       {/* Modals */}
+      <CommanderPickerModal
+        isOpen={isCommanderPickerOpen}
+        onClose={() => setIsCommanderPickerOpen(false)}
+        onSelectCommander={handleSelectCommander}
+      />
+
       <CardDetailModal
         card={selectedCardDetail}
         onClose={() => setSelectedCardDetail(null)}
@@ -259,14 +301,8 @@ export const App: React.FC = () => {
       <CollectionSyncModal
         isOpen={isSyncOpen}
         onClose={() => setIsSyncOpen(false)}
-        onSyncCollection={handleSyncCollection}
+        onSyncCollection={setUserCollection}
         currentCollectionCount={Object.keys(userCollection).length}
-      />
-
-      <MetaDecksModal
-        isOpen={isMetaOpen}
-        onClose={() => setIsMetaOpen(false)}
-        onLoadDeck={handleLoadMetaDeck}
       />
 
       <ExportImportModal
@@ -275,20 +311,6 @@ export const App: React.FC = () => {
         mode={exportImportMode || 'export'}
         onClose={() => setExportImportMode(null)}
         onImportDeck={handleImportDeck}
-      />
-
-      <CommanderPickerModal
-        isOpen={isCommanderPickerOpen}
-        onClose={() => setIsCommanderPickerOpen(false)}
-        onSelectCommander={handleSelectCommander}
-      />
-
-      <SynergyMatrixDrawer
-        commander={activeDeck.commander?.card}
-        isOpen={isSynergyMatrixOpen}
-        onClose={() => setIsSynergyMatrixOpen(false)}
-        onAddCard={card => handleAddCard(card, false)}
-        userCollection={userCollection}
       />
     </div>
   );
