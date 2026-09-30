@@ -1,7 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
-import { ARENA_CARDS } from '../data/arenaCards';
-import { Search, Plus, Sparkles, BookOpen, Layers, X, ShieldAlert } from 'lucide-react';
+import { searchArenaCards } from '../services/scryfallService';
+import { Search, Plus, Sparkles, BookOpen, X, ShieldAlert, Loader2, Globe } from 'lucide-react';
 
 interface CardSearchPanelProps {
   currentFormat: FormatType;
@@ -21,57 +21,53 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
   const [selectedRarity, setSelectedRarity] = useState<CardRarity | null>(null);
   const [digitalOnly, setDigitalOnly] = useState(false);
 
-  // Sync when currentFormat prop changes
-  React.useEffect(() => {
+  // Live Scryfall Search State
+  const [cards, setCards] = useState<Card[]>([]);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  // Sync format changes from parent
+  useEffect(() => {
     setSelectedFormat(currentFormat);
   }, [currentFormat]);
 
-  const filteredCards = useMemo(() => {
-    return ARENA_CARDS.filter(card => {
-      // 1. Format legality check - crucial for Arena hub!
-      if (!card.legalities[selectedFormat]) {
-        return false;
-      }
+  // Debounced search effect
+  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-      // 2. Digital Only filter
-      if (digitalOnly && !card.isDigitalOnly && !card.isAlchemyRebalanced) {
-        return false;
-      }
+  useEffect(() => {
+    setIsLoading(true);
 
-      // 3. Search query
-      if (searchTerm.trim()) {
-        const query = searchTerm.toLowerCase();
-        const matchesName = card.name.toLowerCase().includes(query);
-        const matchesText = card.oracleText.toLowerCase().includes(query);
-        const matchesType = card.typeLine.toLowerCase().includes(query);
-        if (!matchesName && !matchesText && !matchesType) {
-          return false;
-        }
-      }
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
 
-      // 4. Color filter
-      if (selectedColor) {
-        if (selectedColor === 'C') {
-          if (card.colors.length > 0) return false;
-        } else if (selectedColor === 'M') {
-          if (card.colors.length < 2) return false;
-        } else {
-          if (!card.colors.includes(selectedColor as any)) return false;
-        }
-      }
+    // Debounce by 320ms for typing, immediate if no search term
+    const delay = searchTerm.trim() ? 320 : 50;
 
-      // 5. Type filter
-      if (selectedType) {
-        if (!card.types.includes(selectedType)) return false;
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const result = await searchArenaCards({
+          query: searchTerm,
+          format: selectedFormat,
+          color: selectedColor,
+          type: selectedType,
+          rarity: selectedRarity,
+          digitalOnly: digitalOnly
+        });
+        setCards(result.cards);
+        setTotalCount(result.totalCards);
+      } catch (err) {
+        console.error('Error fetching cards:', err);
+      } finally {
+        setIsLoading(false);
       }
+    }, delay);
 
-      // 6. Rarity filter
-      if (selectedRarity) {
-        if (card.rarity !== selectedRarity) return false;
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
       }
-
-      return true;
-    });
+    };
   }, [searchTerm, selectedFormat, selectedColor, selectedType, selectedRarity, digitalOnly]);
 
   return (
@@ -85,16 +81,26 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
               Arena Card Explorer
             </span>
           </div>
-          <span className="text-xs text-slate-400">
-            {filteredCards.length} legal cards found
-          </span>
+          <div className="flex items-center gap-1.5 text-xs text-slate-400">
+            {isLoading ? (
+              <span className="flex items-center gap-1 text-amber-400">
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                Searching Arena...
+              </span>
+            ) : (
+              <span className="flex items-center gap-1">
+                <Globe className="w-3 h-3 text-sky-400" />
+                {totalCount} legal cards
+              </span>
+            )}
+          </div>
         </div>
 
         {/* Search Input */}
         <div className="relative">
           <input
             type="text"
-            placeholder="Search card name, text, or type..."
+            placeholder="Search any MTG Arena card (e.g. Nicol Bolas, Counterspell, Sheoldred)..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full bg-slate-950 border border-slate-700/80 rounded-lg pl-9 pr-8 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500 transition"
@@ -156,11 +162,11 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
           })}
         </div>
 
-        {/* Types & Digital Toggles */}
+        {/* Types, Rarities & Digital Toggles */}
         <div className="flex items-center justify-between gap-2 flex-wrap pt-1 border-t border-slate-800/60 text-xs">
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-semibold text-slate-500 uppercase mr-1">Type:</span>
-            {(['Creature', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Land'] as CardTypeCategory[]).map(t => (
+            {(['Creature', 'Instant', 'Sorcery', 'Artifact', 'Enchantment', 'Planeswalker', 'Land'] as CardTypeCategory[]).map(t => (
               <button
                 key={t}
                 onClick={() => setSelectedType(selectedType === t ? null : t)}
@@ -192,14 +198,20 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
 
       {/* Results List */}
       <div className="mt-4 flex-1 overflow-y-auto space-y-2 pr-1 min-h-[400px] max-h-[620px]">
-        {filteredCards.length === 0 ? (
+        {isLoading && cards.length === 0 ? (
+          <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500 space-y-2">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
+            <p className="font-semibold text-slate-300">Searching MTG Arena card catalog...</p>
+            <p className="text-xs text-slate-500">Connecting to Scryfall live Arena index</p>
+          </div>
+        ) : cards.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
             <ShieldAlert className="w-10 h-10 mb-2 text-slate-600" />
             <p className="font-semibold text-slate-400">No MTG Arena cards found</p>
-            <p className="text-xs mt-1">Try relaxing your search terms or checking another format legality filter.</p>
+            <p className="text-xs mt-1">Try another search term or switch format legality (e.g. Standard vs Timeless).</p>
           </div>
         ) : (
-          filteredCards.map(card => {
+          cards.map(card => {
             const rarityGems = {
               common: 'bg-slate-400',
               uncommon: 'bg-sky-400',
@@ -225,17 +237,17 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
                         {card.name}
                       </span>
                       {card.isDigitalOnly && (
-                        <span className="px-1.5 py-0.2 text-[10px] bg-purple-950 text-purple-300 border border-purple-800 rounded font-medium">
+                        <span className="px-1.5 py-0.2 text-[10px] bg-purple-950 text-purple-300 border border-purple-800 rounded font-medium flex-shrink-0">
                           Digital
                         </span>
                       )}
                       {card.isAlchemyRebalanced && (
-                        <span className="px-1.5 py-0.2 text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 rounded font-medium">
+                        <span className="px-1.5 py-0.2 text-[10px] bg-indigo-950 text-indigo-300 border border-indigo-800 rounded font-medium flex-shrink-0">
                           Rebalanced
                         </span>
                       )}
                       {card.spellbook && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.2 text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 rounded font-medium">
+                        <span className="flex items-center gap-1 px-1.5 py-0.2 text-[10px] bg-emerald-950 text-emerald-300 border border-emerald-800 rounded font-medium flex-shrink-0">
                           <BookOpen className="w-2.5 h-2.5" />
                           Spellbook ({card.spellbook.length})
                         </span>
@@ -275,6 +287,15 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
             );
           })
         )}
+      </div>
+
+      {/* Footer live status */}
+      <div className="pt-2 mt-2 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-500">
+        <span className="flex items-center gap-1.5">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 inline-block animate-pulse" />
+          Live MTG Arena Card Database
+        </span>
+        <span>Strictly filtered: game:arena</span>
       </div>
     </div>
   );

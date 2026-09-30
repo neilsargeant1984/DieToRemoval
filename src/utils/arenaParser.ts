@@ -2,6 +2,7 @@ import { Card } from '../types/card';
 import { Deck, DeckCard } from '../types/deck';
 import { UserCollection } from '../types/collection';
 import { ARENA_CARDS } from '../data/arenaCards';
+import { fetchCardByNameOrSet } from '../services/scryfallService';
 
 /**
  * Formats a deck into strict MTG Arena text format for 1-click clipboard export.
@@ -110,6 +111,92 @@ export function parseArenaFormat(text: string, cardPool: Card[] = ARENA_CARDS): 
 
   return { mainboard, sideboard, commander, unrecognizedCards };
 }
+
+/**
+ * Asynchronously parses MTG Arena formatted deck text, querying Scryfall for any unknown cards.
+ */
+export async function parseArenaFormatAsync(
+  text: string,
+  cardPool: Card[] = ARENA_CARDS
+): Promise<{
+  mainboard: DeckCard[];
+  sideboard: DeckCard[];
+  commander?: DeckCard;
+  unrecognizedCards: string[];
+}> {
+  const lines = text.split(/\r?\n/);
+  const mainboard: DeckCard[] = [];
+  const sideboard: DeckCard[] = [];
+  let commander: DeckCard | undefined;
+  const unrecognizedCards: string[] = [];
+
+  let currentSection: 'deck' | 'sideboard' | 'commander' = 'deck';
+  const lineRegex = /^(\d+)\s+(.+?)(?:\s+\(([A-Za-z0-9_-]+)\)\s+([A-Za-z0-9_-]+))?$/;
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line) continue;
+
+    const lower = line.toLowerCase();
+    if (lower === 'deck') {
+      currentSection = 'deck';
+      continue;
+    } else if (lower === 'sideboard') {
+      currentSection = 'sideboard';
+      continue;
+    } else if (lower === 'commander') {
+      currentSection = 'commander';
+      continue;
+    }
+
+    const match = line.match(lineRegex);
+    if (!match) continue;
+
+    const qty = parseInt(match[1], 10);
+    const cardName = match[2].trim();
+    const setCode = match[3];
+    const collectorNum = match[4];
+
+    // Attempt local match first
+    let matchedCard = cardPool.find(
+      c => c.name.toLowerCase() === cardName.toLowerCase()
+    );
+
+    if (setCode && collectorNum) {
+      const exactSetMatch = cardPool.find(
+        c => c.name.toLowerCase() === cardName.toLowerCase() &&
+             c.set.toLowerCase() === setCode.toLowerCase()
+      );
+      if (exactSetMatch) {
+        matchedCard = exactSetMatch;
+      }
+    }
+
+    // If not found locally, fetch live from Scryfall
+    if (!matchedCard) {
+      const fetched = await fetchCardByNameOrSet(cardName, setCode, collectorNum);
+      if (fetched) {
+        matchedCard = fetched;
+      }
+    }
+
+    if (matchedCard) {
+      const entry: DeckCard = { card: matchedCard, quantity: qty };
+      if (currentSection === 'commander') {
+        commander = entry;
+      } else if (currentSection === 'sideboard') {
+        sideboard.push(entry);
+      } else {
+        mainboard.push(entry);
+      }
+    } else {
+      unrecognizedCards.push(`${qty} ${cardName}`);
+    }
+  }
+
+  return { mainboard, sideboard, commander, unrecognizedCards };
+}
+
 
 /**
  * Parses MTG Arena Player.log to extract the user's card collection.

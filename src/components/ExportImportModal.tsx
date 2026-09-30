@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Deck } from '../types/deck';
-import { exportToArenaFormat, parseArenaFormat } from '../utils/arenaParser';
-import { X, Copy, Check, Download, Upload, AlertCircle } from 'lucide-react';
+import { exportToArenaFormat, parseArenaFormatAsync } from '../utils/arenaParser';
+import { X, Copy, Check, Download, Upload, AlertCircle, Loader2 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface ExportImportModalProps {
@@ -21,6 +21,7 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [importText, setImportText] = useState('');
+  const [isImporting, setIsImporting] = useState(false);
   const [unrecognized, setUnrecognized] = useState<string[]>([]);
 
   if (!isOpen) return null;
@@ -34,21 +35,31 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
     setTimeout(() => setCopied(false), 2500);
   };
 
-  const handleExecuteImport = () => {
-    const { mainboard, sideboard, commander, unrecognizedCards } = parseArenaFormat(importText);
-    setUnrecognized(unrecognizedCards);
+  const handleExecuteImport = async () => {
+    if (!importText.trim()) return;
+    setIsImporting(true);
+    setUnrecognized([]);
 
-    if (mainboard.length > 0 || sideboard.length > 0) {
-      onImportDeck({
-        mainboard,
-        sideboard,
-        commander,
-        updatedAt: new Date().toISOString()
-      });
-      if (unrecognizedCards.length === 0) {
-        onClose();
-        confetti({ particleCount: 60, spread: 60 });
+    try {
+      const { mainboard, sideboard, commander, unrecognizedCards } = await parseArenaFormatAsync(importText);
+      setUnrecognized(unrecognizedCards);
+
+      if (mainboard.length > 0 || sideboard.length > 0) {
+        onImportDeck({
+          mainboard,
+          sideboard,
+          commander,
+          updatedAt: new Date().toISOString()
+        });
+        if (unrecognizedCards.length === 0) {
+          onClose();
+          confetti({ particleCount: 60, spread: 60 });
+        }
       }
+    } catch (err) {
+      console.error('Import failed:', err);
+    } finally {
+      setIsImporting(false);
     }
   };
 
@@ -125,10 +136,11 @@ export const ExportImportModal: React.FC<ExportImportModalProps> = ({
             <div className="flex justify-end gap-2">
               <button
                 onClick={handleExecuteImport}
-                disabled={!importText.trim()}
-                className="px-5 py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition"
+                disabled={!importText.trim() || isImporting}
+                className="flex items-center gap-2 px-5 py-2.5 bg-sky-500 hover:bg-sky-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl shadow-lg transition"
               >
-                Import Deck
+                {isImporting && <Loader2 className="w-4 h-4 animate-spin text-slate-950" />}
+                {isImporting ? 'Importing & Validating...' : 'Import Deck'}
               </button>
             </div>
           </div>
