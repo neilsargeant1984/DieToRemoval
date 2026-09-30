@@ -17,6 +17,7 @@ import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
 import { BrawlDeckDoctor } from './components/BrawlDeckDoctor';
 import { CommanderPickerModal } from './components/CommanderPickerModal';
+import { SynergyMatrixDrawer } from './components/SynergyMatrixDrawer';
 import { FunctionalRole } from './utils/roleClassifier';
 
 export const App: React.FC = () => {
@@ -65,6 +66,7 @@ export const App: React.FC = () => {
   const [isSyncOpen, setIsSyncOpen] = useState(false);
   const [isMetaOpen, setIsMetaOpen] = useState(false);
   const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
+  const [isSynergyMatrixOpen, setIsSynergyMatrixOpen] = useState(false);
   const [activeRoleFilter, setActiveRoleFilter] = useState<FunctionalRole | 'lands' | null>(null);
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
@@ -204,6 +206,7 @@ export const App: React.FC = () => {
             deck={activeDeck}
             onSelectRoleFilter={role => setActiveRoleFilter(activeRoleFilter === role ? null : role)}
             onOpenCommanderPicker={() => setIsCommanderPickerOpen(true)}
+            onOpenSynergyMatrix={() => setIsSynergyMatrixOpen(true)}
           />
         )}
 
@@ -278,6 +281,14 @@ export const App: React.FC = () => {
         isOpen={isCommanderPickerOpen}
         onClose={() => setIsCommanderPickerOpen(false)}
         onSelectCommander={handleSelectCommander}
+      />
+
+      <SynergyMatrixDrawer
+        commander={activeDeck.commander?.card}
+        isOpen={isSynergyMatrixOpen}
+        onClose={() => setIsSynergyMatrixOpen(false)}
+        onAddCard={card => handleAddCard(card, false)}
+        userCollection={userCollection}
       />
     </div>
   );

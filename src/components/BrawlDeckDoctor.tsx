@@ -22,12 +22,14 @@ interface BrawlDeckDoctorProps {
   deck: Deck;
   onSelectRoleFilter: (role: FunctionalRole | 'lands') => void;
   onOpenCommanderPicker: () => void;
+  onOpenSynergyMatrix: () => void;
 }
 
 export const BrawlDeckDoctor: React.FC<BrawlDeckDoctorProps> = ({
   deck,
   onSelectRoleFilter,
-  onOpenCommanderPicker
+  onOpenCommanderPicker,
+  onOpenSynergyMatrix
 }) => {
   const commander = deck.commander?.card;
   const health = analyzeBrawlDeckHealth(deck.mainboard, commander);
@@ -143,14 +145,26 @@ export const BrawlDeckDoctor: React.FC<BrawlDeckDoctorProps> = ({
           </div>
         </div>
 
-        {/* Change Commander Action */}
-        <button
-          onClick={onOpenCommanderPicker}
-          className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-semibold rounded-lg border border-slate-700 transition shadow-sm"
-        >
-          <Crown className="w-3.5 h-3.5 text-amber-400" />
-          <span>{commander ? 'Change Commander' : 'Assign Commander'}</span>
-        </button>
+        {/* Action Buttons: Synergies & Change Commander */}
+        <div className="flex items-center gap-2">
+          {commander && (
+            <button
+              onClick={onOpenSynergyMatrix}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 text-xs font-bold rounded-lg transition shadow-md hover:scale-105"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-slate-950 font-bold" />
+              <span>⚡ Find Synergies</span>
+            </button>
+          )}
+
+          <button
+            onClick={onOpenCommanderPicker}
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-amber-300 text-xs font-semibold rounded-lg border border-slate-700 transition shadow-sm"
+          >
+            <Crown className="w-3.5 h-3.5 text-amber-400" />
+            <span>{commander ? 'Change Commander' : 'Assign Commander'}</span>
+          </button>
+        </div>
       </div>
 
       {/* Dynamic Karsten Advisor Strip */}
