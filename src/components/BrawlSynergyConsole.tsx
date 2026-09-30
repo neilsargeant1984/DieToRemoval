@@ -15,11 +15,14 @@ import {
   ShieldCheck, 
   ExternalLink,
   Zap,
-  Info
+  Info,
+  Users
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { fetchArenaCommunityMeta, EDHRECCardView } from '../services/edhrecService';
 
 export type SynergyCategoryTab = 
+  | 'meta_consensus'
   | 'creatures' 
   | 'instants' 
   | 'sorceries' 
@@ -52,7 +55,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   activeTab: controlledTab,
   onSelectTab
 }) => {
-  const [internalTab, setInternalTab] = useState<SynergyCategoryTab>('creatures');
+  const [internalTab, setInternalTab] = useState<SynergyCategoryTab>('meta_consensus');
   const activeTab = controlledTab || internalTab;
 
   const handleTabChange = (tab: SynergyCategoryTab) => {
@@ -65,6 +68,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
   const [candidates, setCandidates] = useState<Card[]>([]);
   const [scoredSynergies, setScoredSynergies] = useState<SynergyMatchResult[]>([]);
+  const [communityMeta, setCommunityMeta] = useState<EDHRECCardView[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
   // Fetch candidate cards for the Commander's Color Identity across all functional archetypes
@@ -79,36 +83,53 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
     const fetchPool = async () => {
       try {
-        // Query general legal cards + specific role pools concurrently
-        const [generalRes, rampRes, removalRes, wipeRes, protRes] = await Promise.allSettled([
+        // Query EDHREC Community Consensus + Scryfall role pools concurrently
+        const [communityRes, generalRes, rampRes, removalRes, wipeRes, protRes] = await Promise.allSettled([
+          fetchArenaCommunityMeta(commander),
           searchArenaCards({
             format: 'brawl',
             commanderColorIdentity: commander.colorIdentity,
-            query: '-t:basic'
+            query: '-t:basic',
+            order: 'edhrec'
           }),
           searchArenaCards({
             format: 'brawl',
             commanderColorIdentity: commander.colorIdentity,
-            roleFilter: 'ramp'
+            roleFilter: 'ramp',
+            order: 'edhrec'
           }),
           searchArenaCards({
             format: 'brawl',
             commanderColorIdentity: commander.colorIdentity,
-            roleFilter: 'removal'
+            roleFilter: 'removal',
+            order: 'edhrec'
           }),
           searchArenaCards({
             format: 'brawl',
             commanderColorIdentity: commander.colorIdentity,
-            roleFilter: 'board_wipe'
+            roleFilter: 'board_wipe',
+            order: 'edhrec'
           }),
           searchArenaCards({
             format: 'brawl',
             commanderColorIdentity: commander.colorIdentity,
-            roleFilter: 'protection'
+            roleFilter: 'protection',
+            order: 'edhrec'
           })
         ]);
 
+        if (communityRes.status === 'fulfilled' && communityRes.value?.cards) {
+          setCommunityMeta(communityRes.value.cards);
+        }
+
         const cardMap = new Map<string, Card>();
+
+        // Also add community cards into candidate pool
+        if (communityRes.status === 'fulfilled' && communityRes.value?.cards) {
+          for (const item of communityRes.value.cards) {
+            cardMap.set(item.card.id, item.card);
+          }
+        }
 
         const addCards = (res: PromiseSettledResult<{ cards: Card[] }>) => {
           if (res.status === 'fulfilled' && res.value?.cards) {
@@ -141,7 +162,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             if (role.roles.length > 0) {
               scored.push({
                 card: c,
-                score: 75,
+                score: 65,
                 matchReasons: [role.explanation[0] || 'Functional Role Staple'],
                 category: c.types.includes('Creature') 
                   ? 'Creature' 
@@ -167,7 +188,23 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   if (!commander) return null;
 
   // Filter based on active tab
-  const getTabResults = (): { card: Card; score: number; reason: string }[] => {
+  const getTabResults = (): { card: Card; score: number; badge: string; reason: string }[] => {
+    if (activeTab === 'meta_consensus') {
+      return communityMeta.map(item => {
+        const causalMatch = calculateSynergy(commander, item.card);
+        const reason = causalMatch 
+          ? explainSynergy(commander, causalMatch)
+          : `Played in ${item.inclusion}% of community decks (${item.numDecks.toLocaleString()} decks)`;
+
+        return {
+          card: item.card,
+          score: item.inclusion,
+          badge: `🔥 ${item.inclusion}% of Decks`,
+          reason
+        };
+      });
+    }
+
     return scoredSynergies
       .filter(item => {
         const c = item.card;
@@ -191,6 +228,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
       .map(item => ({
         card: item.card,
         score: item.score,
+        badge: `${item.score}% Match`,
         reason: explainSynergy(commander, item)
       }));
   };
@@ -203,6 +241,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   };
 
   const tabs: { id: SynergyCategoryTab; label: string; icon: string }[] = [
+    { id: 'meta_consensus', label: 'What People Are Playing', icon: '🔥' },
     { id: 'creatures', label: 'Creatures', icon: '🗡️' },
     { id: 'instants', label: 'Instants', icon: '⚡' },
     { id: 'sorceries', label: 'Sorceries', icon: '📜' },
@@ -279,7 +318,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
             {currentTabList.map(item => {
-              const { card, score, reason } = item;
+              const { card, score, badge, reason } = item;
               const isInDeck = deckCardIds.has(card.id);
               const isOwned = (userCollection[card.arenaId] || 0) > 0;
 
@@ -299,9 +338,9 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                       className="w-full h-auto object-cover group-hover:brightness-105 transition"
                     />
 
-                    {/* Synergy Match Score Badge */}
-                    <div className="absolute top-1.5 right-1.5 bg-slate-950/90 text-amber-300 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 shadow-md">
-                      {score}% Match
+                    {/* Synergy Match / Community Inclusion Badge */}
+                    <div className="absolute top-1.5 right-1.5 bg-slate-950/90 text-amber-300 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 shadow-md flex items-center gap-1">
+                      {badge || `${score}% Match`}
                     </div>
 
                     {/* Owned badge */}

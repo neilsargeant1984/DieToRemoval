@@ -46,80 +46,84 @@ export function extractCardSynergies(card: Card): CardSynergyProfile {
   const archetypes: string[] = [];
 
   // --- EXTRACT DEMANDS (TRIGGERS) ---
-  if (text.includes('whenever you draw') || text.includes('whenever an opponent draws') || text.includes('if you\'ve drawn')) {
+  if (/(whenever|if).*(you draw|opponent draws|player draws|you've drawn)/i.test(text)) {
     demands.push('draw');
     archetypes.push('Card Draw Triggers');
   }
-  if (text.includes('whenever you discard') || text.includes('whenever a player discards')) {
+  if (/\bdiscard(s)?\s+(a|two|three|\d+|x)?\s*card/i.test(text) || /\beach player discards\b/i.test(text) || /(whenever|if).*discards/i.test(text)) {
     demands.push('discard');
     archetypes.push('Discard / Madness');
   }
-  if (text.includes('whenever you gain life') || text.includes('if you gained life')) {
+  if (/(whenever|if).*(you gain life|gained life)/i.test(text)) {
     demands.push('lifegain');
     archetypes.push('Lifegain Payoffs');
   }
-  if (text.includes('whenever a creature dies') || text.includes('whenever another creature dies') || text.includes('sacrifice a creature')) {
+  if (
+    /(whenever|if).*(another)?.*(nontoken)?.*(creature|permanent).*dies/i.test(text) ||
+    /\bsacrifice(s)?\s+(a|another|one|\d+)?\s*(nontoken)?\s*(creature|permanent|artifact)\b/i.test(text) ||
+    /\bput into (a|your) graveyard from the battlefield\b/i.test(text)
+  ) {
     demands.push('death_sacrifice');
     archetypes.push('Aristocrats / Sacrifice');
   }
-  if (text.includes('whenever you cast an instant or sorcery') || text.includes('whenever you cast a noncreature spell') || text.includes('magecraft') || text.includes('prowess')) {
+  if (/(whenever|if).*you cast an? (instant|sorcery|noncreature)/i.test(text) || /\bmagecraft\b/i.test(text) || /\bprowess\b/i.test(text)) {
     demands.push('spell_cast');
     archetypes.push('Spellslinger / Prowess');
   }
-  if (text.includes('whenever an artifact enters') || text.includes('whenever another artifact')) {
+  if (/(whenever|if).*artifact.*enters/i.test(text) || /\baffinity for artifacts\b/i.test(text)) {
     demands.push('artifact_etb');
     archetypes.push('Artifact Engine');
   }
-  if (text.includes('whenever another creature enters') || text.includes('whenever a creature enters')) {
+  if (/(whenever|if).*(another)?.*creature enters/i.test(text)) {
     demands.push('creature_etb');
     archetypes.push('Creature ETB / Blink');
   }
-  if (text.includes('whenever you put') && text.includes('counter') || text.includes('modified')) {
+  if (/(whenever|if).*put.*counter/i.test(text) || /\bmodified\b/i.test(text)) {
     demands.push('counters');
     archetypes.push('+1/+1 & Counters');
   }
-  if (text.includes('delirium') || text.includes('escape') || text.includes('cards in your graveyard')) {
+  if (/\bdelirium\b/i.test(text) || /\bescape\b/i.test(text) || /\bcards in your graveyard\b/i.test(text) || /\bundergrowth\b/i.test(text)) {
     demands.push('graveyard');
     archetypes.push('Graveyard / Delirium');
   }
-  if (text.includes('pay {e}') || text.includes('whenever you get {e}')) {
+  if (/\bpay \{e\}\b/i.test(text) || /(whenever|if).*get \{e\}/i.test(text)) {
     demands.push('energy');
     archetypes.push('Energy Engine');
   }
-  if (text.includes('for each token you control') || text.includes('whenever a token enters')) {
+  if (/for each token|whenever a token/i.test(text)) {
     demands.push('tokens');
     archetypes.push('Tokens');
   }
 
   // --- EXTRACT SUPPLIES (PAYOFFS & ENABLERS) ---
-  if (text.includes('you gain') && (text.includes('life') || text.includes('lifelink'))) {
+  if (/\blifelink\b/i.test(text) || /\bgain(s)?\s+(\d+|x)?\s*life\b/i.test(text)) {
     supplies.push('gains_life');
   }
-  if (text.includes('draw a card') || text.includes('draw two cards') || text.includes('draw three cards') || text.includes('target player draws')) {
+  if (/\bdraw(s)?\s+(a|two|three|\d+|x)?\s*card/i.test(text) || /\binvestigate\b/i.test(text)) {
     supplies.push('draws_cards');
   }
-  if (text.includes('create a') && (text.includes('token') || text.includes('tokens'))) {
+  if (/\bcreate(s)?\s+(a|two|three|\d+|x)?.*token/i.test(text)) {
     supplies.push('creates_tokens');
-    if (text.includes('treasure')) {
+    if (/treasure/i.test(text)) {
       supplies.push('produces_treasures');
     }
   }
-  if (text.includes('deals') && (text.includes('damage to any target') || text.includes('damage to target'))) {
+  if (/\bdeals\s+(\d+|x)?\s*damage to (any target|target player|each opponent|target)/i.test(text)) {
     supplies.push('deals_burn');
   }
-  if (text.includes('mill') || text.includes('discard a card') || text.includes('discards a card')) {
+  if (/\bmill(s)?\b/i.test(text) || /\bdiscard(s)?\s+(a|two|three|\d+|x)?\s*card/i.test(text) || /\beach player discards\b/i.test(text)) {
     supplies.push('fills_graveyard');
   }
-  if (text.includes('put a +1/+1 counter') || text.includes('proliferate') || text.includes('puts a +1/+1 counter')) {
+  if (/put.*counter/i.test(text) || /\bproliferate\b/i.test(text)) {
     supplies.push('produces_counters');
   }
-  if (text.includes('you get {e}')) {
+  if (/get \{e\}/i.test(text)) {
     supplies.push('produces_energy');
   }
-  if (text.includes('return target creature card from your graveyard') || text.includes('put') && text.includes('graveyard onto the battlefield')) {
+  if (/\breturn target.*from (your|a) graveyard\b/i.test(text) || /\bput.*from (your|a) graveyard onto the battlefield\b/i.test(text) || /\bcast.*from your graveyard\b/i.test(text)) {
     supplies.push('reanimates');
   }
-  if (text.includes('exile') && text.includes('return it to the battlefield')) {
+  if (/\bexile\b.*return it to the battlefield/i.test(text)) {
     supplies.push('flicker');
   }
   if (card.cmc <= 1 && (card.types.includes('Instant') || card.types.includes('Sorcery')) && (text.includes('draw a card') || text.includes('scry'))) {
@@ -153,6 +157,7 @@ export function calculateSynergy(
 
   const p1 = extractCardSynergies(commanderCard);
   const p2 = extractCardSynergies(candidateCard);
+  const candidateText = (candidateCard.oracleText || '').toLowerCase();
 
   let score = 0;
   const matchReasons: string[] = [];
@@ -176,9 +181,21 @@ export function calculateSynergy(
       score += 25;
       matchReasons.push(`Creature entry triggers ${commanderCard.name}`);
     }
-    if (dem === 'death_sacrifice' && (p2.supplies.includes('creates_tokens') || candidateCard.oracleText?.toLowerCase().includes('sacrifice'))) {
-      score += 35;
-      matchReasons.push(`Provides sacrifice fodder and death triggers`);
+    if (dem === 'death_sacrifice') {
+      if (p2.supplies.includes('creates_tokens') || candidateText.includes('sacrifice a creature') || candidateText.includes('as an additional cost to cast this spell, sacrifice')) {
+        score += 35;
+        matchReasons.push(`Provides sacrifice fodder and death triggers for ${commanderCard.name}`);
+      }
+      if (p2.supplies.includes('reanimates')) {
+        score += 30;
+        matchReasons.push(`Recur sacrificed creatures back to the battlefield`);
+      }
+    }
+    if (dem === 'discard') {
+      if (candidateText.includes('whenever a player discards') || candidateText.includes('whenever an opponent discards') || candidateText.includes('discard a card')) {
+        score += 40;
+        matchReasons.push(`Rewards you whenever ${commanderCard.name} forces discards`);
+      }
     }
     if (dem === 'energy' && p2.supplies.includes('produces_energy')) {
       score += 45;
@@ -199,6 +216,10 @@ export function calculateSynergy(
     if (dem === 'draw' && p1.supplies.includes('draws_cards')) {
       score += 35;
       matchReasons.push(`Rewards you whenever ${commanderCard.name} draws cards`);
+    }
+    if (dem === 'death_sacrifice' && p1.supplies.includes('creates_tokens')) {
+      score += 30;
+      matchReasons.push(`Consumes the tokens generated by ${commanderCard.name}`);
     }
     if (dem === 'creature_etb' && commanderCard.types.includes('Creature')) {
       score += 20;
@@ -231,6 +252,12 @@ export function calculateSynergy(
         break;
       }
     }
+  }
+
+  // Match 5: Color Affinity (favor on-color cards over generic colorless filler)
+  const isColorless = candidateCard.colors.length === 0;
+  if (!isColorless && candidateCard.colors.some(c => commanderCard.colorIdentity.includes(c))) {
+    score += 10;
   }
 
   // Determine Category

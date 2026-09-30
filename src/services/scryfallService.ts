@@ -23,6 +23,7 @@ export interface SearchArenaParams {
   digitalOnly?: boolean;
   commanderColorIdentity?: string[];
   roleFilter?: FunctionalRole | 'lands' | null;
+  order?: 'edhrec' | 'name' | 'cmc' | 'rarity' | 'rank';
   page?: number;
 }
 
@@ -227,7 +228,8 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
 
   const queryString = parts.join(' ');
   const page = params.page || 1;
-  const cacheKey = `${queryString}__page_${page}`;
+  const order = params.order || 'edhrec';
+  const cacheKey = `${queryString}__order_${order}__page_${page}`;
 
   // Check cache
   const cached = searchCache.get(cacheKey);
@@ -240,7 +242,7 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
   }
 
   try {
-    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(queryString)}&order=name&page=${page}`;
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(queryString)}&order=${order}&page=${page}`;
     const response = await fetch(url, {
       headers: {
         'Accept': 'application/json'
@@ -276,6 +278,10 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     const fallbackFiltered = ARENA_CARDS.filter(c => {
       if (params.format && !c.legalities[params.format]) return false;
       if (params.digitalOnly && !c.isDigitalOnly && !c.isAlchemyRebalanced) return false;
+      if (params.commanderColorIdentity) {
+        const isLegal = c.colorIdentity.every(col => params.commanderColorIdentity!.includes(col));
+        if (!isLegal) return false;
+      }
       if (params.color) {
         if (params.color === 'C' && c.colors.length > 0) return false;
         if (params.color === 'M' && c.colors.length < 2) return false;
