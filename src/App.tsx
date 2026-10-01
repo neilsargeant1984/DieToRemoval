@@ -16,6 +16,7 @@ import { CollectionSyncModal } from './components/CollectionSyncModal';
 import { MetaDecksModal } from './components/MetaDecksModal';
 import { ExportImportModal } from './components/ExportImportModal';
 import { CommanderPickerModal } from './components/CommanderPickerModal';
+import { MyDecksView } from './components/MyDecksView';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
 import { ARENA_CARDS } from './data/arenaCards';
@@ -27,7 +28,34 @@ export const App: React.FC = () => {
   const [synergyTab, setSynergyTab] = useState<SynergyCategoryTab>('creatures');
   const [isDeckDrawerOpen, setIsDeckDrawerOpen] = useState(false);
 
-  // Active Deck State
+  // Saved Decks Collection (All user-created decks)
+  const [savedDecks, setSavedDecks] = useState<Deck[]>(() => {
+    const saved = localStorage.getItem('arenaforge_saved_decks');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      } catch {
+        // Fallback
+      }
+    }
+    // Default initial deck
+    const defaultCommander = ARENA_CARDS.find(c => c.name.includes('Liliana')) || ARENA_CARDS[0];
+    return [{
+      id: 'default-brawl-deck',
+      name: `${defaultCommander.name} Brawl`,
+      format: 'brawl',
+      commander: { card: defaultCommander, quantity: 1 },
+      mainboard: [],
+      sideboard: [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    }];
+  });
+
+  // Active Deck State (The deck currently loaded into the workspace)
   const [activeDeck, setActiveDeck] = useState<Deck>(() => {
     const saved = localStorage.getItem('arenaforge_active_deck');
     if (saved) {
@@ -37,7 +65,6 @@ export const App: React.FC = () => {
         // Fallback
       }
     }
-    // Default to Brawl format with Liliana or clean commander
     const defaultCommander = ARENA_CARDS.find(c => c.name.includes('Liliana')) || ARENA_CARDS[0];
     return {
       id: 'default-brawl-deck',
@@ -86,10 +113,25 @@ export const App: React.FC = () => {
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
 
-  // Persistence
+  // Sync activeDeck changes back to savedDecks collection
   useEffect(() => {
     localStorage.setItem('arenaforge_active_deck', JSON.stringify(activeDeck));
+    setSavedDecks(prev => {
+      const idx = prev.findIndex(d => d.id === activeDeck.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = activeDeck;
+        return next;
+      } else {
+        return [activeDeck, ...prev];
+      }
+    });
   }, [activeDeck]);
+
+  // Persist savedDecks
+  useEffect(() => {
+    localStorage.setItem('arenaforge_saved_decks', JSON.stringify(savedDecks));
+  }, [savedDecks]);
 
   useEffect(() => {
     localStorage.setItem('arenaforge_wildcard_inventory', JSON.stringify(wildcardInventory));
@@ -207,6 +249,72 @@ export const App: React.FC = () => {
     }));
   };
 
+  // Multiple Deck Management Handlers (Load, Create, Duplicate, Rename, Delete)
+  const handleLoadDeck = (deck: Deck) => {
+    setActiveDeck(deck);
+    setNavTab('deck_builder');
+  };
+
+  const handleCreateNewDeck = (format: FormatType) => {
+    let newDeck: Deck;
+    if (format === 'brawl') {
+      const defaultCommander = ARENA_CARDS.find(c => c.name.includes('Liliana')) || ARENA_CARDS[0];
+      newDeck = {
+        id: `deck-brawl-${Date.now()}`,
+        name: `New ${defaultCommander.name} Brawl`,
+        format: 'brawl',
+        commander: { card: defaultCommander, quantity: 1 },
+        mainboard: [],
+        sideboard: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    } else {
+      newDeck = {
+        id: `deck-${format}-${Date.now()}`,
+        name: `New ${format.toUpperCase()} Deck`,
+        format: format,
+        mainboard: [],
+        sideboard: [],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      };
+    }
+
+    setSavedDecks(prev => [newDeck, ...prev]);
+    setActiveDeck(newDeck);
+    setNavTab('deck_builder');
+  };
+
+  const handleDeleteDeck = (deckId: string) => {
+    setSavedDecks(prev => {
+      const next = prev.filter(d => d.id !== deckId);
+      // If user deletes the currently active deck, switch to the first remaining one
+      if (activeDeck.id === deckId && next.length > 0) {
+        setActiveDeck(next[0]);
+      }
+      return next;
+    });
+  };
+
+  const handleDuplicateDeck = (deck: Deck) => {
+    const copy: Deck = {
+      ...deck,
+      id: `deck-copy-${Date.now()}`,
+      name: `${deck.name} (Copy)`,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    setSavedDecks(prev => [copy, ...prev]);
+  };
+
+  const handleRenameDeck = (deckId: string, newName: string) => {
+    setSavedDecks(prev => prev.map(d => d.id === deckId ? { ...d, name: newName, updatedAt: new Date().toISOString() } : d));
+    if (activeDeck.id === deckId) {
+      setActiveDeck(prev => ({ ...prev, name: newName, updatedAt: new Date().toISOString() }));
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#0b0e14] text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
       {/* Top Navigation Shell */}
@@ -219,11 +327,24 @@ export const App: React.FC = () => {
         onOpenSync={() => setIsSyncOpen(true)}
         onOpenExport={() => setExportImportMode('export')}
         hasCommander={!!activeDeck.commander}
+        deckCount={savedDecks.length}
       />
 
       {/* Main App Content */}
       <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 flex flex-col space-y-6">
-        {navTab === 'card_library' ? (
+        {navTab === 'my_decks' ? (
+          /* Multi-Deck Library View */
+          <MyDecksView
+            savedDecks={savedDecks}
+            activeDeckId={activeDeck.id}
+            onLoadDeck={handleLoadDeck}
+            onCreateNewDeck={handleCreateNewDeck}
+            onDeleteDeck={handleDeleteDeck}
+            onDuplicateDeck={handleDuplicateDeck}
+            onRenameDeck={handleRenameDeck}
+            userCollection={userCollection}
+          />
+        ) : navTab === 'card_library' ? (
           /* Full Screen Card Library View */
           <CardLibraryView
             onSelectCardDetail={setSelectedCardDetail}

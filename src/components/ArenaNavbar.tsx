@@ -8,10 +8,11 @@ import {
   UploadCloud, 
   Download, 
   Crown,
-  Flame
+  Flame,
+  FolderHeart
 } from 'lucide-react';
 
-export type MainNavTab = 'deck_builder' | 'card_library';
+export type MainNavTab = 'deck_builder' | 'card_library' | 'my_decks';
 
 interface ArenaNavbarProps {
   currentTab: MainNavTab;
@@ -22,6 +23,7 @@ interface ArenaNavbarProps {
   onOpenSync: () => void;
   onOpenExport: () => void;
   hasCommander?: boolean;
+  deckCount?: number;
 }
 
 export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
@@ -32,7 +34,8 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
   inventory,
   onOpenSync,
   onOpenExport,
-  hasCommander
+  hasCommander,
+  deckCount = 0
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#0c1017]/95 border-b border-[#232a3b] backdrop-blur-md px-4 py-2.5 shadow-xl">
@@ -54,11 +57,11 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
             </div>
           </div>
 
-          {/* Primary View Pills: Deck Builder vs Card Library */}
+          {/* Primary View Pills: Deck Builder vs Card Library vs My Decks */}
           <div className="flex items-center bg-[#151a24] p-1 rounded-xl border border-[#262f42] shadow-inner">
             <button
               onClick={() => onSelectTab('deck_builder')}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
                 currentTab === 'deck_builder'
                   ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e2533]'
@@ -69,7 +72,7 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
             </button>
             <button
               onClick={() => onSelectTab('card_library')}
-              className={`flex items-center gap-1.5 px-4 py-1.5 rounded-lg text-xs font-bold transition ${
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
                 currentTab === 'card_library'
                   ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
                   : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e2533]'
@@ -77,6 +80,24 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
             >
               <BookOpen className="w-3.5 h-3.5" />
               <span>Card Library</span>
+            </button>
+            <button
+              onClick={() => onSelectTab('my_decks')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                currentTab === 'my_decks'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e2533]'
+              }`}
+            >
+              <FolderHeart className="w-3.5 h-3.5" />
+              <span>My Decks</span>
+              {deckCount > 0 && (
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
+                  currentTab === 'my_decks' ? 'bg-slate-950 text-amber-300' : 'bg-[#222a3b] text-slate-300'
+                }`}>
+                  {deckCount}
+                </span>
+              )}
             </button>
           </div>
         </div>
