@@ -37,7 +37,6 @@ export const ManaBaseModal: React.FC<ManaBaseModalProps> = ({
   userCollection = {}
 }) => {
   const commander = deck.commander?.card;
-  const isStandardBrawl = deck.format === 'standard' || deck.format === 'brawl' && false; // Format check
 
   const defaultLandTarget = useMemo(() => {
     const cmdCmc = commander ? commander.cmc : 4;
