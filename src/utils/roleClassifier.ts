@@ -6,6 +6,9 @@ export type FunctionalRole =
   | 'removal' 
   | 'board_wipe' 
   | 'card_advantage' 
+  | 'sac_outlet'
+  | 'recursion'
+  | 'drain'
   | 'tutor';
 
 export interface CardRoleProfile {
@@ -14,6 +17,13 @@ export interface CardRoleProfile {
   rampType?: 'mana_rock' | 'dork' | 'land_fetch' | 'ritual';
   rampCmc?: number;
   explanation: string[];
+}
+
+export interface RoleChip {
+  id: FunctionalRole;
+  label: string;
+  icon: string;
+  style: string;
 }
 
 /**
@@ -38,7 +48,7 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     const isManaDork = card.types.includes('Creature') && (
       text.includes('{t}: add ') || 
       text.includes('add one mana of any') || 
-      text.includes('whenever you cast') && text.includes('add {')
+      (text.includes('whenever you cast') && text.includes('add {'))
     );
 
     const isLandFetch = 
@@ -80,15 +90,46 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
         explanations.push('Treasure Mana Acceleration');
       }
     }
+  } else if (card.name === 'Phyrexian Tower' || (text.includes('add {') && text.includes('sacrifice a creature'))) {
+    roles.push('ramp');
+    explanations.push('Sacrifice Mana Acceleration');
   }
 
-  // 2. BOARD WIPES (Mass Removals)
+  // 2. SACRIFICE OUTLET (Death Engine Catalyst)
+  const isSacOutlet = 
+    text.includes('sacrifice a creature:') ||
+    text.includes('sacrifice another creature:') ||
+    text.includes('sacrifice a creature or') ||
+    text.includes('sacrifice an artifact or creature') ||
+    text.includes('additional cost to cast this spell, sacrifice a creature') ||
+    text.includes('additional cost to cast this spell, sacrifice an artifact or creature') ||
+    text.includes('additional cost to cast this spell, sacrifice') ||
+    text.includes('{t}, sacrifice a creature') ||
+    text.includes('{t}, sacrifice another creature') ||
+    text.includes('sacrifice a nonland permanent:') ||
+    text.includes('sacrifice another creature or') ||
+    text.includes('sacrifice another permanent:') ||
+    [
+      'deadly dispute', 'village rites', 'corrupted conviction', 'victimize',
+      'ashnod\'s altar', 'phyrexian altar', 'altar of dementia', 'phyrexian tower',
+      'viscera seer', 'woe strider', 'dockside chef', 'high market', 'plumb the forbidden',
+      'eaten alive', 'severed strands', 'bartolomé del presidio', 'ayara, first of locthwain',
+      'yawgmoth, thran physician', 'hostile hostel', 'diabolic intent', 'warren soultrader',
+      'braids, arisen nightmare', 'carrion feeder', 'fell stinger', 'fanatical offering'
+    ].includes(card.name.toLowerCase());
+
+  if (isSacOutlet) {
+    roles.push('sac_outlet');
+    explanations.push('Sacrifice Outlet & Death Catalyst');
+  }
+
+  // 3. BOARD WIPES (Mass Removals)
   const isWipe = 
     (text.includes('destroy all') && (text.includes('creature') || text.includes('nonland') || text.includes('permanent'))) ||
     (text.includes('exile all') && (text.includes('creature') || text.includes('nonland') || text.includes('permanent'))) ||
     text.includes('each creature gets -') ||
     text.includes('all creatures get -') ||
-    text.includes('deals damage to each creature') && (card.cmc >= 3 || text.includes('x damage')) ||
+    (text.includes('deals damage to each creature') && (card.cmc >= 3 || text.includes('x damage'))) ||
     text.includes('destroy each creature') ||
     text.includes('exile each creature') ||
     text.includes('incubate x, where x is the number of creatures exiled');
@@ -98,13 +139,25 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     explanations.push('Mass Board Sweeper');
   }
 
-  // 3. TARGETED REMOVAL & INTERACTION (Single target destroy, exile, counter, bounce)
-  const isTargetedRemoval = !isWipe && (
-    (text.includes('destroy target') || text.includes('exile target') || text.includes('target creature gets -')) ||
+  // 4. TARGETED REMOVAL & INTERACTION
+  const isTargetedRemoval = (
+    text.includes('destroy target') || 
+    text.includes('exile target') || 
+    text.includes('target creature gets -') ||
+    text.includes('target nonland permanent gets -') ||
+    text.includes('put a -1/-1 counter on') ||
+    text.includes('put two -1/-1 counters on') ||
     (text.includes('counter target') && (text.includes('spell') || text.includes('ability'))) ||
     (text.includes('return target') && (text.includes('to its owner\'s hand') || text.includes('to their owner\'s hand'))) ||
     (text.includes('deals') && text.includes('damage to target') && (card.types.includes('Instant') || card.types.includes('Sorcery'))) ||
-    (text.includes('deals 3 damage to any target') || text.includes('deals 4 damage to any target'))
+    text.includes('deals 3 damage to any target') || 
+    text.includes('deals 4 damage to any target') ||
+    (card.types.includes('Creature') && (
+      text.includes('enters the battlefield, destroy target') || 
+      text.includes('enters, destroy target') || 
+      text.includes('enters the battlefield, exile target') ||
+      text.includes('enters, exile target')
+    ))
   );
 
   if (isTargetedRemoval) {
@@ -112,7 +165,7 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     explanations.push('Targeted Spot Removal / Interaction');
   }
 
-  // 4. PROTECTION (Hexproof, Indestructible, Phase Out, Ward, Shield Counters)
+  // 5. PROTECTION (Hexproof, Indestructible, Phase Out, Ward, Shield Counters)
   const isProtection = 
     (text.includes('hexproof') || 
      text.includes('indestructible') || 
@@ -121,7 +174,6 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
      text.includes('can\'t be countered') ||
      text.includes('shield counter') ||
      (text.includes('ward {') && (card.types.includes('Artifact') || card.types.includes('Enchantment')))) &&
-    // Don't classify generic big creatures as "protection spells" unless they grant it or equip it
     (card.types.includes('Instant') || card.types.includes('Artifact') || card.types.includes('Enchantment') || text.includes('target creature you control gains') || text.includes('creatures you control gain'));
 
   if (isProtection) {
@@ -129,7 +181,7 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     explanations.push('Commander & Board Protection');
   }
 
-  // 5. CARD ADVANTAGE & DRAW ENGINES
+  // 6. CARD ADVANTAGE & DRAW ENGINES
   const isCardAdvantage = 
     text.includes('draw a card') || 
     text.includes('draw two cards') || 
@@ -140,12 +192,35 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     (text.includes('exile the top') && text.includes('you may play')) ||
     (text.includes('look at the top') && text.includes('put') && text.includes('into your hand'));
 
-  if (isCardAdvantage && !isWipe) {
+  if (isCardAdvantage) {
     roles.push('card_advantage');
     explanations.push('Card Advantage / Draw Engine');
   }
 
-  // 6. TUTORS
+  // 7. GRAVEYARD RECURSION / REANIMATION
+  const isRecursion = 
+    (text.includes('return target') && (text.includes('graveyard to the battlefield') || text.includes('graveyard onto the battlefield'))) ||
+    (text.includes('put target') && (text.includes('graveyard to the battlefield') || text.includes('graveyard onto the battlefield'))) ||
+    (text.includes('return target') && text.includes('graveyard to your hand') && !card.types.includes('Land')) ||
+    text.includes('reanimate') ||
+    card.name.toLowerCase() === 'victimize';
+
+  if (isRecursion) {
+    roles.push('recursion');
+    explanations.push('Graveyard Recursion / Reanimation');
+  }
+
+  // 8. LIFE DRAIN / PING
+  const isDrain = 
+    ((text.includes('each opponent loses') || text.includes('target opponent loses') || text.includes('each player loses')) && text.includes('you gain')) ||
+    (text.includes('whenever a creature') && text.includes('dies') && (text.includes('loses 1 life') || text.includes('loses life') || text.includes('deals 1 damage to each opponent')));
+
+  if (isDrain) {
+    roles.push('drain');
+    explanations.push('Life Drain / Aristocrat Ping');
+  }
+
+  // 9. TUTORS
   const isTutor = 
     text.includes('search your library for a card') ||
     (text.includes('search your library for a') && !roles.includes('ramp'));
@@ -162,4 +237,47 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     rampCmc: roles.includes('ramp') ? card.cmc : undefined,
     explanation: explanations
   };
+}
+
+/**
+ * Returns formatted UI chips for all functional roles a card fulfills.
+ * Enables highlighting multi-role powerhouses in the deckbuilder.
+ */
+export function getCardRoleChips(card: Card): RoleChip[] {
+  const profile = classifyCardRoles(card);
+  const chips: RoleChip[] = [];
+
+  for (const role of profile.roles) {
+    switch (role) {
+      case 'sac_outlet':
+        chips.push({ id: 'sac_outlet', label: 'Sac Outlet', icon: '⚡', style: 'bg-amber-950/80 text-amber-300 border-amber-700/60' });
+        break;
+      case 'card_advantage':
+        chips.push({ id: 'card_advantage', label: 'Card Draw', icon: '📖', style: 'bg-sky-950/80 text-sky-300 border-sky-700/60' });
+        break;
+      case 'removal':
+        chips.push({ id: 'removal', label: 'Removal', icon: '🎯', style: 'bg-rose-950/80 text-rose-300 border-rose-700/60' });
+        break;
+      case 'board_wipe':
+        chips.push({ id: 'board_wipe', label: 'Board Wipe', icon: '💣', style: 'bg-red-950/80 text-red-300 border-red-700/60' });
+        break;
+      case 'ramp':
+        chips.push({ id: 'ramp', label: 'Ramp', icon: '💎', style: 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60' });
+        break;
+      case 'recursion':
+        chips.push({ id: 'recursion', label: 'Recursion', icon: '💀', style: 'bg-purple-950/80 text-purple-300 border-purple-700/60' });
+        break;
+      case 'drain':
+        chips.push({ id: 'drain', label: 'Drain', icon: '🩸', style: 'bg-fuchsia-950/80 text-fuchsia-300 border-fuchsia-700/60' });
+        break;
+      case 'protection':
+        chips.push({ id: 'protection', label: 'Protection', icon: '🛡️', style: 'bg-cyan-950/80 text-cyan-300 border-cyan-700/60' });
+        break;
+      case 'tutor':
+        chips.push({ id: 'tutor', label: 'Tutor', icon: '🔍', style: 'bg-indigo-950/80 text-indigo-300 border-indigo-700/60' });
+        break;
+    }
+  }
+
+  return chips;
 }

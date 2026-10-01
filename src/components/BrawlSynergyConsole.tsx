@@ -3,7 +3,7 @@ import { Card } from '../types/card';
 import { calculateSynergy, SynergyMatchResult } from '../utils/synergyGraph';
 import { explainSynergy } from '../utils/synergyExplainer';
 import { searchArenaCards } from '../services/scryfallService';
-import { classifyCardRoles } from '../utils/roleClassifier';
+import { classifyCardRoles, getCardRoleChips, RoleChip } from '../utils/roleClassifier';
 import { UserCollection } from '../types/collection';
 import { 
   Sparkles, 
@@ -211,27 +211,35 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
   if (!commander) return null;
 
+  const [multiRoleOnly, setMultiRoleOnly] = useState<boolean>(false);
+
   // Filter based on active tab
-  const getTabResults = (): { card: Card; score: number; badge: string; reason: string }[] => {
+  const getTabResults = (): { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[] }[] => {
     if (activeTab === 'meta_consensus') {
       return communityMeta.map(item => {
         const causalMatch = calculateSynergy(commander, item.card);
-        const reason = causalMatch 
+        const roleChips = getCardRoleChips(item.card);
+        let reason = causalMatch 
           ? explainSynergy(commander, causalMatch)
           : `Played in ${item.inclusion}% of community decks (${item.numDecks.toLocaleString()} decks)`;
+
+        if (roleChips.length >= 2) {
+          reason = `Multi-Role (${roleChips.length}-in-1: ${roleChips.map(r => r.label).join(' • ')}). ${reason}`;
+        }
 
         return {
           card: item.card,
           score: item.inclusion,
-          badge: `🔥 ${item.inclusion}% of Decks`,
-          reason
+          badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Engine` : `🔥 ${item.inclusion}% of Decks`,
+          reason,
+          roleChips
         };
       });
     }
 
     if (activeTab === 'meta_staples') {
       // Build elite iconic staples combining community play + causal synergy + archetype pillars
-      const stapleMap = new Map<string, { card: Card; score: number; badge: string; reason: string }>();
+      const stapleMap = new Map<string, { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[] }>();
 
       const universalStaples = new Set([
         'Arcane Signet', 'Mind Stone', 'Coldsteel Heart', 'Swiftfoot Boots', 
@@ -254,18 +262,25 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           continue;
         }
 
+        const roleChips = getCardRoleChips(c);
         const causalScore = causal ? causal.score : 40;
         const inclusionScore = item.inclusion;
-        const bonus = isOnColor ? 15 : (isIconic ? 15 : 0);
+        const bonus = (isOnColor ? 15 : (isIconic ? 15 : 0)) + (roleChips.length >= 2 ? 10 : 0);
 
         const stapleScore = Math.min(99, Math.round((inclusionScore * 0.45) + (causalScore * 0.45) + bonus));
 
         if (stapleScore >= 45) {
+          let reason = causal ? explainSynergy(commander, causal) : `Iconic community staple (${item.inclusion}% deck inclusion)`;
+          if (roleChips.length >= 2) {
+            reason = `Multi-Role (${roleChips.length}-in-1: ${roleChips.map(r => r.label).join(' • ')}). ${reason}`;
+          }
+
           stapleMap.set(c.id, {
             card: c,
             score: stapleScore,
-            badge: `⭐ ${stapleScore}% Staple`,
-            reason: causal ? explainSynergy(commander, causal) : `Iconic community staple (${item.inclusion}% deck inclusion)`
+            badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Staple` : `⭐ ${stapleScore}% Staple`,
+            reason,
+            roleChips
           });
         }
       }
@@ -277,11 +292,18 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         if (item.score >= 50) {
           const isOnColor = c.colors.some(col => commander.colorIdentity.includes(col));
           if (isOnColor || universalStaples.has(c.name) || archetypeStapleArtifacts.has(c.name)) {
+            const roleChips = getCardRoleChips(c);
+            let reason = explainSynergy(commander, item);
+            if (roleChips.length >= 2) {
+              reason = `Multi-Role (${roleChips.length}-in-1: ${roleChips.map(r => r.label).join(' • ')}). ${reason}`;
+            }
+
             stapleMap.set(c.id, {
               card: c,
               score: item.score,
-              badge: `⭐ ${item.score}% Synergy Core`,
-              reason: explainSynergy(commander, item)
+              badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Core` : `⭐ ${item.score}% Synergy Core`,
+              reason,
+              roleChips
             });
           }
         }
@@ -293,19 +315,26 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     }
 
     if (activeTab === 'commander_triggers' && triggerConfig.hasTriggers) {
-      const triggerCards: { card: Card; score: number; badge: string; reason: string }[] = [];
+      const triggerCards: { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[] }[] = [];
       const seen = new Set<string>();
 
       for (const item of scoredSynergies) {
         const c = item.card;
         if (triggerConfig.isTriggerCard(c)) {
           seen.add(c.id);
+          const roleChips = getCardRoleChips(c);
           const score = Math.max(item.score, 75);
+          let reason = triggerConfig.getCardReason(commander, c);
+          if (roleChips.length >= 2) {
+            reason = `Multi-Role (${roleChips.length}-in-1: ${roleChips.map(r => r.label).join(' • ')}). ${reason}`;
+          }
+
           triggerCards.push({
             card: c,
             score,
-            badge: triggerConfig.getCardBadge(c),
-            reason: triggerConfig.getCardReason(commander, c)
+            badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Trigger` : triggerConfig.getCardBadge(c),
+            reason,
+            roleChips
           });
         }
       }
@@ -314,12 +343,19 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         const c = item.card;
         if (!seen.has(c.id) && triggerConfig.isTriggerCard(c)) {
           seen.add(c.id);
+          const roleChips = getCardRoleChips(c);
           const score = Math.max(item.inclusion, 75);
+          let reason = triggerConfig.getCardReason(commander, c);
+          if (roleChips.length >= 2) {
+            reason = `Multi-Role (${roleChips.length}-in-1: ${roleChips.map(r => r.label).join(' • ')}). ${reason}`;
+          }
+
           triggerCards.push({
             card: c,
             score,
-            badge: triggerConfig.getCardBadge(c),
-            reason: triggerConfig.getCardReason(commander, c)
+            badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Trigger` : triggerConfig.getCardBadge(c),
+            reason,
+            roleChips
           });
         }
       }
@@ -376,23 +412,30 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         return false;
       })
       .map(item => {
-        let badge = `${item.score}% Match`;
+        const roleChips = getCardRoleChips(item.card);
+        let badge = roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1` : `${item.score}% Match`;
         let reason = explainSynergy(commander, item);
 
         if (activeTab === 'card_draw') {
           const co = (item.card.oracleText || '').toLowerCase();
           const isSacDraw = (co.includes('sacrifice') || co.includes('dies')) && (co.includes('draw') || co.includes('investigate'));
           if (isSacDraw) {
-            badge = `💡 Sac Draw Engine`;
+            badge = roleChips.length >= 3 ? `✨ 3-in-1 Engine` : `💡 Sac Draw Engine`;
             reason = `Sacrifice Draw Engine: Converts creatures into steady card draw and commander death triggers`;
           }
+        }
+
+        if (roleChips.length >= 2) {
+          const roleNames = roleChips.map(r => r.label).join(' • ');
+          reason = `Multi-Role Powerhouse (${roleChips.length}-in-1: ${roleNames}). ${reason}`;
         }
 
         return {
           card: item.card,
           score: item.score,
           badge,
-          reason
+          reason,
+          roleChips
         };
       })
       .sort((a, b) => {
@@ -419,6 +462,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   };
 
   const currentTabList = getTabResults();
+  const multiRoleCount = currentTabList.filter(item => item.roleChips.length >= 2).length;
+  const displayedList = multiRoleOnly ? currentTabList.filter(item => item.roleChips.length >= 2) : currentTabList;
 
   const handleAdd = (card: Card) => {
     onAddCard(card);
@@ -462,9 +507,30 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           </div>
         </div>
 
-        <span className="text-xs text-slate-500 font-medium">
-          {currentTabList.length} cards matched
-        </span>
+        {/* Multi-Role Filter Toggle & Card Count */}
+        <div className="flex items-center gap-2.5">
+          <button
+            onClick={() => setMultiRoleOnly(!multiRoleOnly)}
+            title="Filter to show only multi-role powerhouses that fulfill 2 or more functional roles"
+            className={`text-xs px-2.5 py-1.5 rounded-xl font-bold border transition flex items-center gap-1.5 ${
+              multiRoleOnly
+                ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 border-amber-300 shadow-md shadow-amber-500/20'
+                : 'bg-[#151a24] text-slate-400 hover:text-slate-200 hover:bg-[#1f2636] border-[#262f42]'
+            }`}
+          >
+            <span>✨</span>
+            <span>Multi-Role Only</span>
+            {multiRoleCount > 0 && (
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${multiRoleOnly ? 'bg-slate-950 text-amber-300' : 'bg-[#1f2737] text-slate-300'}`}>
+                {multiRoleCount}
+              </span>
+            )}
+          </button>
+
+          <span className="text-xs text-slate-500 font-medium">
+            {displayedList.length} cards matched
+          </span>
+        </div>
       </div>
 
       {/* Category Tabs */}
@@ -496,16 +562,20 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             <p className="font-semibold text-slate-200">Evaluating Causal Synergies...</p>
             <p className="text-xs text-slate-500">Checking triggers, payoffs, and Arena legalities</p>
           </div>
-        ) : currentTabList.length === 0 ? (
+        ) : displayedList.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
             <Flame className="w-8 h-8 text-slate-600 mb-2" />
-            <p className="font-semibold text-slate-300">No {activeTab} synergies found</p>
-            <p className="text-xs text-slate-500 mt-1">Try switching to other tabs above.</p>
+            <p className="font-semibold text-slate-300">
+              {multiRoleOnly ? `No multi-role cards found in ${activeTab}` : `No ${activeTab} synergies found`}
+            </p>
+            <p className="text-xs text-slate-500 mt-1">
+              {multiRoleOnly ? 'Try turning off "Multi-Role Only" or switching tabs.' : 'Try switching to other tabs above.'}
+            </p>
           </div>
         ) : (
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
-            {currentTabList.map(item => {
-              const { card, score, badge, reason } = item;
+            {displayedList.map(item => {
+              const { card, score, badge, reason, roleChips } = item;
               const isInDeck = deckCardIds.has(card.id);
               const isOwned = (userCollection[card.arenaId] || 0) > 0;
 
@@ -548,6 +618,25 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                           {badge || `${score}% Match`}
                         </span>
                       </div>
+
+                      {/* Multi-Role Chips (Displays when card fulfills 2+ functional roles) */}
+                      {roleChips.length >= 2 && (
+                        <div className="flex flex-wrap items-center gap-1 my-1">
+                          <span className="text-[8.5px] font-extrabold text-amber-300 bg-amber-500/15 px-1 py-0.5 rounded border border-amber-500/30 whitespace-nowrap flex items-center gap-0.5">
+                            <span>✨</span>
+                            <span>{roleChips.length}-in-1</span>
+                          </span>
+                          {roleChips.map(rc => (
+                            <span
+                              key={rc.id}
+                              className={`text-[8.5px] px-1.5 py-0.5 rounded border font-semibold flex items-center gap-0.5 whitespace-nowrap ${rc.style}`}
+                            >
+                              <span>{rc.icon}</span>
+                              <span>{rc.label}</span>
+                            </span>
+                          ))}
+                        </div>
+                      )}
 
                       <p className="text-[10px] text-amber-200/80 line-clamp-2 leading-tight bg-[#0f121a] p-1.5 rounded border border-[#1e2536]">
                         💡 {reason}
