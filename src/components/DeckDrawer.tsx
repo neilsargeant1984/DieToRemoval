@@ -397,7 +397,7 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
             onClick={onClose}
             className="px-3.5 py-2 bg-[#171c28] hover:bg-[#202738] text-stone-300 hover:text-white font-bold text-xs rounded-xl border border-white/10 transition"
           >
-            Hide Tray
+            Hide Decklist
           </button>
         </div>
       </div>
