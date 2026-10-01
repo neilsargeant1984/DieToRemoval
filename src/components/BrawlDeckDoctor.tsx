@@ -4,6 +4,7 @@ import { Deck } from '../types/deck';
 import { analyzeBrawlDeckHealth } from '../utils/rampAdvisor';
 import { validateBrawlDeck } from '../utils/brawlValidator';
 import { FunctionalRole } from '../utils/roleClassifier';
+import { ManaCost } from './ManaCost';
 import { 
   Zap, 
   Shield, 
@@ -127,7 +128,7 @@ export const BrawlDeckDoctor: React.FC<BrawlDeckDoctorProps> = ({
             {commander ? (
               <div className="flex items-center gap-2 mt-0.5">
                 <span className="text-sm font-bold text-slate-100">{commander.name}</span>
-                <span className="text-xs font-mono text-amber-300">({commander.manaCost})</span>
+                <ManaCost manaCost={commander.manaCost} size="sm" />
                 <div className="flex items-center gap-1 ml-1">
                   {commander.colorIdentity.map(c => (
                     <span
@@ -167,31 +168,7 @@ export const BrawlDeckDoctor: React.FC<BrawlDeckDoctorProps> = ({
         </div>
       </div>
 
-      {/* Dynamic Karsten Advisor Strip */}
-      <div className="bg-slate-950/70 border border-slate-800/90 rounded-xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
-        <div className="flex items-center gap-3">
-          <div className="bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg text-center min-w-[70px]">
-            <span className="text-[10px] text-slate-400 uppercase block font-semibold">T3/T4 Cast</span>
-            <span className="text-base font-bold text-amber-300">{health.turnAcceleratedProbability}%</span>
-          </div>
-          <div>
-            <span className="font-bold text-slate-200 block text-xs">
-              Frank Karsten Mana Tuning
-            </span>
-            <p className="text-[11px] text-slate-400 leading-snug">
-              Avg Non-Land CMC: <strong className="text-slate-200">{health.averageNonLandCmc}</strong> • 
-              Commander: <strong className="text-slate-200">{health.commanderCmc} CMC</strong>
-            </p>
-          </div>
-        </div>
 
-        {health.coachingAdvice.length > 0 && (
-          <div className="flex-1 md:max-w-md bg-slate-900/90 p-2 rounded-lg border border-slate-800 text-[11px] text-amber-200/90 flex items-start gap-2">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
-            <span>{health.coachingAdvice[0]}</span>
-          </div>
-        )}
-      </div>
 
       {/* Role Health Progress Meters */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">

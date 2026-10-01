@@ -4,6 +4,7 @@ import { Deck } from '../types/deck';
 import { DeckWildcardCost } from '../types/collection';
 import { analyzeBrawlDeckHealth } from '../utils/rampAdvisor';
 import { FunctionalRole } from '../utils/roleClassifier';
+import { ManaCost } from './ManaCost';
 import { 
   Crown, 
   Sparkles, 
@@ -227,11 +228,9 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
             <div className="bg-[#141926]/90 border border-[#232b3d] rounded-xl p-4 space-y-3 shadow-inner">
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <div>
-                  <h2 className="text-xl font-extrabold text-slate-100 flex items-center gap-2">
+                  <h2 className="text-xl font-extrabold text-slate-100 flex items-center gap-2.5">
                     <span>{commander.name}</span>
-                    <span className="text-sm font-mono text-amber-300 font-bold bg-[#1b2233] px-2 py-0.5 rounded border border-[#2c364d]">
-                      {commander.manaCost}
-                    </span>
+                    <ManaCost manaCost={commander.manaCost} size="md" />
                   </h2>
                   <span className="text-xs text-slate-400 block mt-0.5">
                     {commander.typeLine} • CMC: {commander.cmc}
@@ -306,32 +305,7 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                 </div>
               </div>
 
-              {/* Dynamic Karsten Advisor Strip */}
-              <div className="bg-[#0e121a] border border-[#232b3d] rounded-xl p-3 flex flex-col md:flex-row items-start md:items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-3">
-                  <div className="bg-amber-500/10 border border-amber-500/30 p-2 rounded-lg text-center min-w-[70px]">
-                    <span className="text-[10px] text-slate-400 uppercase block font-bold">T3/T4 Cast</span>
-                    <span className="text-base font-extrabold text-amber-300">{health.turnAcceleratedProbability}%</span>
-                  </div>
-                  <div>
-                    <span className="font-extrabold text-slate-200 block text-xs flex items-center gap-1.5">
-                      <span>Frank Karsten Mana Tuning</span>
-                      <span className="text-[10px] text-amber-400 font-semibold bg-amber-400/10 px-1.5 py-0.2 rounded border border-amber-400/20">Brawl Curve</span>
-                    </span>
-                    <p className="text-[11px] text-slate-400 leading-snug mt-0.5">
-                      Avg Non-Land CMC: <strong className="text-slate-200">{health.averageNonLandCmc}</strong> • 
-                      Commander: <strong className="text-slate-200">{health.commanderCmc} CMC</strong>
-                    </p>
-                  </div>
-                </div>
 
-                {health.coachingAdvice.length > 0 && (
-                  <div className="flex-1 md:max-w-md bg-[#161c28] p-2 rounded-lg border border-[#2a3449] text-[11px] text-amber-200/90 flex items-start gap-2 shadow-sm">
-                    <Sparkles className="w-3.5 h-3.5 text-amber-400 flex-shrink-0 mt-0.5" />
-                    <span>{health.coachingAdvice[0]}</span>
-                  </div>
-                )}
-              </div>
 
               {/* 6 Deck Skeleton Health Progress Meters */}
               <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
