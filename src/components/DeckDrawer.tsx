@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
+import confetti from 'canvas-confetti';
 import { Deck } from '../types/deck';
 import { Card } from '../types/card';
 import { UserCollection, DeckWildcardCost } from '../types/collection';
@@ -25,6 +26,7 @@ interface DeckDrawerProps {
   wildcardCost: DeckWildcardCost;
   userCollection: UserCollection;
   variant?: 'inline' | 'drawer';
+  onAddCard?: (card: Card) => void;
 }
 
 export const DeckDrawer: React.FC<DeckDrawerProps> = ({
@@ -36,9 +38,14 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
   onOpenExport,
   wildcardCost,
   userCollection,
-  variant = 'drawer'
+  variant = 'drawer',
+  onAddCard
 }) => {
   const [hoveredCard, setHoveredCard] = useState<Card | null>(null);
+  const [isDragOver, setIsDragOver] = useState<boolean>(false);
+  const [dropToast, setDropToast] = useState<{ message: string; type: 'success' | 'warn' } | null>(null);
+  const dragCounter = useRef<number>(0);
+  const toastTimeoutRef = useRef<number | null>(null);
 
   if (!isOpen) return null;
 
@@ -46,6 +53,80 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
   const mainCount = deck.mainboard.reduce((a, b) => a + b.quantity, 0);
   const totalDeckCount = mainCount + (commander ? 1 : 0);
   const targetDeckSize = deck.format === 'brawl' ? 100 : 60;
+
+  const handleDragEnter = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current += 1;
+    if (e.dataTransfer.types.includes('application/json') || e.dataTransfer.types.includes('text/plain')) {
+      setIsDragOver(true);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'copy';
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current -= 1;
+    if (dragCounter.current <= 0) {
+      dragCounter.current = 0;
+      setIsDragOver(false);
+    }
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    dragCounter.current = 0;
+    setIsDragOver(false);
+
+    try {
+      const rawJson = e.dataTransfer.getData('application/json');
+      if (!rawJson) return;
+      const droppedCard: Card = JSON.parse(rawJson);
+      if (!droppedCard || !droppedCard.name) return;
+
+      const list = [...deck.mainboard];
+      const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'].includes(droppedCard.name);
+      const maxCopies = isBasic ? 99 : (deck.format === 'brawl' ? 1 : 4);
+      const existing = list.find(c => c.card.name.toLowerCase().trim() === droppedCard.name.toLowerCase().trim());
+      const existingQty = existing ? existing.quantity : 0;
+
+      if (existingQty >= maxCopies) {
+        if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+        setDropToast({
+          message: deck.format === 'brawl' && !isBasic 
+            ? `"${droppedCard.name}" is already in your Brawl deck (Singleton: 1 max)`
+            : `Max ${maxCopies} copies of "${droppedCard.name}" already in deck`,
+          type: 'warn'
+        });
+        toastTimeoutRef.current = window.setTimeout(() => setDropToast(null), 3000);
+        return;
+      }
+
+      if (onAddCard) {
+        onAddCard(droppedCard);
+      } else {
+        if (existing) {
+          existing.quantity += 1;
+        } else {
+          list.push({ card: droppedCard, quantity: 1 });
+        }
+        onUpdateDeck({ ...deck, mainboard: list, updatedAt: new Date().toISOString() });
+      }
+
+      confetti({ particleCount: 35, spread: 50, origin: { x: 0.85, y: 0.5 } });
+      if (toastTimeoutRef.current) clearTimeout(toastTimeoutRef.current);
+      setDropToast({
+        message: `Added "${droppedCard.name}" to Decklist`,
+        type: 'success'
+      });
+      toastTimeoutRef.current = window.setTimeout(() => setDropToast(null), 2500);
+    } catch (err) {
+      console.error('Failed to parse dropped card:', err);
+    }
+  };
 
   // Group cards into complete, clear categories
   const groups: Record<string, typeof deck.mainboard> = {
@@ -103,11 +184,48 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
   };
 
   const panelContent = (
-    <div className={`w-full bg-[#0e121a] border border-[#c5a059]/25 shadow-2xl flex flex-col justify-between overflow-hidden ${
-      variant === 'inline'
-        ? 'rounded-3xl h-[calc(100vh-100px)] arena-panel-elevated'
-        : 'max-w-md h-full rounded-l-3xl border-l'
-    }`}>
+    <div 
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+      className={`w-full bg-[#0e121a] border relative transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-2xl ${
+        isDragOver 
+          ? 'border-amber-400 ring-2 ring-amber-400/90 ring-inset bg-amber-950/20' 
+          : 'border-[#c5a059]/25'
+      } ${
+        variant === 'inline'
+          ? 'rounded-3xl h-[calc(100vh-100px)] arena-panel-elevated'
+          : 'max-w-md h-full rounded-l-3xl border-l'
+      }`}
+    >
+      {/* Drop Zone Visual Cue Overlay */}
+      {isDragOver && (
+        <div className="absolute inset-0 z-40 bg-[#0e121a]/90 backdrop-blur-sm border-2 border-dashed border-amber-400 rounded-3xl flex flex-col items-center justify-center p-6 text-center pointer-events-none animate-in fade-in duration-150">
+          <div className="w-16 h-16 rounded-2xl bg-amber-500/20 border border-amber-400 flex items-center justify-center mb-3 animate-bounce shadow-lg shadow-amber-500/20">
+            <Plus className="w-8 h-8 text-amber-300" />
+          </div>
+          <h4 className="font-fantasy font-black text-base text-amber-200">
+            Drop to Add to Decklist
+          </h4>
+          <p className="text-xs text-stone-300 mt-1 max-w-[220px]">
+            Release anywhere to add this card to your Brawl deck!
+          </p>
+        </div>
+      )}
+
+      {/* Floating Drop Toast Notification */}
+      {dropToast && (
+        <div className={`absolute top-16 left-4 right-4 z-40 px-3 py-2 rounded-xl text-xs font-bold shadow-2xl flex items-center justify-center gap-2 border animate-in slide-in-from-top-2 duration-200 pointer-events-none ${
+          dropToast.type === 'warn'
+            ? 'bg-rose-950/95 text-rose-300 border-rose-700/80 shadow-rose-950/50'
+            : 'bg-amber-500 text-slate-950 border-amber-400 font-extrabold shadow-amber-500/20'
+        }`}>
+          <span>{dropToast.type === 'warn' ? '⚠️' : '✨'}</span>
+          <span className="truncate">{dropToast.message}</span>
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#121622] flex-shrink-0">
         <div className="flex items-center gap-2.5">
@@ -116,7 +234,7 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
           </div>
           <div>
             <h3 className="font-fantasy font-black text-sm text-white flex items-center gap-2">
-              <span>Active Deck Tray</span>
+              <span>Decklist</span>
               <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold ${
                 totalDeckCount === targetDeckSize
                   ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
@@ -134,7 +252,7 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
         <button
           onClick={onClose}
           className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-stone-400 hover:text-amber-300 hover:bg-white/10 transition border border-transparent hover:border-white/10"
-          title="Hide Deck Tray"
+          title="Hide Decklist"
         >
           <PanelRightClose className="w-4 h-4 text-stone-400" />
           <span className="text-xs font-bold">Hide</span>
@@ -170,9 +288,9 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
             <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-3 border border-white/10">
               <Layers className="w-6 h-6 text-stone-400" />
             </div>
-            <p className="font-fantasy font-bold text-stone-300 text-sm">Tray is empty</p>
-            <p className="text-xs text-stone-500 mt-1 max-w-[220px]">
-              Browse synergies on the left and click &quot;+ Add to Deck&quot; to populate your Brawl deck!
+            <p className="font-fantasy font-bold text-stone-300 text-sm">Decklist is empty</p>
+            <p className="text-xs text-stone-500 mt-1 max-w-[240px]">
+              Drag &amp; drop cards here or click &quot;+ Add to Deck&quot; from synergies to populate your Brawl deck!
             </p>
           </div>
         )}
