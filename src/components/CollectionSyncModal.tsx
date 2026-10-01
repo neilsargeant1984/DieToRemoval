@@ -33,6 +33,7 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
 }) => {
   const [logText, setLogText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isDragOver, setIsDragOver] = useState(false);
   const [statusMessage, setStatusMessage] = useState<{
     type: 'success' | 'error';
     text: string;
@@ -96,8 +97,6 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
       setIsProcessing(false);
     }
   };
-
-  const [isDragOver, setIsDragOver] = useState(false);
 
   const handleDropFile = (file: File) => {
     const reader = new FileReader();
