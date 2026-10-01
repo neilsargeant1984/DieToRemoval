@@ -546,7 +546,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           <Sparkles className="w-5 h-5 text-amber-400" />
           <div>
             <h3 className="text-base font-extrabold text-slate-100 flex items-center gap-2">
-              <span>Brawl Synergy Console</span>
+              <span>Commander Synergies</span>
               <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/30">
                 {commander.name}
               </span>
