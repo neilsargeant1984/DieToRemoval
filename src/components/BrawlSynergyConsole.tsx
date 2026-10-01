@@ -23,7 +23,8 @@ import {
   X,
   Mountain,
   ChevronDown,
-  Filter
+  Filter,
+  GripVertical
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchArenaCommunityMeta, EDHRECCardView } from '../services/edhrecService';
@@ -930,7 +931,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           {onToggleDeckTray && (
             <button
               onClick={onToggleDeckTray}
-              title={isDeckTrayOpen ? 'Hide Active Deck Tray' : 'Show Active Deck Tray'}
+              title={isDeckTrayOpen ? 'Hide Decklist' : 'Show Decklist'}
               className={`text-xs px-3 py-1.5 rounded-xl font-bold border transition flex items-center gap-1.5 shadow-sm ${
                 isDeckTrayOpen
                   ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
@@ -938,7 +939,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-amber-400" />
-              <span>{isDeckTrayOpen ? 'Hide Deck Tray' : 'Show Deck Tray'}</span>
+              <span>{isDeckTrayOpen ? 'Hide Decklist' : 'Show Decklist'}</span>
             </button>
           )}
 
@@ -1226,7 +1227,14 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
               return (
                 <div
                   key={card.id}
-                  className="card-tile group rounded-2xl p-2.5 flex flex-col justify-between"
+                  draggable={true}
+                  onDragStart={(e) => {
+                    e.dataTransfer.setData('application/json', JSON.stringify(card));
+                    e.dataTransfer.setData('text/plain', card.name);
+                    e.dataTransfer.effectAllowed = 'copy';
+                  }}
+                  className="card-tile group rounded-2xl p-2.5 flex flex-col justify-between cursor-grab active:cursor-grabbing hover:scale-[1.01] transition-transform select-none"
+                  title="Drag card into Decklist, or click card art for details"
                 >
                   {/* Card Art Clickable (100% Unobscured card title & mana cost) */}
                   <div
@@ -1237,7 +1245,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                       src={card.imageUrl}
                       cardName={card.name}
                       alt={card.name}
-                      className="w-full h-auto object-cover group-hover:brightness-105 transition"
+                      draggable={false}
+                      className="w-full h-auto object-cover group-hover:brightness-105 transition pointer-events-none"
                     />
 
                     {/* Owned badge at subtle bottom corner */}
@@ -1253,12 +1262,17 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                     <div>
                       {/* Name & Synergy/Staple Badge Row */}
                       <div className="flex items-center justify-between gap-1 mb-1">
-                        <span 
-                          className="font-bold text-stone-100 text-xs truncate group-hover:text-amber-300 transition"
-                          title={card.name}
-                        >
-                          {card.name}
-                        </span>
+                        <div className="flex items-center gap-1 min-w-0 flex-1">
+                          <span title="Drag to Decklist">
+                            <GripVertical className="w-3.5 h-3.5 text-stone-600 group-hover:text-amber-400/80 flex-shrink-0 transition" />
+                          </span>
+                          <span 
+                            className="font-bold text-stone-100 text-xs truncate group-hover:text-amber-300 transition"
+                            title={card.name}
+                          >
+                            {card.name}
+                          </span>
+                        </div>
                         <span className="flex-shrink-0 bg-orange-950/80 text-orange-300 font-black text-[9px] px-2 py-0.5 rounded-full border border-orange-500/40 whitespace-nowrap shadow-sm">
                           {badge || `${score}% Match`}
                         </span>
@@ -1289,6 +1303,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                           e.stopPropagation();
                           setExpandedReasonCardId(prev => prev === card.id ? null : card.id);
                         }}
+                        draggable={false}
+                        onDragStart={(e) => e.stopPropagation()}
                         title={`Synergy Breakdown:\n${reason}\n\n(Click to ${expandedReasonCardId === card.id ? 'collapse' : 'expand'})`}
                         className={`group/reason relative p-2 rounded-xl border transition-all cursor-pointer ${
                           expandedReasonCardId === card.id
@@ -1319,6 +1335,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                     {!isMultiCopy ? (
                       <button
                         onClick={() => (countInDeck > 0 ? handleRemove(card, true) : handleAdd(card))}
+                        draggable={false}
+                        onDragStart={(e) => e.stopPropagation()}
                         className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
                           countInDeck > 0
                             ? 'bg-rose-950/80 hover:bg-rose-900 text-rose-300 border border-rose-800 hover:scale-[1.02]'
@@ -1340,6 +1358,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                     ) : countInDeck === 0 ? (
                       <button
                         onClick={() => handleAdd(card)}
+                        draggable={false}
+                        onDragStart={(e) => e.stopPropagation()}
                         className="btn-mythic-spark w-full flex items-center justify-center gap-1.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm hover:scale-[1.02]"
                       >
                         <Plus className="w-3.5 h-3.5" />
@@ -1349,9 +1369,15 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                         )}
                       </button>
                     ) : (
-                      <div className="w-full flex items-center justify-between bg-[#0d1017] border border-white/10 rounded-xl p-0.5 shadow-inner">
+                      <div 
+                        draggable={false}
+                        onDragStart={(e) => e.stopPropagation()}
+                        className="w-full flex items-center justify-between bg-[#0d1017] border border-white/10 rounded-xl p-0.5 shadow-inner"
+                      >
                         <button
                           onClick={() => handleRemove(card, false)}
+                          draggable={false}
+                          onDragStart={(e) => e.stopPropagation()}
                           title={countInDeck === 1 ? "Remove card from deck" : "Decrease copy"}
                           className="p-1 rounded-lg bg-[#141926] hover:bg-rose-950 text-stone-300 hover:text-rose-300 border border-white/5 hover:border-rose-800 transition"
                         >
@@ -1372,6 +1398,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                         <button
                           onClick={() => handleAdd(card)}
                           disabled={!canAddMore}
+                          draggable={false}
+                          onDragStart={(e) => e.stopPropagation()}
                           title={canAddMore ? "Add another copy" : `Max ${maxAllowed} copies reached`}
                           className={`p-1 rounded-lg transition border ${
                             canAddMore

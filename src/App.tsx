@@ -753,7 +753,7 @@ export const App: React.FC = () => {
                 )}
               </div>
 
-              {/* Side-by-Side Active Deck Tray (Desktop) */}
+              {/* Side-by-Side Decklist (Desktop) */}
               {isDeckDrawerOpen && (
                 <aside className="hidden lg:block w-[360px] xl:w-[400px] flex-shrink-0 sticky top-20 z-20">
                   <DeckDrawer
@@ -766,6 +766,7 @@ export const App: React.FC = () => {
                     onOpenExport={() => setExportImportMode('export')}
                     wildcardCost={wildcardCost}
                     userCollection={userCollection}
+                    onAddCard={card => handleAddCard(card, false)}
                   />
                 </aside>
               )}
@@ -793,7 +794,7 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Mobile Slide-out Deck Tray (Drawer for < lg screens) */}
+      {/* Mobile Slide-out Decklist (Drawer for < lg screens) */}
       <div className="lg:hidden">
         <DeckDrawer
           isOpen={isDeckDrawerOpen}
@@ -805,19 +806,39 @@ export const App: React.FC = () => {
           onOpenExport={() => setExportImportMode('export')}
           wildcardCost={wildcardCost}
           userCollection={userCollection}
+          onAddCard={card => handleAddCard(card, false)}
         />
       </div>
 
-      {/* Floating Edge Tab to easily unhide Deck Tray when scrolled down on desktop */}
+      {/* Floating Edge Tab to easily unhide Decklist when scrolled down on desktop */}
       {!isDeckDrawerOpen && navTab === 'deck_builder' && activeDeck.format === 'brawl' && (
         <button
           onClick={() => setIsDeckDrawerOpen(true)}
+          onDragOver={(e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'copy';
+          }}
+          onDrop={(e) => {
+            e.preventDefault();
+            try {
+              const rawJson = e.dataTransfer.getData('application/json');
+              if (rawJson) {
+                const droppedCard = JSON.parse(rawJson);
+                if (droppedCard && droppedCard.name) {
+                  handleAddCard(droppedCard, false);
+                  setIsDeckDrawerOpen(true);
+                }
+              }
+            } catch (err) {
+              console.error('Failed to handle drop on edge tab:', err);
+            }
+          }}
           className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 bg-[#121622]/95 hover:bg-[#1a2030] text-amber-300 border-l border-y border-amber-500/40 px-2.5 py-4 rounded-l-2xl shadow-2xl flex-col items-center gap-2 group transition duration-200 cursor-pointer"
-          title="Show Active Deck Tray"
+          title="Show Decklist (or drop card to add)"
         >
           <Layers className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
           <span className="[writing-mode:vertical-rl] text-[10px] font-fantasy font-black tracking-wider text-stone-200 uppercase">
-            Deck Tray ({activeDeck.mainboard.reduce((a, b) => a + b.quantity, 0) + (activeDeck.commander ? 1 : 0)}/{activeDeck.format === 'brawl' ? 100 : 60})
+            Decklist ({activeDeck.mainboard.reduce((a, b) => a + b.quantity, 0) + (activeDeck.commander ? 1 : 0)}/{activeDeck.format === 'brawl' ? 100 : 60})
           </span>
         </button>
       )}

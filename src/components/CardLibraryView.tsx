@@ -878,7 +878,13 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                 return (
                   <div
                     key={`${card.id}-${card.collectorNumber}`}
-                    className="card-tile group rounded-2xl overflow-hidden flex flex-col justify-between cursor-pointer p-2 transition duration-200"
+                    draggable={true}
+                    onDragStart={(e) => {
+                      e.dataTransfer.setData('application/json', JSON.stringify(card));
+                      e.dataTransfer.setData('text/plain', card.name);
+                      e.dataTransfer.effectAllowed = 'copy';
+                    }}
+                    className="card-tile group rounded-2xl overflow-hidden flex flex-col justify-between cursor-grab active:cursor-grabbing p-2 transition duration-200"
                     onClick={() => onSelectCardDetail(card)}
                   >
                     <div className="relative overflow-hidden rounded-xl shadow border border-black/40 mb-2 bg-black">
@@ -886,7 +892,8 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                         src={card.imageUrl}
                         cardName={card.name}
                         alt={card.name}
-                        className="w-full h-auto object-cover group-hover:brightness-105 group-hover:scale-[1.02] transition duration-200"
+                        draggable={false}
+                        className="w-full h-auto object-cover group-hover:brightness-105 group-hover:scale-[1.02] transition duration-200 pointer-events-none"
                       />
                       
                       {/* Mana Value (CMC) Badge */}
@@ -928,6 +935,8 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                           e.stopPropagation();
                           onAddCardToDeck(card);
                         }}
+                        draggable={false}
+                        onDragStart={(e) => e.stopPropagation()}
                         className="p-1.5 btn-mythic-spark rounded-lg transition shadow-sm hover:scale-110 active:scale-95 flex-shrink-0"
                         title="Add to active deck"
                       >

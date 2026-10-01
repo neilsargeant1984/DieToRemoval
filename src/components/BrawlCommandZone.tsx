@@ -280,10 +280,10 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                   ? 'btn-mythic-spark text-slate-950 font-black shadow-amber-500/20'
                   : 'bg-[#141926] hover:bg-[#1c2335] text-stone-200 border-white/10 hover:border-amber-400/30'
               }`}
-              title={isDeckDrawerOpen ? 'Hide Deck Tray' : 'Show Deck Tray'}
+              title={isDeckDrawerOpen ? 'Hide Decklist' : 'Show Decklist'}
             >
               <Layers className={`w-4 h-4 ${isDeckDrawerOpen ? 'text-slate-950' : 'text-amber-400'}`} />
-              <span>{isDeckDrawerOpen ? 'Hide Deck Tray' : 'Show Deck Tray'} ({totalDeckCount}/{targetDeckSize})</span>
+              <span>{isDeckDrawerOpen ? 'Hide Decklist' : 'Show Decklist'} ({totalDeckCount}/{targetDeckSize})</span>
             </button>
           </div>
 

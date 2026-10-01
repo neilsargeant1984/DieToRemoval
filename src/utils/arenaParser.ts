@@ -835,13 +835,58 @@ export function parsePlayerLog(logContent: string): {
 
 /**
  * Extracts MTG Arena Wildcards from Player.log or Tracker JSON.
- * Recognizes wcCommon, wcUncommon, wcRare, wcMythic and nested wildcard objects.
+ * Recognizes MTG Arena's exact InventoryInfo payload (WildCardCommons, WildCardUnCommons, WildCardRares, WildCardMythics)
+ * where missing keys default to 0. Also supports legacy/tracker formats.
  */
 export function parsePlayerLogWildcards(logContent: string): WildcardInventory | null {
   if (!logContent || typeof logContent !== 'string') return null;
 
   try {
-    // 1. Direct MTG Arena Player.log keys: "wcCommon": 15, "wcUncommon": 24, "wcRare": 6, "wcMythic": 2
+    // 1. MTG Arena exact Player.log format: "InventoryInfo": { ..., "WildCardCommons": 553, "WildCardUnCommons": 79, ... }
+    // MTG Arena omits Rares/Mythics when the user's count is 0!
+    // Scan through all InventoryInfo blocks to take the latest full inventory snapshot
+    const inventoryInfoRegex = /"InventoryInfo"\s*:\s*\{([^}]+)\}/gi;
+    let match;
+    let latestFullSnapshot: WildcardInventory | null = null;
+
+    while ((match = inventoryInfoRegex.exec(logContent)) !== null) {
+      const block = match[1];
+      // Only process snapshots that include full inventory (contain WildCardCommons or WcTrackPosition or Gems)
+      if (block.includes('WildCardCommons') || block.includes('WcTrackPosition') || block.includes('WildCardUnCommons')) {
+        const cMatch = block.match(/"?WildCardCommons"?\s*:\s*(\d+)/i);
+        const uMatch = block.match(/"?WildCardUnCommons"?\s*:\s*(\d+)/i);
+        const rMatch = block.match(/"?WildCardRares"?\s*:\s*(\d+)/i);
+        const mMatch = block.match(/"?WildCardMythics"?\s*:\s*(\d+)/i);
+
+        latestFullSnapshot = {
+          common: cMatch ? parseInt(cMatch[1], 10) : 0,
+          uncommon: uMatch ? parseInt(uMatch[1], 10) : 0,
+          rare: rMatch ? parseInt(rMatch[1], 10) : 0,
+          mythic: mMatch ? parseInt(mMatch[1], 10) : 0,
+        };
+      }
+    }
+
+    if (latestFullSnapshot) {
+      return latestFullSnapshot;
+    }
+
+    // 2. Fallback: Search globally for the last occurrence of each WildCard key
+    const allC = [...logContent.matchAll(/"?WildCardCommons"?\s*:\s*(\d+)/gi)];
+    const allU = [...logContent.matchAll(/"?WildCardUnCommons"?\s*:\s*(\d+)/gi)];
+    const allR = [...logContent.matchAll(/"?WildCardRares"?\s*:\s*(\d+)/gi)];
+    const allM = [...logContent.matchAll(/"?WildCardMythics"?\s*:\s*(\d+)/gi)];
+
+    if (allC.length > 0 || allU.length > 0 || allR.length > 0 || allM.length > 0) {
+      return {
+        common: allC.length > 0 ? parseInt(allC[allC.length - 1][1], 10) : 0,
+        uncommon: allU.length > 0 ? parseInt(allU[allU.length - 1][1], 10) : 0,
+        rare: allR.length > 0 ? parseInt(allR[allR.length - 1][1], 10) : 0,
+        mythic: allM.length > 0 ? parseInt(allM[allM.length - 1][1], 10) : 0,
+      };
+    }
+
+    // 3. Fallback: Legacy format ("wcCommon", "wcUncommon", ...)
     const wcCommonMatch = logContent.match(/"?wcCommon"?\s*:\s*(\d+)/i);
     const wcUncommonMatch = logContent.match(/"?wcUncommon"?\s*:\s*(\d+)/i);
     const wcRareMatch = logContent.match(/"?wcRare"?\s*:\s*(\d+)/i);
@@ -856,7 +901,7 @@ export function parsePlayerLogWildcards(logContent: string): WildcardInventory |
       };
     }
 
-    // 2. MTG Arena alternative formats / Trackers: "wildcards": { "common": X, ... }
+    // 4. Fallback: Tracker JSON formats ("wildcards": { "common": X, ... })
     const wildcardsBlockMatch = logContent.match(/"?wildcards"?\s*:\s*\{([^}]+)\}/i);
     if (wildcardsBlockMatch) {
       const block = wildcardsBlockMatch[1];
@@ -873,28 +918,11 @@ export function parsePlayerLogWildcards(logContent: string): WildcardInventory |
         };
       }
     }
-
-    // 3. Alternative format: "WildCards": { "Common": X, ... }
-    const altMatch = logContent.match(/"?WildCards"?\s*:\s*\{([^}]+)\}/i);
-    if (altMatch) {
-      const block = altMatch[1];
-      const c = block.match(/"?Common"?\s*:\s*(\d+)/i);
-      const u = block.match(/"?Uncommon"?\s*:\s*(\d+)/i);
-      const r = block.match(/"?Rare"?\s*:\s*(\d+)/i);
-      const m = block.match(/"?Mythic"?\s*:\s*(\d+)/i);
-      if (c || u || r || m) {
-        return {
-          common: c ? parseInt(c[1], 10) : 0,
-          uncommon: u ? parseInt(u[1], 10) : 0,
-          rare: r ? parseInt(r[1], 10) : 0,
-          mythic: m ? parseInt(m[1], 10) : 0,
-        };
-      }
-    }
   } catch (err) {
     console.error('Error parsing wildcards from log content:', err);
   }
 
   return null;
 }
+
 
