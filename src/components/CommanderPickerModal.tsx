@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card } from '../types/card';
 import { searchArenaCards } from '../services/scryfallService';
 import { X, Crown, Search, Loader2 } from 'lucide-react';
+import { CardImage } from './CardImage';
 
 interface CommanderPickerModalProps {
   isOpen: boolean;
@@ -129,8 +130,9 @@ export const CommanderPickerModal: React.FC<CommanderPickerModalProps> = ({
                   className="card-tile group rounded-2xl overflow-hidden p-2.5 transition cursor-pointer flex flex-col justify-between bg-[#131722]/90 border border-[#c5a059]/25 hover:border-amber-400/60 hover:scale-[1.02]"
                 >
                   <div className="rounded-xl overflow-hidden shadow border border-black/50 mb-2 bg-black">
-                    <img
+                    <CardImage
                       src={cmd.imageUrl}
+                      cardName={cmd.name}
                       alt={cmd.name}
                       className="w-full h-auto object-cover group-hover:brightness-105 transition"
                     />

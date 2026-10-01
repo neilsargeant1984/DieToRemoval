@@ -4,6 +4,7 @@ import { X, BookOpen, Sparkles } from 'lucide-react';
 import { calculateSynergy } from '../utils/synergyGraph';
 import { explainSynergy } from '../utils/synergyExplainer';
 import { getCardRoleChips, classifyCardRoles } from '../utils/roleClassifier';
+import { CardImage } from './CardImage';
 
 interface CardDetailModalProps {
   card: Card | null;
@@ -42,8 +43,9 @@ export const CardDetailModal: React.FC<CardDetailModalProps> = ({
 
         {/* Left: Card Image */}
         <div className="w-full md:w-64 flex-shrink-0 flex flex-col items-center">
-          <img
+          <CardImage
             src={card.imageUrl}
+            cardName={card.name}
             alt={card.name}
             className="w-full rounded-2xl shadow-xl border border-black/60 object-cover bg-black"
           />

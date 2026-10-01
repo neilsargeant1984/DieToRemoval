@@ -21,13 +21,16 @@ import {
   Minus,
   Search,
   X,
-  Mountain
+  Mountain,
+  ChevronDown,
+  Filter
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchArenaCommunityMeta, EDHRECCardView } from '../services/edhrecService';
 import { getCommanderTriggerConfig } from '../utils/commanderTriggers';
 import { getMaxCardCopies } from '../utils/cardRules';
 import { ARENA_LANDS_DATABASE, convertArenaLandToCard } from '../data/arenaLands';
+import { CardImage } from './CardImage';
 
 export type SynergyCategoryTab = 
   | 'meta_consensus'
@@ -45,6 +48,82 @@ export type SynergyCategoryTab =
   | 'removal'
   | 'board_wipe'
   | 'card_draw';
+
+export type MetaSubCategory = 
+  | 'creatures' 
+  | 'instants' 
+  | 'sorceries' 
+  | 'artifacts' 
+  | 'enchantments' 
+  | 'planeswalkers' 
+  | 'lands' 
+  | 'ramp' 
+  | 'protection' 
+  | 'removal' 
+  | 'board_wipe' 
+  | 'card_draw'
+  | 'all';
+
+export interface MetaSubCategoryOption {
+  id: MetaSubCategory;
+  label: string;
+  icon: string;
+  group: 'types' | 'roles' | 'all';
+}
+
+export const META_SUB_CATEGORIES: MetaSubCategoryOption[] = [
+  // Card Types
+  { id: 'creatures', label: 'Creatures', icon: '🗡️', group: 'types' },
+  { id: 'instants', label: 'Instants', icon: '⚡', group: 'types' },
+  { id: 'sorceries', label: 'Sorceries', icon: '📜', group: 'types' },
+  { id: 'artifacts', label: 'Artifacts', icon: '🛡️', group: 'types' },
+  { id: 'enchantments', label: 'Enchantments', icon: '✨', group: 'types' },
+  { id: 'planeswalkers', label: 'Planeswalkers', icon: '👑', group: 'types' },
+  { id: 'lands', label: 'Lands', icon: '🏔️', group: 'types' },
+  // Functional Roles
+  { id: 'ramp', label: 'Ramp', icon: '💎', group: 'roles' },
+  { id: 'protection', label: 'Protection', icon: '🛡️', group: 'roles' },
+  { id: 'removal', label: 'Removal', icon: '🎯', group: 'roles' },
+  { id: 'board_wipe', label: 'Board Wipes', icon: '💣', group: 'roles' },
+  { id: 'card_draw', label: 'Card Draw', icon: '📖', group: 'roles' },
+  // All
+  { id: 'all', label: 'All Cards', icon: '🌐', group: 'all' },
+];
+
+export function matchesMetaSubCategory(card: Card, subCat: MetaSubCategory, commander?: Card): boolean {
+  if (subCat === 'all') return true;
+
+  if (subCat === 'creatures') {
+    return card.types.includes('Creature') || (card.typeLine || '').toLowerCase().includes('creature');
+  }
+  if (subCat === 'instants') {
+    return card.types.includes('Instant') || (card.typeLine || '').toLowerCase().includes('instant');
+  }
+  if (subCat === 'sorceries') {
+    return card.types.includes('Sorcery') || (card.typeLine || '').toLowerCase().includes('sorcery');
+  }
+  if (subCat === 'artifacts') {
+    return (card.types.includes('Artifact') || (card.typeLine || '').toLowerCase().includes('artifact')) && !card.types.includes('Creature');
+  }
+  if (subCat === 'enchantments') {
+    return (card.types.includes('Enchantment') || (card.typeLine || '').toLowerCase().includes('enchantment')) && !card.types.includes('Creature');
+  }
+  if (subCat === 'planeswalkers') {
+    return card.types.includes('Planeswalker') || (card.typeLine || '').toLowerCase().includes('planeswalker');
+  }
+  if (subCat === 'lands') {
+    return card.types.includes('Land') || (card.typeLine || '').toLowerCase().includes('land');
+  }
+
+  const roles = classifyCardRoles(card, commander);
+  if (subCat === 'ramp') return roles.roles.includes('ramp');
+  if (subCat === 'protection') return roles.roles.includes('protection');
+  if (subCat === 'removal') return roles.roles.includes('removal');
+  if (subCat === 'board_wipe') return roles.roles.includes('board_wipe');
+  if (subCat === 'card_draw') return roles.roles.includes('card_advantage');
+
+  return true;
+}
 
 interface BrawlSynergyConsoleProps {
   commander?: Card;
@@ -95,6 +174,20 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   const [expandedReasonCardId, setExpandedReasonCardId] = useState<string | null>(null);
   const [tabSearchQuery, setTabSearchQuery] = useState<string>('');
   const [multiRoleOnly, setMultiRoleOnly] = useState<boolean>(false);
+  const [metaSubCategory, setMetaSubCategory] = useState<MetaSubCategory>('creatures');
+  const [metaFilterMode, setMetaFilterMode] = useState<'dropdown' | 'pills'>('dropdown');
+
+  const metaCategoryCounts = useMemo(() => {
+    if (activeTab !== 'meta_consensus' || !communityMeta.length) return {} as Record<MetaSubCategory, number>;
+    const counts: Partial<Record<MetaSubCategory, number>> = {
+      all: communityMeta.length
+    };
+    for (const cat of META_SUB_CATEGORIES) {
+      if (cat.id === 'all') continue;
+      counts[cat.id] = communityMeta.filter(item => matchesMetaSubCategory(item.card, cat.id, commander)).length;
+    }
+    return counts as Record<MetaSubCategory, number>;
+  }, [communityMeta, activeTab, commander]);
 
   const triggerConfig = getCommanderTriggerConfig(commander);
 
@@ -148,6 +241,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           communityRes, 
           generalRes, 
           rampRes, 
+          cardDrawRes,
           removalRes, 
           wipeRes, 
           protRes, 
@@ -166,6 +260,12 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             format: 'brawl',
             commanderColorIdentity: commander.colorIdentity,
             roleFilter: 'ramp',
+            order: 'edhrec'
+          }),
+          searchArenaCards({
+            format: 'brawl',
+            commanderColorIdentity: commander.colorIdentity,
+            roleFilter: 'card_advantage',
             order: 'edhrec'
           }),
           searchArenaCards({
@@ -235,6 +335,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
         addCards(generalRes);
         addCards(rampRes);
+        addCards(cardDrawRes);
         addCards(removalRes);
         addCards(wipeRes);
         addCards(protRes);
@@ -384,9 +485,9 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     }
 
     if (activeTab === 'meta_consensus') {
-      const consensusList = communityMeta.map(item => {
+      const fullConsensusList = communityMeta.map(item => {
         const causalMatch = calculateSynergy(commander, item.card);
-        const roleChips = getCardRoleChips(item.card);
+        const roleChips = getCardRoleChips(item.card, commander);
         const causalScore = causalMatch ? causalMatch.score : 35;
         // Synergy-first weighting: 65% causal synergy + 35% community consensus
         const blendedScore = Math.min(99, Math.round(causalScore * 0.65 + item.inclusion * 0.35));
@@ -403,11 +504,15 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         };
       });
 
-      consensusList.sort((a, b) => {
+      const filteredList = metaSubCategory === 'all'
+        ? fullConsensusList
+        : fullConsensusList.filter(item => matchesMetaSubCategory(item.card, metaSubCategory, commander));
+
+      filteredList.sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.card.cmc - b.card.cmc;
       });
-      return consensusList;
+      return filteredList;
     }
 
     if (activeTab === 'meta_staples') {
@@ -543,6 +648,11 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     const isArtifactCommander = commander.types.includes('Artifact') || 
       (commander.oracleText || '').toLowerCase().includes('artifact');
 
+    const communityInclusionMap = new Map<string, number>();
+    for (const item of communityMeta) {
+      communityInclusionMap.set(item.card.name.toLowerCase().trim(), item.inclusion);
+    }
+
     const multiColorFixingRocks = new Set([
       'Chromatic Lantern', 'Commander\'s Sphere', 'Manalith', 'Celestial Prism',
       'Letter of Acceptance', 'Network Terminal', 'Spinning Wheel', 'Altar of the Pantheon'
@@ -593,29 +703,88 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         return false;
       })
       .map(item => {
-        const roleChips = getCardRoleChips(item.card, commander);
+        const c = item.card;
+        const roleChips = getCardRoleChips(c, commander);
+        let adjustedScore = item.score;
         let badge = `${item.score}% Match`;
         let reason = explainSynergy(commander, item);
 
+        // Community consensus boost if this card is commonly played in this commander's decks
+        const inclusion = communityInclusionMap.get(c.name.toLowerCase().trim());
+        if (inclusion !== undefined && inclusion >= 20) {
+          adjustedScore = Math.max(adjustedScore, Math.min(99, Math.round(adjustedScore * 0.7 + inclusion * 0.4)));
+        }
+
+        // TAB-SPECIFIC SYNERGISTIC & ENGINE BOOSTS
         if (activeTab === 'card_draw') {
-          const co = (item.card.oracleText || '').toLowerCase();
+          const co = (c.oracleText || '').toLowerCase();
+          const cn = c.name.toLowerCase();
+          const cmdText = (commander.oracleText || '').toLowerCase();
+
+          // 1. Commander-Direct Synergistic Draw Engines
+          const isDeathCommander = cmdText.includes('dies') || cmdText.includes('sacrifice');
           const isSacDraw = (co.includes('sacrifice') || co.includes('dies')) && (co.includes('draw') || co.includes('investigate'));
-          if (isSacDraw) {
+          const isSpellCommander = cmdText.includes('instant') || cmdText.includes('sorcery') || cmdText.includes('magecraft');
+          const isSpellDraw = (c.types.includes('Instant') || c.types.includes('Sorcery') || co.includes('cast an instant') || co.includes('cast a sorcery')) && co.includes('draw');
+
+          // Elite draw engine staples on MTG Arena
+          const eliteDrawStaples = new Set([
+            'rhystic study', 'esper sentinel', 'phyrexian arena', 'sylvan library', 
+            'the one ring', 'skullclamp', 'black market connections', 'trouble in pairs',
+            'up the beanstalk', 'bident of thassa', 'toski, bearer of secrets',
+            'great henge', 'morbid opportunist', 'deadly dispute', 'village rites',
+            'night\'s whisper', 'sign in blood', 'read the bones', 'archmage emeritus',
+            'ledger shredder', 'dark confidant', 'treasure cruise', 'dig through time'
+          ]);
+
+          if (isDeathCommander && isSacDraw) {
+            adjustedScore = Math.max(adjustedScore + 20, 92);
             badge = roleChips.length >= 3 ? `✨ 3-in-1 Engine` : `💡 Sac Draw Engine`;
-            reason = `Sacrifice Draw Engine: Converts creatures into steady card draw and commander death triggers`;
+            reason = `Sacrifice Draw Engine: Sacrifices creatures to draw cards and trigger ${commander.name}'s death synergies`;
+          } else if (isSpellCommander && isSpellDraw) {
+            adjustedScore = Math.max(adjustedScore + 20, 92);
+            badge = `⚡ Spell Draw Engine`;
+            reason = `Spellslinger Draw: Fuels hand and triggers ${commander.name}'s spellcasting engine`;
+          } else if (eliteDrawStaples.has(cn)) {
+            adjustedScore = Math.max(adjustedScore, 88);
+            badge = `⭐ Premier Draw`;
+          } else if (c.cmc <= 3 && (co.includes('draw a card') || co.includes('draw two cards'))) {
+            // Efficient low-CMC draw spells get rewarded over expensive clunky ones
+            adjustedScore = Math.min(99, adjustedScore + 6);
+          }
+        } else if (activeTab === 'ramp') {
+          const cn = c.name.toLowerCase();
+          const cmdCmc = commander.cmc;
+
+          // Elite Arena ramp staples
+          const eliteRampStaples = new Set([
+            'arcane signet', 'coldsteel heart', 'mind stone', 'fellwar stone',
+            'smothering tithe', 'dark ritual', 'strike it rich', 'llanowar elves',
+            'elvish mystic', 'birds of paradise', 'delighted halfling', 'cultivate',
+            'kodama\'s reach', 'farseek', 'nature\'s lore', 'three visits',
+            'phyrexian tower', 'nykthos, shrine to nyx', 'talismans', 'signets'
+          ]);
+
+          if (eliteRampStaples.has(cn) || (c.types.includes('Artifact') && c.cmc === 2 && (c.oracleText || '').toLowerCase().includes('add '))) {
+            adjustedScore = Math.max(adjustedScore, 90);
+            badge = cmdCmc === 4 ? `🎯 Turn-3 ${commander.name}` : `⚡ Fast Mana`;
+          } else if (c.cmc <= 2 && roleChips.some(r => r.id === 'ramp')) {
+            adjustedScore = Math.min(99, adjustedScore + 8);
           }
         }
 
+        adjustedScore = Math.min(99, Math.max(1, adjustedScore));
+
         return {
-          card: item.card,
-          score: item.score,
-          badge,
+          card: c,
+          score: adjustedScore,
+          badge: badge.includes('% Match') ? `${adjustedScore}% Match` : badge,
           reason,
           roleChips
         };
       })
       .sort((a, b) => {
-        // 1. PRIMARY: Synergy Score descending (Highest Synergy Always First)
+        // 1. PRIMARY: Adjusted Synergy & Role Score descending
         if (b.score !== a.score) {
           return b.score - a.score;
         }
@@ -627,14 +796,14 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           if (aColorless !== bColorless) return aColorless - bColorless;
         }
 
-        // 3. TIE BREAKER 2: Multi-Role Powerhouses (fulfill more functional roles)
-        if (b.roleChips.length !== a.roleChips.length) {
-          return b.roleChips.length - a.roleChips.length;
-        }
-
-        // 4. TIE BREAKER 3: Lower Mana Value / Curve efficiency
+        // 3. TIE BREAKER 2: Lower Mana Value / Curve efficiency
         if (a.card.cmc !== b.card.cmc) {
           return a.card.cmc - b.card.cmc;
+        }
+
+        // 4. TIE BREAKER 3: Multi-Role Powerhouses (fulfill more functional roles)
+        if (b.roleChips.length !== a.roleChips.length) {
+          return b.roleChips.length - a.roleChips.length;
         }
 
         // 5. TIE BREAKER 4: Alphabetical
@@ -696,6 +865,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   ];
 
   const currentTabObj = tabs.find(t => t.id === activeTab);
+  const currentSubCatObj = META_SUB_CATEGORIES.find(c => c.id === metaSubCategory);
 
   if (!commander) return null;
 
@@ -780,6 +950,115 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         })}
       </div>
 
+      {/* "What People Are Playing" In-Tab Category Controls (Dropdown menu with default Creatures + Sub-Pills view) */}
+      {activeTab === 'meta_consensus' && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-2xl bg-[#0e121b] border border-amber-500/25 shadow-inner">
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5 pl-1">
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span>Consensus Type:</span>
+            </span>
+
+            {/* Dropdown Menu (Default view as requested) */}
+            <div className="relative inline-flex items-center">
+              <select
+                value={metaSubCategory}
+                onChange={(e) => setMetaSubCategory(e.target.value as MetaSubCategory)}
+                className="appearance-none bg-[#141926] hover:bg-[#1a2133] border border-amber-500/40 hover:border-amber-400 text-stone-100 font-bold text-xs py-1.5 pl-8 pr-8 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer shadow transition"
+              >
+                <optgroup label="Card Types" className="bg-[#121622] text-stone-300 font-semibold">
+                  {META_SUB_CATEGORIES.filter(c => c.group === 'types').map(cat => (
+                    <option key={cat.id} value={cat.id} className="bg-[#121622] text-stone-100">
+                      {cat.icon} {cat.label} ({metaCategoryCounts[cat.id] ?? 0})
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Functional Roles" className="bg-[#121622] text-stone-300 font-semibold">
+                  {META_SUB_CATEGORIES.filter(c => c.group === 'roles').map(cat => (
+                    <option key={cat.id} value={cat.id} className="bg-[#121622] text-stone-100">
+                      {cat.icon} {cat.label} ({metaCategoryCounts[cat.id] ?? 0})
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Overview" className="bg-[#121622] text-stone-300 font-semibold">
+                  {META_SUB_CATEGORIES.filter(c => c.group === 'all').map(cat => (
+                    <option key={cat.id} value={cat.id} className="bg-[#121622] text-stone-100">
+                      {cat.icon} {cat.label} ({metaCategoryCounts[cat.id] ?? 0})
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-xs">
+                {currentSubCatObj?.icon || '🗡️'}
+              </span>
+              <ChevronDown className="w-3.5 h-3.5 text-amber-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
+
+            {/* Quick Summary Badge */}
+            <span className="text-[11px] font-semibold text-stone-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
+              Showing <strong className="text-amber-300">{displayedList.length}</strong> {currentSubCatObj?.label.toLowerCase()}
+            </span>
+          </div>
+
+          {/* Toggle between Dropdown and Sub-Pills */}
+          <div className="flex items-center gap-1 bg-[#121622] p-1 rounded-xl border border-white/5">
+            <button
+              onClick={() => setMetaFilterMode('dropdown')}
+              title="Compact Dropdown View"
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ${
+                metaFilterMode === 'dropdown'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  : 'text-stone-400 hover:text-stone-200'
+              }`}
+            >
+              <Filter className="w-3 h-3 text-amber-400" />
+              <span>Dropdown</span>
+            </button>
+            <button
+              onClick={() => setMetaFilterMode('pills')}
+              title="Interactive Sub-Pills View"
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ${
+                metaFilterMode === 'pills'
+                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
+                  : 'text-stone-400 hover:text-stone-200'
+              }`}
+            >
+              <span>💊</span>
+              <span>Sub-Pills</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Sub-Pills Bar (Visible when toggled to Sub-Pills mode) */}
+      {activeTab === 'meta_consensus' && metaFilterMode === 'pills' && (
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 no-scrollbar">
+          {META_SUB_CATEGORIES.map(cat => {
+            const isCatActive = metaSubCategory === cat.id;
+            const count = metaCategoryCounts[cat.id] ?? 0;
+            return (
+              <button
+                key={cat.id}
+                onClick={() => setMetaSubCategory(cat.id)}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                  isCatActive
+                    ? 'btn-mythic-spark shadow-sm'
+                    : 'bg-[#121622] text-stone-400 hover:text-stone-200 hover:bg-[#171c28] border border-white/5'
+                }`}
+              >
+                <span>{cat.icon}</span>
+                <span>{cat.label}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  isCatActive ? 'bg-black/40 text-amber-200' : 'bg-white/10 text-stone-400'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Tab In-Category Search Toolbar */}
       <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-white/10">
         <div className="relative flex-1 min-w-[260px] max-w-md">
@@ -788,7 +1067,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             type="text"
             value={tabSearchQuery}
             onChange={(e) => setTabSearchQuery(e.target.value)}
-            placeholder={`Search within ${currentTabObj?.label || 'this tab'}... (e.g. card name, rules text)`}
+            placeholder={`Search within ${activeTab === 'meta_consensus' ? `${currentSubCatObj?.label || 'What People Are Playing'} (Community)` : (currentTabObj?.label || 'this tab')}... (e.g. card name, rules text)`}
             className="w-full pl-9 pr-8 py-2 bg-[#0d1017] border border-white/10 focus:border-amber-500 rounded-xl text-xs text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition shadow-inner"
           />
           {tabSearchQuery && (
@@ -810,7 +1089,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           ) : (
             <span className="text-stone-400 font-medium text-[11px] flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-              <span>{displayedList.length} cards • <strong>Ranked by Highest Synergy First</strong></span>
+              <span>{displayedList.length} cards • <strong>{activeTab === 'meta_consensus' ? 'Ranked by Community Consensus & Synergy' : 'Ranked by Highest Synergy First'}</strong></span>
             </span>
           )}
         </div>
@@ -876,10 +1155,18 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-stone-500">
               <Flame className="w-8 h-8 text-stone-400 mb-2" />
               <p className="font-semibold text-stone-700">
-                {multiRoleOnly ? `No multi-role cards found in ${activeTab}` : `No ${activeTab} synergies found`}
+                {activeTab === 'meta_consensus'
+                  ? (multiRoleOnly 
+                      ? `No multi-role ${currentSubCatObj?.label.toLowerCase() || 'cards'} found in community decks` 
+                      : `No community-played ${currentSubCatObj?.label.toLowerCase() || 'cards'} found for ${commander.name}`)
+                  : (multiRoleOnly 
+                      ? `No multi-role cards found in ${activeTab}` 
+                      : `No ${activeTab} synergies found`)}
               </p>
               <p className="text-xs text-stone-500 mt-1">
-                {multiRoleOnly ? 'Try turning off "Multi-Role Only" or switching tabs.' : 'Try switching to other tabs above.'}
+                {multiRoleOnly 
+                  ? 'Try turning off "Multi-Role Only" or switching categories.' 
+                  : 'Try switching to other categories above.'}
               </p>
             </div>
           )
@@ -909,8 +1196,9 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                     onClick={() => onSelectCardDetail(card)}
                     className="relative cursor-pointer overflow-hidden rounded-xl shadow-md border border-black/40 mb-2 bg-black"
                   >
-                    <img
+                    <CardImage
                       src={card.imageUrl}
+                      cardName={card.name}
                       alt={card.name}
                       className="w-full h-auto object-cover group-hover:brightness-105 transition"
                     />

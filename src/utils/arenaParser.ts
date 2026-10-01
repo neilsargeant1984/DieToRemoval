@@ -409,7 +409,7 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
     } catch {}
   }
 
-  // 3. Scan RPC calls: DeckUpsertDeckV3, EventSetDeckV3, DeckGetAllPreconDecksV3
+  // 3. Scan RPC calls: DeckUpsertDeckV3, EventSetDeckV3, DeckGetAllPreconDecksV3, DeckGetDeckSummariesV3
   const extractedDeckMap = new Map<string, {
     name: string;
     format: FormatType;
@@ -422,7 +422,56 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
   const allCardIds = new Set<number>();
   const lines = logContent.split(/\r?\n/);
 
-  for (const line of lines) {
+  for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
+    const line = lines[lineIdx];
+
+    // Handle DeckGetDeckSummariesV3 responses (which list ALL user decks!)
+    if (line.includes('DeckGetDeckSummariesV3') || (lineIdx > 0 && lines[lineIdx - 1].includes('DeckGetDeckSummariesV3'))) {
+      const idx = line.indexOf('{');
+      if (idx !== -1) {
+        try {
+          const jsonStr = line.substring(idx);
+          const obj = JSON.parse(jsonStr);
+          const summaries = Array.isArray(obj.Summaries) ? obj.Summaries : (Array.isArray(obj.payload?.Summaries) ? obj.payload.Summaries : []);
+          
+          for (const summary of summaries) {
+            if (!summary || !summary.DeckId) continue;
+            const deckId = summary.DeckId;
+            const name = summary.Name || 'MTG Arena Deck';
+            
+            // Format detection
+            const formatAttr = summary.Attributes?.find((a: any) => a.name === 'Format')?.value?.toLowerCase();
+            let format: FormatType = 'historic';
+            if (formatAttr === 'standard') format = 'standard';
+            else if (formatAttr === 'brawl' || formatAttr === 'historicbrawl') format = 'brawl';
+            else if (formatAttr === 'timeless') format = 'timeless';
+            else if (formatAttr === 'explorer') format = 'explorer';
+            else if (formatAttr === 'alchemy') format = 'alchemy';
+            else if (name.toLowerCase().startsWith('(b) ') || name.toLowerCase().includes('brawl')) format = 'brawl';
+            else if (name.toLowerCase().startsWith('(s) ') || name.toLowerCase().includes('standard')) format = 'standard';
+
+            const rawTileId = summary.DeckTileId || summary.Attributes?.find((a: any) => a.name === 'TileID')?.value;
+            const deckTileId = rawTileId ? parseInt(String(rawTileId), 10) : undefined;
+            if (deckTileId && !isNaN(deckTileId)) {
+              allCardIds.add(deckTileId);
+            }
+
+            if (!extractedDeckMap.has(deckId)) {
+              extractedDeckMap.set(deckId, {
+                name,
+                format,
+                deckTileId,
+                mainMap: new Map<number, number>(),
+                sideMap: new Map<number, number>()
+              });
+            }
+          }
+        } catch {
+          // Skip malformed entries
+        }
+      }
+    }
+
     if (line.includes('DeckUpsertDeckV3') || line.includes('EventSetDeckV3') || line.includes('DeckGetAllPreconDecksV3')) {
       const idx = line.indexOf('{');
       if (idx === -1) continue;
@@ -492,6 +541,7 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
             allCardIds.add(deckTileId);
           }
 
+          // Merge or overwrite summary entry with complete cards list
           extractedDeckMap.set(deckId, {
             name,
             format,

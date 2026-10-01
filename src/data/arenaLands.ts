@@ -48,7 +48,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'common',
     oracleText: '{T}: Add one mana of any color in your commander\'s color identity.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/7/177f1165-4141-4c7b-b518-e160a2d48c08.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/a/1ac6cb62-45da-4e9a-84c6-09e6eacf0664.jpg?1789644465',
     entersUntapped: true,
     arenaSet: 'ELD'
   },
@@ -61,7 +61,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life: Add one mana of any color.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/d/bd6e4922-1d37-4d6d-8854-c9f1b212cc8a.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/0/504a69eb-3c2d-4bb1-b117-252b15acf0c2.jpg?1783939402',
     entersUntapped: true,
     arenaSet: 'EOS'
   },
@@ -74,7 +74,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add one mana of any type that a land you control could produce.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/3/a/3a795b84-2d0a-4196-8822-7932822a16d8.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/c/b/cbc4281a-b70d-4f96-b309-38e986484829.jpg?1789644471',
     entersUntapped: true,
     arenaSet: 'FRC'
   },
@@ -87,7 +87,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a legendary spell.\n{T}: Add one mana of any color among legendary permanents you control.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/a/2/a2278314-7916-499d-8232-a12bd9420897.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/9/6/96fe4b9b-d766-463b-a6df-345ebebfc17c.jpg?1783903197',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -100,7 +100,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'The World Tree enters the battlefield tapped.\n{T}: Add {G}.\nAs long as you control six or more lands, lands you control have "{T}: Add one mana of any color."',
-    imageUrl: 'https://cards.scryfall.io/normal/front/a/7/a70cb6d9-3955-4064-917b-11dec26440c5.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/a/7/a70cb6d9-3955-4064-917b-11dec26440c5.jpg?1783928169',
     entersUntapped: false,
     arenaSet: 'KHM'
   },
@@ -113,7 +113,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'mythic',
     oracleText: 'As Cavern of Souls enters the battlefield, choose a creature type.\n{T}: Add {C}.\n{T}: Add one mana of any color. Spend this mana only to cast a creature spell of the chosen type, and that spell can\'t be countered.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/e/6/e697ea4d-e1e4-44e6-9460-e4e698579227.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/3/a/3aad15a2-8a1b-4460-9b06-e85863081878.jpg?1783913719',
     entersUntapped: true,
     arenaSet: 'LCI'
   },
@@ -126,7 +126,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Sacrifice Fabled Passage: Search your library for a basic land card, put it onto the battlefield tapped, then shuffle. Then if you control four or more lands, untap that land.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/3/d313d051-7295-4884-8cbf-f2f835fd45f4.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/6/76edd22f-808e-4a7c-b941-13c0f5e30418.jpg?1789599905',
     entersUntapped: 'conditional',
     arenaSet: 'BLB'
   },
@@ -139,7 +139,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}, Pay 1 life: Add one mana of any color. Activate only if you control an artifact.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/3/8333424d-be5f-4746-ae0d-569e60472421.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/3/5/35e9ec06-a848-4230-84a2-19cb8034e0f0.jpg?1783906004',
     entersUntapped: true,
     arenaSet: 'KLR'
   },
@@ -156,7 +156,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Flooded Strand: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/8/8840f2a8-081c-449e-b4da-77e2304725eb.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/f/8f85e12c-196b-4459-b81f-0c9c854e9f57.jpg?1783911240',
     entersUntapped: true,
     arenaSet: 'KTK'
   },
@@ -169,7 +169,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Polluted Delta: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/f/f/ff42d593-16fe-4667-a493-52fb9b711ff0.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/6/e/6e288374-2b71-4ace-b1d2-a19fee6cb4af.jpg?1783911240',
     entersUntapped: true,
     arenaSet: 'KTK'
   },
@@ -182,7 +182,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Bloodstained Mire: Search your library for a Swamp or Mountain card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/f/7f430794-0d86-4f6a-97e0-4bbb6716d613.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/7/579743fe-f71e-4cb2-8629-d6b02ed1591d.jpg?1783911241',
     entersUntapped: true,
     arenaSet: 'KTK'
   },
@@ -195,7 +195,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Wooded Foothills: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/a/8/a8503cca-7e7d-44c4-8587-81376b396398.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/4/e/4e11ea8a-f895-438d-a3b7-f070238e4161.jpg?1783911232',
     entersUntapped: true,
     arenaSet: 'KTK'
   },
@@ -208,7 +208,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Windswept Heath: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/3/8315ea4c-339d-4303-92b1-013e734407b0.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/d/bd1d13f7-fd38-4f0b-a8e0-1eac78668117.jpg?1783911233',
     entersUntapped: true,
     arenaSet: 'KTK'
   },
@@ -221,7 +221,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Marsh Flats: Search your library for a Plains or Swamp card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/6/5/659039ed-c269-4c2d-bce6-91d143f0618e.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/9/d/9db3ba6d-eb7f-4f5b-9a3b-c6239c3baa42.jpg?1783926796',
     entersUntapped: true,
     arenaSet: 'MH3'
   },
@@ -234,7 +234,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Scalding Tarn: Search your library for an Island or Mountain card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/1/71e491c5-8c07-449b-b2f1-ffa052e6d311.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/1/71e491c5-8c07-449b-b2f1-ffa052e6d311.jpg?1783926793',
     entersUntapped: true,
     arenaSet: 'MH3'
   },
@@ -247,7 +247,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Verdant Catacombs: Search your library for a Swamp or Forest card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/9/4/94c229ea-90da-4aa0-bfda-b162fb354b1b.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/9/4/94c229ea-90da-4aa0-bfda-b162fb3b5b8b.jpg?1783926791',
     entersUntapped: true,
     arenaSet: 'MH3'
   },
@@ -260,7 +260,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Arid Mesa: Search your library for a Mountain or Plains card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/2/5/25ac5405-df7b-4097-914a-022cb18e20d4.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/5/25ac5405-df7b-4097-914a-022cb18e20d4.jpg?1783926797',
     entersUntapped: true,
     arenaSet: 'MH3'
   },
@@ -273,7 +273,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}, Pay 1 life, Sacrifice Misty Rainforest: Search your library for a Forest or Island card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/8/88231c0d-0cc8-44ec-bf95-81d1710ac141.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/8/88231c0d-0cc8-44ec-bf95-81d1710ac141.jpg?1783926795',
     entersUntapped: true,
     arenaSet: 'MH3'
   },
@@ -291,7 +291,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Plains', 'Island'],
     rarity: 'rare',
     oracleText: '({T}: Add {W} or {U}.)\nAs Hallowed Fountain enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/f/9/f97a6d34-03ab-49f1-b02e-405b733f8843.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/7/b7285986-7e08-4969-86ef-452dc5bfdd9f.jpg?1784036830',
     entersUntapped: 'conditional',
     arenaSet: 'RNA'
   },
@@ -305,7 +305,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Island', 'Swamp'],
     rarity: 'rare',
     oracleText: '({T}: Add {U} or {B}.)\nAs Watery Grave enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/0/c/0c96f370-0c88-42e2-b64f-4672914538b3.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/5/5525d6a6-e532-4047-9da4-bfae7927fecc.jpg?1784036860',
     entersUntapped: 'conditional',
     arenaSet: 'GRN'
   },
@@ -319,7 +319,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Swamp', 'Mountain'],
     rarity: 'rare',
     oracleText: '({T}: Add {B} or {R}.)\nAs Blood Crypt enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/5/7/57adb06a-52ac-4216-8d94-7c1e795a614e.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/b/1b7eb998-3ec0-4cbc-a416-5a1e3e5a7316.jpg?1784036817',
     entersUntapped: 'conditional',
     arenaSet: 'RNA'
   },
@@ -333,7 +333,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Mountain', 'Forest'],
     rarity: 'rare',
     oracleText: '({T}: Add {R} or {G}.)\nAs Stomping Ground enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/c/dcaa1ff6-304e-4660-9df3-36dde8e8979d.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/e/1ee8255a-44f6-4faa-9843-15432bf751ea.jpg?1784065855',
     entersUntapped: 'conditional',
     arenaSet: 'RNA'
   },
@@ -347,7 +347,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Forest', 'Plains'],
     rarity: 'rare',
     oracleText: '({T}: Add {G} or {W}.)\nAs Temple Garden enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/2/b/2b9b0195-bada-4c92-a228-54160d0dc25b.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/9/b9b0589d-f327-46a7-8bac-06b7654c547a.jpg?1784036854',
     entersUntapped: 'conditional',
     arenaSet: 'GRN'
   },
@@ -361,7 +361,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Plains', 'Swamp'],
     rarity: 'rare',
     oracleText: '({T}: Add {W} or {B}.)\nAs Godless Shrine enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/c/a/cad82492-9d1e-4638-8038-323474c41ef5.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/f/8fbd1ae0-3d4c-492a-a1ea-85a95fa3d7b6.jpg?1784036826',
     entersUntapped: 'conditional',
     arenaSet: 'RNA'
   },
@@ -375,7 +375,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Island', 'Mountain'],
     rarity: 'rare',
     oracleText: '({T}: Add {U} or {R}.)\nAs Steam Vents enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/1/b1021bb8-ebba-475f-877f-8b781454d757.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/a/8/a83903c7-fd51-4526-aed2-359e946fea36.jpg?1784036844',
     entersUntapped: 'conditional',
     arenaSet: 'GRN'
   },
@@ -389,7 +389,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Swamp', 'Forest'],
     rarity: 'rare',
     oracleText: '({T}: Add {B} or {G}.)\nAs Overgrown Tomb enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/e/f/eff1f52c-5c43-4260-aaa0-6920846a191c.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/a/d/ad7e18e2-c033-4b6c-86e8-d0e5cc824cfd.jpg?1784036836',
     entersUntapped: 'conditional',
     arenaSet: 'GRN'
   },
@@ -403,7 +403,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Mountain', 'Plains'],
     rarity: 'rare',
     oracleText: '({T}: Add {R} or {W}.)\nAs Sacred Foundry enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/7/b7b598d0-555e-4614-9047-0d9c4901f40d.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/a/7/a7758cc6-4e18-48a5-8720-5f42b5cd9d31.jpg?1784036842',
     entersUntapped: 'conditional',
     arenaSet: 'GRN'
   },
@@ -417,7 +417,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Forest', 'Island'],
     rarity: 'rare',
     oracleText: '({T}: Add {G} or {U}.)\nAs Breeding Pool enters the battlefield, you may pay 2 life. If you don\'t, it enters the battlefield tapped.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/b/bb54233c-0844-4965-9cde-e8a4ef3e11b8.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/6/3/63e4dc07-c742-41bd-8301-861637908fd1.jpg?1784036820',
     entersUntapped: 'conditional',
     arenaSet: 'RNA'
   },
@@ -435,7 +435,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Plains', 'Island', 'Swamp'],
     rarity: 'rare',
     oracleText: '({T}: Add {W}, {U}, or {B}.)\nRaffine\'s Tower enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/3/3/33054539-61da-4b4d-9d31-70e1347ce3c6.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/a/2/a2c56479-4bee-4edb-80d7-4af010b7c793.jpg?1783923055',
     entersUntapped: false,
     arenaSet: 'SNC'
   },
@@ -449,7 +449,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Island', 'Swamp', 'Mountain'],
     rarity: 'rare',
     oracleText: '({T}: Add {U}, {B}, or {R}.)\nXander\'s Lounge enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/4/8/48ae94e5-9066-43ee-b5d6-89c86953496f.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/4/54f449ff-4025-465e-9ec5-a5cf42c4c9d3.jpg?1783923052',
     entersUntapped: false,
     arenaSet: 'SNC'
   },
@@ -463,7 +463,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Swamp', 'Mountain', 'Forest'],
     rarity: 'rare',
     oracleText: '({T}: Add {B}, {R}, or {G}.)\nZiatora\'s Proving Ground enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/5/75fd5fe5-e000-46ab-87f5-2fc9920e495c.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/5/75fdce80-e338-4a50-bdc6-786511feaeef.jpg?1783923052',
     entersUntapped: false,
     arenaSet: 'SNC'
   },
@@ -477,7 +477,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Mountain', 'Forest', 'Plains'],
     rarity: 'rare',
     oracleText: '({T}: Add {R}, {G}, or {W}.)\nJetmir\'s Garden enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/2/6/26d40e03-6de4-4373-9fce-04c107a666f7.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/6/26d40e03-6de4-4373-9fbf-04c1dd79e995.jpg?1783923058',
     entersUntapped: false,
     arenaSet: 'SNC'
   },
@@ -491,7 +491,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Forest', 'Plains', 'Island'],
     rarity: 'rare',
     oracleText: '({T}: Add {G}, {W}, or {U}.)\nSpara\'s Headquarters enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/3/7363f1fb-9af3-4212-921f-d59533faf0e5.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/3/7363f1fb-9af3-4212-921f-d59533faf0e5.jpg?1783923052',
     entersUntapped: false,
     arenaSet: 'SNC'
   },
@@ -505,7 +505,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Plains', 'Swamp', 'Forest'],
     rarity: 'rare',
     oracleText: '({T}: Add {W}, {B}, or {G}.)\nIndatha Triome enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/2/b/2b74bb81-fb9a-40e5-a941-e517430b52f5.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/b/2b74bb81-fb9a-40e5-a941-e517430b52f5.jpg?1783931001',
     entersUntapped: false,
     arenaSet: 'IKO'
   },
@@ -519,7 +519,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Island', 'Mountain', 'Plains'],
     rarity: 'rare',
     oracleText: '({T}: Add {U}, {R}, or {W}.)\nRaugrin Triome enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/0/2/02138fbb-dd3e-46c4-9df6-7ba6a046fc77.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/0/2/02138fbb-3962-4348-8d31-faaefba0b8b2.jpg?1783931001',
     entersUntapped: false,
     arenaSet: 'IKO'
   },
@@ -533,7 +533,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Swamp', 'Forest', 'Island'],
     rarity: 'rare',
     oracleText: '({T}: Add {B}, {G}, or {U}.)\nZagoth Triome enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/c/c/cc520518-2053-4b39-90d4-c088877e874e.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/c/c/cc520518-2063-4b57-a0d4-10cf62a7175e.jpg?1783930997',
     entersUntapped: false,
     arenaSet: 'IKO'
   },
@@ -547,7 +547,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Mountain', 'Plains', 'Swamp'],
     rarity: 'rare',
     oracleText: '({T}: Add {R}, {W}, or {B}.)\nSavai Triome enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/4/748e6a61-9c1f-4225-9f04-e54002f63ac3.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/4/748e6a61-9c1f-4225-9f04-e54002f63ac3.jpg?1783931000',
     entersUntapped: false,
     arenaSet: 'IKO'
   },
@@ -561,7 +561,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Forest', 'Island', 'Mountain'],
     rarity: 'rare',
     oracleText: '({T}: Add {G}, {U}, or {R}.)\nKetria Triome enters the battlefield tapped.\nCycling {3}',
-    imageUrl: 'https://cards.scryfall.io/normal/front/a/2/a249b1f4-2b22-4b67-a207-e0c4ae95d2e1.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/a/2/a249b1f4-2b22-4b67-a207-e0c4ae95d2e1.jpg?1783931001',
     entersUntapped: false,
     arenaSet: 'IKO'
   },
@@ -579,7 +579,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Plains', 'Island'],
     rarity: 'rare',
     oracleText: '({T}: Add {W} or {U}.)\nMeticulous Archive enters the battlefield tapped.\nWhen Meticulous Archive enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/6/86ecdced-7e08-424c-83b5-776377e810cb.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/6/5/652236c2-84ef-45e4-b5fc-ed6170bc3d6c.jpg?1783912824',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -593,7 +593,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Island', 'Swamp'],
     rarity: 'rare',
     oracleText: '({T}: Add {U} or {B}.)\nUndercity Sewers enters the battlefield tapped.\nWhen Undercity Sewers enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/2/b/2b5801fb-2026-4f25-98bc-bbb2e99084e7.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/b/2b5801fb-2026-4f25-98bc-ebb2f99684b9.jpg?1786507741',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -607,7 +607,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Swamp', 'Mountain'],
     rarity: 'rare',
     oracleText: '({T}: Add {B} or {R}.)\nRaucous Theater enters the battlefield tapped.\nWhen Raucous Theater enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/5/1/51f46fb5-3c42-4523-b3eb-460707914569.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/5/b598c93e-dae1-4d71-a9e4-917abf76d2d0.jpg?1783912823',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -621,7 +621,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Mountain', 'Forest'],
     rarity: 'rare',
     oracleText: '({T}: Add {R} or {G}.)\nCommercial District enters the battlefield tapped.\nWhen Commercial District enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/a/d/ad220917-7489-4b47-b844-31ff55b7194f.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/f/bf220c06-3cce-4bdd-aa58-83940c223e9c.jpg?1783912825',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -635,7 +635,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Forest', 'Plains'],
     rarity: 'rare',
     oracleText: '({T}: Add {G} or {W}.)\nLush Portico enters the battlefield tapped.\nWhen Lush Portico enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/4/b498f3b2-658b-4a58-8aa3-524a87c1be2f.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/c/1/c17816e8-28b1-4295-a637-efb0e5c18873.jpg?1783912824',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -649,7 +649,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Plains', 'Swamp'],
     rarity: 'rare',
     oracleText: '({T}: Add {W} or {B}.)\nShadowy Backstreet enters the battlefield tapped.\nWhen Shadowy Backstreet enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/6/76974751-2745-4144-9118-124912952862.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/6/9/69c1b656-1d67-499c-bf0f-417682a86c7d.jpg?1783912827',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -663,7 +663,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Island', 'Mountain'],
     rarity: 'rare',
     oracleText: '({T}: Add {U} or {R}.)\nThundering Falls enters the battlefield tapped.\nWhen Thundering Falls enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/6/4/647a4697-a419-4a37-b4d0-40e98038755e.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/7/17260fff-b239-4af4-9306-3236ae3fa5a5.jpg?1783912822',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -677,7 +677,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Swamp', 'Forest'],
     rarity: 'rare',
     oracleText: '({T}: Add {B} or {G}.)\nUnderground Mortuary enters the battlefield tapped.\nWhen Underground Mortuary enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/e/4/e49171b3-4670-4e3a-9694-814bfb321eb9.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/f/6/f6ca59cd-8779-4a84-a54b-e863b79c61f0.jpg?1783912822',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -691,7 +691,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Mountain', 'Plains'],
     rarity: 'rare',
     oracleText: '({T}: Add {R} or {W}.)\nElegant Parlor enters the battlefield tapped.\nWhen Elegant Parlor enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/3/731fb789-9e05-4c6e-826c-d8ca23a6700c.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/2/72c6d541-e2cb-4d6e-acac-90a8f53b7006.jpg?1783912824',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -705,7 +705,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Forest', 'Island'],
     rarity: 'rare',
     oracleText: '({T}: Add {G} or {U}.)\nHedge Maze enters the battlefield tapped.\nWhen Hedge Maze enters the battlefield, surveil 1.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/4/2/42dd1b48-d39d-4340-9a3b-179836814981.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/2/5260f8ae-805b-4eae-badf-62de0f768867.jpg?1783912824',
     entersUntapped: false,
     arenaSet: 'MKM'
   },
@@ -722,7 +722,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Deserted Beach enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {W} or {U}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/2/12dd0e73-010d-499f-8f17-ad96fb0dd0ea.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/6/56dae4c4-3e71-4a32-979b-4e26d9c9e96c.jpg?1788878239',
     entersUntapped: 'conditional',
     arenaSet: 'MID'
   },
@@ -735,7 +735,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Shipwreck Marsh enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {U} or {B}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/4/5/456b1097-371b-452d-a18c-28d498305026.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/9/e/9e944c5b-68ac-4a30-bbd4-09a4288319ce.jpg?1788878245',
     entersUntapped: 'conditional',
     arenaSet: 'MID'
   },
@@ -748,7 +748,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Haunted Ridge enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {B} or {R}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/9/b959e922-3490-4822-ba4d-e9668ad58b16.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/a/4/a4e4966b-8963-4fac-a8bf-e778e063c7dd.jpg?1788878241',
     entersUntapped: 'conditional',
     arenaSet: 'MID'
   },
@@ -761,7 +761,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Rockfall Vale enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {R} or {G}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/e/a/eaff0a1e-b65a-422f-8f9f-65fac037047d.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/e/3/e3c8a8b6-23ba-45ad-80d1-8e2dc79897f7.jpg?1788878243',
     entersUntapped: 'conditional',
     arenaSet: 'MID'
   },
@@ -774,20 +774,20 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Overgrown Farmland enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {G} or {W}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/4/84a76e0f-49cc-4d8b-9c60-987da77a6452.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/7/178e61e4-472f-42cd-9d3b-4880c2acc527.jpg?1788878246',
     entersUntapped: 'conditional',
     arenaSet: 'MID'
   },
   {
     id: 'shattered-sanctuary',
-    name: 'Shattered Sanctuary',
+    name: 'Shattered Sanctum',
     cycle: 'slowland',
     colorsProduced: ['W', 'B'],
     colorIdentity: ['W', 'B'],
     typeLine: 'Land',
     rarity: 'rare',
-    oracleText: 'Shattered Sanctuary enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {W} or {B}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/a/d/ad8090f7-feb6-432a-99a5-d41dd72ef7a9.jpg',
+    oracleText: 'Shattered Sanctum enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {W} or {B}.',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/a/5aa0c810-3b7d-4661-979e-e84fb327742d.jpg?1783903618',
     entersUntapped: 'conditional',
     arenaSet: 'VOW'
   },
@@ -800,7 +800,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Stormcarved Coast enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {U} or {R}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/2/9/299f1dee-b3d7-472b-aa0b-2f9b46a96da5.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/d/bd3ae4fa-4c97-410a-8c0a-bd203342595d.jpg?1783903618',
     entersUntapped: 'conditional',
     arenaSet: 'VOW'
   },
@@ -813,7 +813,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Deathcap Glade enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {B} or {G}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/5/d55e096f-c1f9-4bcf-a54d-7bc4bdf45df4.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/8/78897104-80e1-4d8a-9958-145b40f679e8.jpg?1783903621',
     entersUntapped: 'conditional',
     arenaSet: 'VOW'
   },
@@ -826,7 +826,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Sundown Pass enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {R} or {W}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/f/8f3fddd7-ede4-41c7-a645-a6af298a3d35.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/3/b34000e9-ff20-4fb4-9d0b-03a172a92457.jpg?1783903618',
     entersUntapped: 'conditional',
     arenaSet: 'VOW'
   },
@@ -839,7 +839,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Dreamroot Cascade enters the battlefield tapped unless you control two or more other lands.\n{T}: Add {G} or {U}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/e/b/eb604455-c411-414d-92ef-575a24dd1808.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/e/f/ef662b92-5a7f-48c9-bcc1-14b55e091aef.jpg?1783903621',
     entersUntapped: 'conditional',
     arenaSet: 'VOW'
   },
@@ -856,7 +856,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Seachrome Coast enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {W} or {U}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/9/e/9e1c757d-47bc-49b0-ac6b-90299e394593.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/9/e/9ed7441f-f624-49c8-8611-d9bba0e441ac.jpg?1783917980',
     entersUntapped: 'conditional',
     arenaSet: 'ONE'
   },
@@ -869,7 +869,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Darkslick Shores enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {U} or {B}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/1/b1089f2a-b9c1-4899-873b-e85d43fb77a7.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/c/4/c49305d1-ac95-43ea-b02d-c3c7205bcda6.jpg?1783911882',
     entersUntapped: 'conditional',
     arenaSet: 'ONE'
   },
@@ -882,7 +882,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Blackcleave Cliffs enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {B} or {R}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/3/8/38a6a236-fa2a-4db3-8b77-cf68a18fa093.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/f/7/f75715ce-744f-409c-aeb1-e66eb9186a74.jpg?1783909578',
     entersUntapped: 'conditional',
     arenaSet: 'ONE'
   },
@@ -895,7 +895,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Copperline Gorge enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {R} or {G}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/8/7854f30f-646e-4c75-9702-d996455b574f.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/8/78b0f36b-7d8c-4e77-adc2-a4dad93a81d5.jpg?1783917981',
     entersUntapped: 'conditional',
     arenaSet: 'ONE'
   },
@@ -908,7 +908,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Razorverge Thicket enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {G} or {W}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/6/5/65b26f68-3a25-4c4e-bc76-a199ab479a50.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/d/f/df1233de-4449-4c32-944b-e19bed666324.jpg?1783903196',
     entersUntapped: 'conditional',
     arenaSet: 'ONE'
   },
@@ -921,7 +921,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Concealed Courtyard enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {W} or {B}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/8/18791c8c-1e64-42b7-a35a-93f8bbff039d.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/7/b75df1f0-0513-40e4-a449-454f75de6434.jpg?1783911773',
     entersUntapped: 'conditional',
     arenaSet: 'KLR'
   },
@@ -934,7 +934,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Spirebluff Canal enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {U} or {R}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/5/6/563e41b9-373b-488d-a417-db3ef446c7ad.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/9/59a04e16-a767-4112-ab01-6ca1b09c286c.jpg?1783911772',
     entersUntapped: 'conditional',
     arenaSet: 'KLR'
   },
@@ -947,7 +947,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Blooming Marsh enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {B} or {G}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/9/0/90da5171-be49-43c2-84b2-c0cb91176b66.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/6/861caabb-0573-4e94-8b03-342f90465064.jpg?1783911773',
     entersUntapped: 'conditional',
     arenaSet: 'KLR'
   },
@@ -960,7 +960,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Inspiring Vantage enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {R} or {W}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/4/7/47d8b59e-9d84-4d89-8d19-efeeffbe8d14.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/5/85df6b6a-2dcf-4828-a4a8-e07d52e1fddd.jpg?1783911772',
     entersUntapped: 'conditional',
     arenaSet: 'KLR'
   },
@@ -973,7 +973,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Botanical Sanctum enters the battlefield tapped unless you control two or fewer other lands.\n{T}: Add {G} or {U}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/9/0/90797371-1d54-47ef-a0ad-467ea64380b0.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/c/c/cc18d5f4-a56a-4f7d-9f56-ccc92cbfb7f7.jpg?1783911772',
     entersUntapped: 'conditional',
     arenaSet: 'KLR'
   },
@@ -990,7 +990,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {W} or {U}. Adarkar Wastes deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/0/8/08ae1037-6f70-41a9-b75e-98fa9a2152c8.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/4/2/42e0aa15-639a-4e88-9bd8-ce5e7c7d7649.jpg?1783906017',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1003,7 +1003,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {U} or {B}. Underground River deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/b/bb547bf1-a477-4402-9a00-1c7ecdf286a1.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/e/8/e8b05f37-815f-4854-bf82-ca544ca67532.jpg?1789599935',
     entersUntapped: true,
     arenaSet: 'BRO'
   },
@@ -1016,7 +1016,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {B} or {R}. Sulfurous Springs deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/f/dfd54505-9613-4402-91f2-771120a169b5.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/e/be340a1c-f1e7-446e-ae91-86ecb884479c.jpg?1789599923',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1029,7 +1029,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {R} or {G}. Karplusan Forest deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/8/b89b2c79-e3d3-4ef9-abad-be52bc5527db.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/6/7/67198b97-bac2-480f-aea8-12841e8884de.jpg?1783906010',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1042,7 +1042,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {G} or {W}. Brushland deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/8/18d236ce-3b78-403a-b5f9-4fb44123d85b.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/8/18d236ce-3b78-403a-b5f9-4fb44123d85b.jpg?1783920007',
     entersUntapped: true,
     arenaSet: 'BRO'
   },
@@ -1055,7 +1055,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {W} or {B}. Caves of Koilos deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/9/9/9926e12d-7235-4efc-a334-9724fe10c477.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/c/a/ca814c7c-9908-4727-b556-3f85bfd653ca.jpg?1789599896',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1068,7 +1068,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {U} or {R}. Shivan Reef deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/a/a/aaca0961-450f-4e11-8ec6-ee1f3080ff43.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/9/f/9fb3938c-9ecf-46cc-865a-0091455419f9.jpg?1789599919',
     entersUntapped: true,
     arenaSet: 'BRO'
   },
@@ -1081,7 +1081,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {B} or {G}. Llanowar Wastes deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/9/19446f2d-45db-4467-89fb-d8d47eb3df3f.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/6/266316d3-3bbc-4283-aab8-69629855909f.jpg?1783903726',
     entersUntapped: true,
     arenaSet: 'BRO'
   },
@@ -1094,7 +1094,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {R} or {W}. Battlefield Forge deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/4/d4a3b784-bb9e-4e6f-96eb-8e5eb56e9c60.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/e/f/ef7d3676-b1db-4329-9201-18f8a6c54ea6.jpg?1789599856',
     entersUntapped: true,
     arenaSet: 'BRO'
   },
@@ -1107,7 +1107,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add {G} or {U}. Yavimaya Coast deals 1 damage to you.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/0/e/0ed6556a-014b-4f5b-ba3a-56da36089961.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/f/4/f4c1500b-1f4c-4d33-810c-25e3bb0a4666.jpg?1783903712',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1124,7 +1124,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {W}.\n// Mistgate Pathway\n{T}: Add {U}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/e/7e09f33b-7547-495a-b49a-62e49c36e147.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/7/e/7ef37cb3-d803-47d7-8a01-9c803aa2eadc.jpg?1783928182',
     entersUntapped: true,
     arenaSet: 'KHM'
   },
@@ -1137,7 +1137,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {U}.\n// Murkwater Pathway\n{T}: Add {B}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/4/b4b99ebb-0d54-4fe1-a4f6-84c2643882b1.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/4/b4b99ebb-0d54-4fe5-a495-979aaa564aa8.jpg?1783929316',
     entersUntapped: true,
     arenaSet: 'ZNR'
   },
@@ -1150,7 +1150,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {B}.\n// Searstep Pathway\n{T}: Add {R}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/0/c/0ce39a19-f51d-4a35-ae80-5b82eb15fcff.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/0/c/0ce39a19-f51d-4a35-ae80-5b82eb15fcff.jpg?1783928185',
     entersUntapped: true,
     arenaSet: 'KHM'
   },
@@ -1163,7 +1163,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {R}.\n// Timbercrown Pathway\n{T}: Add {G}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/a/da57eb54-5498-499e-962c-882243738871.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/d/a/da57eb54-5199-4a56-95f7-f6ac432876b1.jpg?1783929311',
     entersUntapped: true,
     arenaSet: 'ZNR'
   },
@@ -1176,7 +1176,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {G}.\n// Boulderloft Pathway\n{T}: Add {W}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/0/5/0511e232-2a72-40f5-a400-4f7ebc442d17.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/0/5/0511e232-2a72-40f5-a400-4f7ebc442d17.jpg?1783929314',
     entersUntapped: true,
     arenaSet: 'ZNR'
   },
@@ -1189,7 +1189,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {W}.\n// Grimclimb Pathway\n{T}: Add {B}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/2/d24c3d51-795d-4c01-a34a-3280fccd2d78.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/d/2/d24c3d51-795d-4c01-a34a-3280fccd2d78.jpg?1783929313',
     entersUntapped: true,
     arenaSet: 'ZNR'
   },
@@ -1202,7 +1202,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {U}.\n// Lavaglide Pathway\n{T}: Add {R}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/2/6/2668ac91-6cda-4f81-a08d-4fc5f9cb0589.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/6/2668ac91-6cda-4f81-a08d-4fc5f9cb35b2.jpg?1783929311',
     entersUntapped: true,
     arenaSet: 'ZNR'
   },
@@ -1215,7 +1215,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {B}.\n// Slitherbore Pathway\n{T}: Add {G}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/7/87a4e5fe-161f-42da-9ca2-67c8e8970e94.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/7/87a4e5fe-161f-42da-9ca2-67c8e8970e94.jpg?1783928184',
     entersUntapped: true,
     arenaSet: 'KHM'
   },
@@ -1228,7 +1228,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {R}.\n// Pillarverge Pathway\n{T}: Add {W}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/6/5/65590f57-19a4-4a4b-9721-a4773ffef265.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/6/5/6559047e-6ede-4815-a3a0-389062094f9d.jpg?1783929311',
     entersUntapped: true,
     arenaSet: 'ZNR'
   },
@@ -1241,7 +1241,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {G}.\n// Tidechannel Pathway\n{T}: Add {U}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/b/6/b6de14ae-0132-4261-af00-6478bf591742.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/6/b6de14ae-0132-4261-af00-630bf15918cd.jpg?1783928184',
     entersUntapped: true,
     arenaSet: 'KHM'
   },
@@ -1258,7 +1258,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Legendary Land',
     rarity: 'rare',
     oracleText: '{T}: Add {W}.\nChannel — {2}{W}, Discard Eiganjo, Seat of the Empire: It deals 4 damage to target attacking or blocking creature.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/c/3/c375a022-5b57-496d-a802-e4fb83fe3be7.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/c/3/c375a022-5b57-496d-a802-e4ea8376e9e4.jpg?1783923818',
     entersUntapped: true,
     arenaSet: 'NEO'
   },
@@ -1271,7 +1271,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Legendary Land',
     rarity: 'rare',
     oracleText: '{T}: Add {U}.\nChannel — {3}{U}, Discard Otawara, Soaring City: Return target artifact, creature, enchantment, or planeswalker to its owner\'s hand.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/4/8/486d7edc-d983-41f0-8b78-c99aecd72996.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/4/8/486d7edc-d983-41f0-8b78-c99aecd72996.jpg?1783923816',
     entersUntapped: true,
     arenaSet: 'NEO'
   },
@@ -1284,7 +1284,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Legendary Land',
     rarity: 'rare',
     oracleText: '{T}: Add {B}.\nChannel — {3}{B}, Discard Takenuma, Abandoned Mire: Mill three cards, then return a creature or planeswalker card from your graveyard to your hand.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/4/9/499037cc-a577-41cb-8ca2-5e117945634f.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/4/9/499037cc-a577-41cb-8ca2-5e117945634f.jpg?1783923812',
     entersUntapped: true,
     arenaSet: 'NEO'
   },
@@ -1297,7 +1297,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Legendary Land',
     rarity: 'rare',
     oracleText: '{T}: Add {R}.\nChannel — {3}{R}, Discard Sokenzan, Crucible of Defiance: Create two 1/1 colorless Spirit creature tokens with haste.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/1/d1ec50e3-214e-4e45-8f2c-e16e0e6490dd.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/a/a/aa548dcd-c1dd-492d-a69f-c65dfeef0633.jpg?1783923814',
     entersUntapped: true,
     arenaSet: 'NEO'
   },
@@ -1310,7 +1310,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Legendary Land',
     rarity: 'rare',
     oracleText: '{T}: Add {G}.\nChannel — {1}{G}, Discard Boseiju, Who Endures: Destroy target artifact, enchantment, or nonbasic land an opponent controls.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/2/1/2135ac5a-187b-4dc9-8f82-34e8d1603416.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/1/2135ac5a-187b-4dc9-8f82-34e8d1603416.jpg?1783923818',
     entersUntapped: true,
     arenaSet: 'NEO'
   },
@@ -1327,7 +1327,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Castle Ardenvale enters the battlefield tapped unless you control a Plains.\n{T}: Add {W}.\n{2}{W}{W}, {T}: Create a 1/1 white Human creature token.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/f/7f910495-8bd7-4134-a281-c16fd666d5cc.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/6/5/65e4de2e-47d2-4967-be31-9df0057a9c74.jpg?1783906996',
     entersUntapped: 'conditional',
     arenaSet: 'ELD'
   },
@@ -1340,7 +1340,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Castle Vantress enters the battlefield tapped unless you control an Island.\n{T}: Add {U}.\n{2}{U}{U}, {T}: Scry 2.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/0/a/0a8b9d37-e89c-44ad-bd1b-51cb06ec3e0b.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/d/e/dead85f7-865c-4f7d-ad6c-014d4e90f8be.jpg?1783909579',
     entersUntapped: 'conditional',
     arenaSet: 'ELD'
   },
@@ -1353,7 +1353,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Castle Locthwain enters the battlefield tapped unless you control a Swamp.\n{T}: Add {B}.\n{1}{B}{B}, {T}: Draw a card, then you lose life equal to the number of cards in your hand.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/9/195383c1-4723-40b0-ba53-296dfa8e1dc9.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/9/19336e3a-2242-4a30-a563-32f2e4fc18e9.jpg?1783922380',
     entersUntapped: 'conditional',
     arenaSet: 'ELD'
   },
@@ -1366,7 +1366,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Castle Embereth enters the battlefield tapped unless you control a Mountain.\n{T}: Add {R}.\n{1}{R}{R}, {T}: Creatures you control get +1/+0 until end of turn.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/b/8bb8512e-6913-4be6-8828-2bcf3eb58327.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/3/3/337f2d97-b317-4c10-b151-7acccf38fca8.jpg?1783906997',
     entersUntapped: 'conditional',
     arenaSet: 'ELD'
   },
@@ -1379,7 +1379,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Castle Garenbrig enters the battlefield tapped unless you control a Forest.\n{T}: Add {G}.\n{2}{G}{G}, {T}: Add six {G}. Spend this mana only to cast creature spells or activate abilities of creatures.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/e/3/e3c2c66c-f7f0-41d5-a805-a129aeaf1b75.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/e/3/e3c2c66c-f7f0-41d5-a805-a129aeaf1b75.jpg?1783932578',
     entersUntapped: 'conditional',
     arenaSet: 'ELD'
   },
@@ -1396,7 +1396,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Legendary Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{2}, {T}: Choose a color. Add an amount of mana of that color equal to your devotion to that color.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/8/3/834b27a0-dfd7-4f96-8cde-cacac4b24acc.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/3/834b27a0-dfd7-4f96-8cde-cacac4b24acc.jpg?1783939713',
     entersUntapped: true,
     arenaSet: 'EA'
   },
@@ -1409,7 +1409,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'uncommon',
     oracleText: '{T}: Add {C}.\n{2}, {T}, Sacrifice Demolition Field: Destroy target nonbasic land an opponent controls. That player and you each search their library for a basic land card, put it onto the battlefield, then shuffle.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/3/9/3961dd39-2a96-4c4f-96ff-f03c7cb577d5.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/0/c/0c7e51b6-4898-4632-b39c-3ce438caa882.jpg?1783908902',
     entersUntapped: true,
     arenaSet: 'BRO'
   },
@@ -1422,7 +1422,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'uncommon',
     oracleText: '{T}: Add {C}.\n{2}, {T}, Sacrifice Field of Ruin: Destroy target nonbasic land an opponent controls. Each player searches their library for a basic land card, puts it onto the battlefield tapped, then shuffles.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/4/143147d2-2eec-41e7-b78a-592288b38630.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/1/4/143147d2-2eec-41e7-b78a-592288b38630.jpg?1783917099',
     entersUntapped: true,
     arenaSet: 'OTJ'
   },
@@ -1435,7 +1435,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Blast Zone enters the battlefield with a blast counter on it.\n{T}: Add {C}.\n{X}{X}, {T}: Put X blast counters on Blast Zone.\n{3}, {T}, Sacrifice Blast Zone: Destroy each nonland permanent with mana value equal to the number of blast counters on Blast Zone.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/e/a/ea6bc7d5-e8f6-4103-920c-9f7ec5cd6c28.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/c/d/cdad14f1-d541-4e58-af9f-f8e587fca05f.jpg?1783915394',
     entersUntapped: true,
     arenaSet: 'WAR'
   },
@@ -1448,7 +1448,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land - Sphere',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{T}: Add one mana of any color. Activate only if Mirrex entered the battlefield this turn.\n{3}, {T}: Create a 1/1 colorless Phyrexian Mite artifact creature token with toxic 1 and "This creature can\'t block."',
-    imageUrl: 'https://cards.scryfall.io/normal/front/5/4/54a702cd-ca49-4570-b47e-8b090452a3c3.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/4/54a702cd-ca49-4570-b47e-8b090452a3c3.jpg?1783917980',
     entersUntapped: true,
     arenaSet: 'ONE'
   },
@@ -1461,7 +1461,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{2}: Mishra\'s Foundry becomes a 2/2 Assembly-Worker artifact creature until end of turn. It\'s still a land.\n{1}, {T}: Target attacking Assembly-Worker gets +2/+2 until end of turn.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/a/da7699b2-e1af-4bc0-8c5b-84ba3e868d7c.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/d/a/da7699b2-e1af-4bc0-8c5b-84ba3e868d7c.jpg?1783920005',
     entersUntapped: true,
     arenaSet: 'BRO'
   },
@@ -1474,7 +1474,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'uncommon',
     oracleText: 'You have no maximum hand size.\n{T}: Add {C}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/d/f/df1cb087-f100-410e-92a0-47cbb6509f7a.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/e/2/e2a27742-08c1-4153-af7f-25a7a98f585e.jpg?1783903721',
     entersUntapped: true,
     arenaSet: 'M19'
   },
@@ -1487,7 +1487,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land - Desert',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{2}, {T}, Sacrifice a Desert: Exile all cards from all graveyards.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/7/8/78748ac8-4726-4156-a97e-023f80f7011a.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/9/f/9fbe68ba-ffe5-4fe0-ac0a-0b3221e4f395.jpg?1783903197',
     entersUntapped: true,
     arenaSet: 'HOU'
   },
@@ -1500,7 +1500,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: 'Ascend (If you control ten or more permanents, you get the city\'s blessing for the rest of the game.)\n{T}: Add {C}.\n{5}, {T}: Draw a card. Activate only if you have the city\'s blessing.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/c/6/c6d47162-749b-47d5-9589-8f1dbf60b9f3.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/5/8/581dcadd-7de4-4b39-bab0-d3567194a252.jpg?1783913835',
     entersUntapped: true,
     arenaSet: 'RIX'
   },
@@ -1513,7 +1513,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{3}, {T}, Pay life equal to the number of colors in your commander\'s color identity: Draw a card.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/4/8/48d6ce7c-5dc8-449b-acba-db25c49b788c.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/0/7/0775b4be-881c-4832-8954-d961064315b6.jpg?1783903712',
     entersUntapped: true,
     arenaSet: 'CLB'
   },
@@ -1526,7 +1526,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Land',
     rarity: 'rare',
     oracleText: '{T}: Add {C}.\n{4}, {T}: Proliferate.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/a/7/a72a42d4-387e-4bd4-9ae9-0e10b106260a.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/2/22017ec2-3552-4865-af76-dba042b141f5.jpg?1783906011',
     entersUntapped: true,
     arenaSet: 'WAR'
   },
@@ -1544,7 +1544,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Plains'],
     rarity: 'common',
     oracleText: '({T}: Add {W}.)',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/4/14f5f561-39fd-4dad-b225-40cc1eddb563.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/8/a/8ab0f4c0-b331-4c57-b68f-2e24bb5ba06c.jpg?1785981632',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1558,7 +1558,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Island'],
     rarity: 'common',
     oracleText: '({T}: Add {U}.)',
-    imageUrl: 'https://cards.scryfall.io/normal/front/f/a/fa6543b5-236b-4e89-beaa-ea5669b73d6e.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/f/3/f3cc07cd-cc79-4745-b0b7-eade60175cc3.jpg?1785981645',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1572,7 +1572,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Swamp'],
     rarity: 'common',
     oracleText: '({T}: Add {B}.)',
-    imageUrl: 'https://cards.scryfall.io/normal/front/3/1/31b14e48-916c-45b0-8800-e144917637f1.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/7/b7387103-1df1-4fd0-9e91-1544509792c7.jpg?1785981659',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1586,7 +1586,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Mountain'],
     rarity: 'common',
     oracleText: '({T}: Add {R}.)',
-    imageUrl: 'https://cards.scryfall.io/normal/front/1/b/1b1a539f-f513-433e-b850-89196b0bc3ee.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/2/a/2a844b96-6616-4c39-8f4f-5d14a3b2bd55.jpg?1785981666',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1600,7 +1600,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     subtypes: ['Forest'],
     rarity: 'common',
     oracleText: '({T}: Add {G}.)',
-    imageUrl: 'https://cards.scryfall.io/normal/front/3/9/393b3a32-a5ec-44f2-9014-99b82c3c97ae.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/d/c/dce15387-4114-4b3e-91aa-5b42b45c44ac.jpg?1785981675',
     entersUntapped: true,
     arenaSet: 'DMU'
   },
@@ -1613,7 +1613,7 @@ export const ARENA_LANDS_DATABASE: ArenaLandCard[] = [
     typeLine: 'Basic Land',
     rarity: 'common',
     oracleText: '{T}: Add {C}.',
-    imageUrl: 'https://cards.scryfall.io/normal/front/9/c/9cc070d3-4b83-4684-9caf-063e5c473a77.jpg',
+    imageUrl: 'https://cards.scryfall.io/normal/front/b/a/baf8f4f2-9f25-4cd2-8d78-1041e134aeac.jpg?1783906001',
     entersUntapped: true,
     arenaSet: 'OGW'
   }

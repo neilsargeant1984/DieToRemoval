@@ -127,7 +127,12 @@ export function extractCardSynergies(card: Card): CardSynergyProfile {
   if (text.includes('the ring tempts you')) {
     supplies.push('ring_temptation');
   }
-  if (/\bdraw(s)?\s+(a|two|three|\d+|x)?\s*card/i.test(text) || /\binvestigate\b/i.test(text)) {
+  const textWithoutOpponentDraw = text
+    .replace(/(whenever|if)\s+(an?\s+opponent|target\s+opponent|each\s+opponent|opponents)\s+draws?\s+(a\s+card|\d+\s+cards?|cards?)[^.]*\./gi, '')
+    .replace(/except\s+the\s+first\s+one\s+they\s+draw[^.]*\./gi, '')
+    .replace(/for\s+each\s+card\s+(an?\s+opponent|target\s+opponent|each\s+opponent|opponents)\s+has\s+drawn/gi, '');
+
+  if (/\bdraw(s)?\s+(a|two|three|\d+|x)?\s*card/i.test(textWithoutOpponentDraw) || /\binvestigate\b/i.test(text) || /\byou draw\b/i.test(textWithoutOpponentDraw)) {
     supplies.push('draws_cards');
   }
   if (/\bcreate(s)?\s+(a|two|three|\d+|x)?.*token/i.test(text)) {

@@ -110,7 +110,11 @@ export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile
       }
     }
 
-    if (!isOffColorCostReduction && (isManaRock || isManaDork || isLandFetch || isRitual || (isTreasureGenerator && card.cmc <= 3))) {
+    const isTaxOrPassiveTreasureRamp = 
+      card.name.toLowerCase() === 'smothering tithe' || 
+      (card.types.includes('Enchantment') && isTreasureGenerator);
+
+    if (!isOffColorCostReduction && (isManaRock || isManaDork || isLandFetch || isRitual || (isTreasureGenerator && card.cmc <= 3) || isTaxOrPassiveTreasureRamp)) {
       roles.push('ramp');
       if (isManaRock) {
         rampType = 'mana_rock';
@@ -124,7 +128,7 @@ export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile
       } else if (isRitual) {
         rampType = 'ritual';
         explanations.push('Mana Ritual');
-      } else if (isTreasureGenerator) {
+      } else if (isTreasureGenerator || isTaxOrPassiveTreasureRamp) {
         rampType = 'mana_rock';
         explanations.push('Treasure Mana Acceleration');
       }
@@ -202,7 +206,11 @@ export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile
       text.includes('enters the battlefield, destroy target') || 
       text.includes('enters, destroy target') || 
       (text.includes('enters the battlefield, exile target') && !isGyHateOnly) ||
-      (text.includes('enters, exile target') && !isGyHateOnly)
+      (text.includes('enters, exile target') && !isGyHateOnly) ||
+      text.includes('deals 1 damage to any target') ||
+      text.includes('deals 2 damage to any target') ||
+      text.includes('deals damage to any target') ||
+      card.name.toLowerCase() === 'orcish bowmasters'
     ))
   );
 
@@ -243,14 +251,22 @@ export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile
   }
 
   // 6. CARD ADVANTAGE & DRAW ENGINES
+  // Clean text of opponent-exclusive draw trigger phrases to prevent cards like Orcish Bowmasters, Smothering Tithe,
+  // or Sheoldred, the Apocalypse from being mistakenly tagged as card draw for the player.
+  const textWithoutOpponentDraw = text
+    .replace(/(whenever|if)\s+(an?\s+opponent|target\s+opponent|each\s+opponent|opponents)\s+draws?\s+(a\s+card|\d+\s+cards?|cards?)[^.]*\./gi, '')
+    .replace(/except\s+the\s+first\s+one\s+they\s+draw[^.]*\./gi, '')
+    .replace(/for\s+each\s+card\s+(an?\s+opponent|target\s+opponent|each\s+opponent|opponents)\s+has\s+drawn/gi, '');
+
   const isCardAdvantage = 
-    text.includes('draw a card') || 
-    text.includes('draw two cards') || 
-    text.includes('draw three cards') || 
-    text.includes('draws a card') ||
-    text.includes('draw cards equal to') ||
+    textWithoutOpponentDraw.includes('draw a card') || 
+    textWithoutOpponentDraw.includes('draw two cards') || 
+    textWithoutOpponentDraw.includes('draw three cards') || 
+    textWithoutOpponentDraw.includes('draws a card') ||
+    textWithoutOpponentDraw.includes('draw cards equal to') ||
+    textWithoutOpponentDraw.includes('you draw') ||
     text.includes('investigate') ||
-    (text.includes('exile the top') && text.includes('you may play')) ||
+    (text.includes('exile the top') && (text.includes('you may play') || text.includes('you may cast'))) ||
     (text.includes('look at the top') && text.includes('put') && text.includes('into your hand'));
 
   if (isCardAdvantage) {

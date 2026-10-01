@@ -3,6 +3,7 @@ import { Deck } from '../types/deck';
 import { Card } from '../types/card';
 import { UserCollection, DeckWildcardCost } from '../types/collection';
 import { ManaCost } from './ManaCost';
+import { CardImage } from './CardImage';
 import { 
   X, 
   Trash2, 
@@ -287,8 +288,9 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
 
   const hoverPreview = hoveredCard ? (
     <div className="fixed z-50 pointer-events-none w-56 rounded-2xl shadow-2xl border-2 border-amber-400/80 overflow-hidden bg-black/95 right-6 bottom-6 animate-in fade-in zoom-in-95 duration-150">
-      <img
+      <CardImage
         src={hoveredCard.imageUrl}
+        cardName={hoveredCard.name}
         alt={hoveredCard.name}
         className="w-full h-auto object-cover rounded-xl"
       />

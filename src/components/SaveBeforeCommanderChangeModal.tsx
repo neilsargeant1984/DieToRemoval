@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '../types/card';
 import { Deck } from '../types/deck';
 import { AlertCircle, ArrowRight, Save, Trash2, X } from 'lucide-react';
+import { CardImage } from './CardImage';
 
 interface SaveBeforeCommanderChangeModalProps {
   isOpen: boolean;
@@ -56,8 +57,9 @@ export const SaveBeforeCommanderChangeModal: React.FC<SaveBeforeCommanderChangeM
           {/* Current Commander */}
           <div className="flex items-center gap-2.5 min-w-0">
             {currentCommander?.imageUrl && (
-              <img
+              <CardImage
                 src={currentCommander.imageUrl}
+                cardName={currentCommander.name}
                 alt={currentCommander.name}
                 className="w-11 h-14 object-cover rounded-lg border border-black/50 flex-shrink-0 shadow-sm bg-black"
               />
@@ -81,8 +83,9 @@ export const SaveBeforeCommanderChangeModal: React.FC<SaveBeforeCommanderChangeM
               <span className="text-[10px] text-emerald-400 font-semibold">Fresh singleton list</span>
             </div>
             {newCommander.imageUrl && (
-              <img
+              <CardImage
                 src={newCommander.imageUrl}
+                cardName={newCommander.name}
                 alt={newCommander.name}
                 className="w-11 h-14 object-cover rounded-lg border border-amber-500/60 flex-shrink-0 shadow-sm bg-black"
               />

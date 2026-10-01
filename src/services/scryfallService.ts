@@ -169,7 +169,7 @@ export function transformScryfallCard(raw: any): Card {
     set: (raw.set || 'ARENA').toUpperCase(),
     setName: raw.set_name || 'MTG Arena',
     collectorNumber: raw.collector_number || '1',
-    imageUrl: imageUrl || 'https://cards.scryfall.io/normal/front/1/4/14f5f561-39fd-4dad-b225-40cc1eddb563.jpg',
+    imageUrl: imageUrl || (raw.name ? `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(raw.name)}&format=image` : 'https://cards.scryfall.io/back.png'),
     isDigitalOnly,
     isAlchemyRebalanced,
     spellbook,
@@ -283,15 +283,15 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
   // Functional Role filter
   if (params.roleFilter) {
     if (params.roleFilter === 'ramp') {
-      parts.push('((t:artifact o:"add ") or (o:"search your library for a" o:"land") or (t:creature o:"{t}: add") or o:"create a treasure token") -t:land');
+      parts.push('((t:artifact o:"add ") or (o:"search your library for a" o:"land") or (t:creature o:"{t}: add") or o:"create a treasure token" or "Smothering Tithe") -t:land');
     } else if (params.roleFilter === 'protection') {
       parts.push('(o:hexproof or o:indestructible or o:"phase out" or o:"ward {" or o:"protection from")');
     } else if (params.roleFilter === 'removal') {
-      parts.push('((o:"destroy target" or o:"exile target" or o:"counter target" or ((t:instant or t:sorcery) and (o:"damage to target" or o:"deals 3 damage to any target"))) and -o:"destroy all" and -o:"exile all" and -o:"from a graveyard" and -o:"from target player\'s graveyard")');
+      parts.push('((o:"destroy target" or o:"exile target" or o:"counter target" or ((t:instant or t:sorcery) and (o:"damage to target" or o:"deals 3 damage to any target")) or "Orcish Bowmasters") and -o:"destroy all" and -o:"exile all" and -o:"from a graveyard" and -o:"from target player\'s graveyard")');
     } else if (params.roleFilter === 'board_wipe') {
       parts.push('(o:"destroy all" or o:"exile all" or o:"each creature gets -" or o:"all creatures get -")');
     } else if (params.roleFilter === 'card_advantage') {
-      parts.push('(o:"draw a card" or o:"draw two cards" or o:"draws a card" or o:investigate or (o:"exile the top" o:"you may play"))');
+      parts.push('((o:"draw a card" or o:"draw two cards" or o:"draw three cards" or o:"draw cards" or o:"draws a card" or o:investigate or (o:"exile the top" (o:"you may play" or o:"you may cast"))) and -(o:"whenever an opponent draws" -o:"you draw") and -"Orcish Bowmasters" and -"Smothering Tithe")');
     } else if (params.roleFilter === 'lands') {
       parts.push('t:land');
     }

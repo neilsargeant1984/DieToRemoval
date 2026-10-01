@@ -4,6 +4,7 @@ import { calculateSynergy, SynergyMatchResult } from '../utils/synergyGraph';
 import { explainSynergy } from '../utils/synergyExplainer';
 import { searchArenaCards } from '../services/scryfallService';
 import { UserCollection } from '../types/collection';
+import { CardImage } from './CardImage';
 import { 
   X, 
   Sparkles, 
@@ -173,8 +174,9 @@ export const SynergyMatrixDrawer: React.FC<SynergyMatrixDrawerProps> = ({
                   >
                     {/* Left: Thumbnail & Card Specs */}
                     <div className="flex items-center gap-3 min-w-0 flex-1">
-                      <img
+                      <CardImage
                         src={card.imageUrl}
+                        cardName={card.name}
                         alt={card.name}
                         className="w-12 h-16 object-cover rounded-md border border-slate-800 flex-shrink-0"
                       />

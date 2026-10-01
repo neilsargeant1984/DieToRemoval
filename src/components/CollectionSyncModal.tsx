@@ -97,10 +97,9 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
     }
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const [isDragOver, setIsDragOver] = useState(false);
 
+  const handleDropFile = (file: File) => {
     const reader = new FileReader();
     reader.onload = async event => {
       const content = event.target?.result as string;
@@ -109,6 +108,34 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
       }
     };
     reader.readAsText(file);
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    handleDropFile(file);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragOver(false);
+    const file = e.dataTransfer.files?.[0];
+    if (file) {
+      handleDropFile(file);
+    }
   };
 
   const handleLoadSampleCollection = () => {
@@ -169,7 +196,17 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
         </div>
 
         {/* Upload Drop Zone */}
-        <div className="border-2 border-dashed border-amber-500/40 hover:border-amber-400 rounded-2xl p-6 text-center transition bg-[#0d1017]/50 hover:bg-[#0d1017] shadow-sm">
+        <div
+          onDragOver={handleDragOver}
+          onDragEnter={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          className={`border-2 border-dashed rounded-2xl p-6 text-center transition shadow-sm ${
+            isDragOver 
+              ? 'border-amber-400 bg-amber-500/20 scale-[1.01]' 
+              : 'border-amber-500/40 hover:border-amber-400 bg-[#0d1017]/50 hover:bg-[#0d1017]'
+          }`}
+        >
           <input
             type="file"
             id="logFileInput"
@@ -178,11 +215,11 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
             className="hidden"
           />
           <label htmlFor="logFileInput" className="cursor-pointer space-y-2 block">
-            <FileText className="w-8 h-8 mx-auto text-amber-400" />
+            <FileText className={`w-8 h-8 mx-auto transition-transform ${isDragOver ? 'scale-110 text-amber-300' : 'text-amber-400'}`} />
             <div className="text-sm font-bold text-stone-200">
-              Click to select Player.log or drag &amp; drop here
+              {isDragOver ? 'Drop file to import now' : 'Click to select Player.log or drag & drop here'}
             </div>
-            <p className="text-xs text-stone-500">Supports Player.log, .txt, or tracker exported JSON</p>
+            <p className="text-xs text-stone-500">Supports Player.log, Player-prev.log, or tracker JSON</p>
           </label>
         </div>
 

@@ -5,6 +5,7 @@ import { UserCollection } from '../types/collection';
 import { Plus, Minus, Trash2, ArrowRightLeft, Sparkles, BookOpen, AlertTriangle } from 'lucide-react';
 import { getMaxCardCopies } from '../utils/cardRules';
 import { ManaCost } from './ManaCost';
+import { CardImage } from './CardImage';
 
 interface DeckListWorkspaceProps {
   deck: Deck;
@@ -293,8 +294,9 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
       {/* Floating Card Art Tooltip on Hover */}
       {hoveredCard && (
         <div className="absolute right-4 bottom-4 pointer-events-none z-50 w-52 rounded-2xl shadow-2xl border-2 border-[#c5a059] overflow-hidden animate-in fade-in duration-150">
-          <img
+          <CardImage
             src={hoveredCard.imageUrl}
+            cardName={hoveredCard.name}
             alt={hoveredCard.name}
             className="w-full h-auto object-cover rounded-xl"
           />

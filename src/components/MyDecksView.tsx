@@ -3,6 +3,7 @@ import { Deck } from '../types/deck';
 import { FormatType } from '../types/card';
 import { UserCollection } from '../types/collection';
 import { ManaCost } from './ManaCost';
+import { CardImage } from './CardImage';
 import { 
   FolderHeart, 
   Plus, 
@@ -294,8 +295,9 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                   {commander ? (
                     <div className="flex items-center gap-3 bg-[#0d1017] p-2.5 rounded-xl border border-white/5 shadow-inner">
                       {commander.imageUrl && (
-                        <img
+                        <CardImage
                           src={commander.imageUrl}
+                          cardName={commander.name}
                           alt={commander.name}
                           className="w-10 h-14 object-cover rounded-lg border border-[#d4af37]/60 shadow-md flex-shrink-0"
                         />

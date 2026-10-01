@@ -3,6 +3,7 @@ import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { UserCollection } from '../types/collection';
 import { searchArenaCards } from '../services/scryfallService';
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
+import { CardImage } from './CardImage';
 import { 
   Search, 
   Loader2, 
@@ -861,10 +862,10 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                     onClick={() => onSelectCardDetail(card)}
                   >
                     <div className="relative overflow-hidden rounded-xl shadow border border-black/40 mb-2 bg-black">
-                      <img
+                      <CardImage
                         src={card.imageUrl}
+                        cardName={card.name}
                         alt={card.name}
-                        loading="lazy"
                         className="w-full h-auto object-cover group-hover:brightness-105 group-hover:scale-[1.02] transition duration-200"
                       />
                       

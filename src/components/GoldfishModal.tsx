@@ -3,6 +3,7 @@ import { DeckCard } from '../types/deck';
 import { Card } from '../types/card';
 import { simulateOpeningHand } from '../utils/deckAnalytics';
 import { X, RefreshCw, PlusCircle, Shuffle, ShieldAlert } from 'lucide-react';
+import { CardImage } from './CardImage';
 
 interface GoldfishModalProps {
   mainboard: DeckCard[];
@@ -127,8 +128,9 @@ export const GoldfishModal: React.FC<GoldfishModalProps> = ({
                   onClick={() => onSelectCardDetail(card)}
                   className="group relative rounded-2xl overflow-hidden shadow-md border border-[#c5a059]/30 hover:border-amber-400 hover:scale-105 transition transform cursor-pointer flex flex-col bg-[#121622] card-tile"
                 >
-                  <img
+                  <CardImage
                     src={card.imageUrl}
+                    cardName={card.name}
                     alt={card.name}
                     className="w-full h-auto object-cover"
                   />

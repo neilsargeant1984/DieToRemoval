@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { UserCollection, WildcardInventory } from '../types/collection';
 import { ARENA_CARDS } from '../data/arenaCards';
+import { CardImage } from './CardImage';
 import { 
   Sparkles, 
   Search, 
@@ -270,8 +271,9 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
                   onClick={() => onSelectCardDetail(card)}
                 >
                   <div className="relative overflow-hidden rounded-xl shadow border border-black/30 mb-2 bg-black">
-                    <img
+                    <CardImage
                       src={card.imageUrl}
+                      cardName={card.name}
                       alt={card.name}
                       className="w-full h-auto object-cover group-hover:brightness-105 transition"
                     />
