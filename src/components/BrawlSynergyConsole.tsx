@@ -138,11 +138,13 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         }
 
         const cardMap = new Map<string, Card>();
+        const communityMap = new Map<string, EDHRECCardView>();
 
         // Also add community cards into candidate pool
         if (communityRes.status === 'fulfilled' && communityRes.value?.cards) {
           for (const item of communityRes.value.cards) {
             cardMap.set(item.card.id, item.card);
+            communityMap.set(item.card.id, item);
           }
         }
 
@@ -171,15 +173,33 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         for (const c of allCards) {
           const match = calculateSynergy(commander, c);
           const isTrigger = triggerConfig.hasTriggers && triggerConfig.isTriggerCard(c);
+          const comm = communityMap.get(c.id);
 
           if (match) {
             if (isTrigger) {
               match.score = Math.max(match.score + 25, 82);
               match.matchReasons.unshift(triggerConfig.getCardReason(commander, c));
             }
+            if (comm) {
+              match.score = Math.min(99, Math.round((match.score * 0.5) + (comm.inclusion * 0.5)));
+            }
             scored.push(match);
+          } else if (comm) {
+            // Highly played community card for this commander (EDHREC consensus)
+            const isOnColor = c.colors.some(col => commander.colorIdentity.includes(col));
+            const commScore = Math.min(95, Math.round(comm.inclusion * 0.75 + (isOnColor ? 20 : 10)));
+            scored.push({
+              card: c,
+              score: Math.max(commScore, 58),
+              matchReasons: [
+                `Played in ${comm.inclusion}% of community ${commander.name} decks (${comm.numDecks.toLocaleString()} decks)`
+              ],
+              category: (c.types.includes('Creature') || (c.typeLine || '').toLowerCase().includes('creature'))
+                ? 'Creature' 
+                : (c.types.includes('Instant') || c.types.includes('Sorcery') ? 'Instant/Sorcery' : (c.types.includes('Land') ? 'Land' : 'Artifact/Enchantment'))
+            });
           } else {
-            // Also include functional role staples and trigger enablers
+            // Also include functional role staples, trigger enablers, and on-color cards
             const role = classifyCardRoles(c);
             if (isTrigger || role.roles.length > 0) {
               scored.push({
@@ -188,10 +208,23 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                 matchReasons: isTrigger 
                   ? [triggerConfig.getCardReason(commander, c)]
                   : [role.explanation[0] || 'Functional Role Staple'],
-                category: c.types.includes('Creature') 
+                category: (c.types.includes('Creature') || (c.typeLine || '').toLowerCase().includes('creature'))
                   ? 'Creature' 
                   : (c.types.includes('Instant') || c.types.includes('Sorcery') ? 'Instant/Sorcery' : (c.types.includes('Land') ? 'Land' : 'Artifact/Enchantment'))
               });
+            } else {
+              // General on-color cards from Scryfall search
+              const isOnColor = c.colors.some(col => commander.colorIdentity.includes(col));
+              if (isOnColor) {
+                scored.push({
+                  card: c,
+                  score: 55,
+                  matchReasons: [`On-color staple option for ${commander.name}`],
+                  category: (c.types.includes('Creature') || (c.typeLine || '').toLowerCase().includes('creature'))
+                    ? 'Creature' 
+                    : (c.types.includes('Instant') || c.types.includes('Sorcery') ? 'Instant/Sorcery' : (c.types.includes('Land') ? 'Land' : 'Artifact/Enchantment'))
+                });
+              }
             }
           }
         }
@@ -376,7 +409,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
       .filter(item => {
         const c = item.card;
         if (activeTab === 'creatures') {
-          if (!c.types.includes('Creature')) return false;
+          const isCreature = c.types.includes('Creature') || (c.typeLine || '').toLowerCase().includes('creature');
+          if (!isCreature) return false;
           // Filter out generic colorless artifact creatures unless commander cares about artifacts or card has high synergy
           const isColorlessArtifactCreature = c.types.includes('Artifact') && c.colors.length === 0;
           if (isColorlessArtifactCreature && !isArtifactCommander) {

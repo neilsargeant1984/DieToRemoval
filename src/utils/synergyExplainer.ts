@@ -11,15 +11,19 @@ export function explainSynergy(
 ): string {
   const { card, matchReasons } = result;
 
-  if (matchReasons.length > 0) {
-    // If we have specific reasons, weave them into a crisp sentence
+  if (matchReasons && matchReasons.length > 0) {
     const primary = matchReasons[0];
     const secondary = matchReasons[1];
 
-    if (secondary) {
-      return `${card.name} is a high-value synergy with ${commander.name}: It ${primary.toLowerCase()}, and ${secondary.toLowerCase()}.`;
+    // If primary is already an articulated explanation
+    if (primary.includes(':') || primary.startsWith('Format card') || primary.startsWith('Iconic') || primary.startsWith('Played in')) {
+      return primary;
     }
-    return `${card.name} directly fuels ${commander.name}: It ${primary.toLowerCase()}.`;
+
+    if (secondary) {
+      return `${card.name} pairs with ${commander.name}: It ${primary.toLowerCase()}, and ${secondary.toLowerCase()}.`;
+    }
+    return `${card.name} synergizes with ${commander.name}: It ${primary.toLowerCase()}.`;
   }
 
   // Fallback archetype summary
