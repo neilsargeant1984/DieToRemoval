@@ -109,7 +109,8 @@ export async function fetchArenaCommunityMeta(
 
     // Now, cross-reference with MTG Arena legality!
     const rawList = Array.from(rawCardsMap.values());
-    const idsToLookup = rawList.filter(c => c.id).map(c => ({ id: c.id }));
+    // Lookup by card name so Scryfall returns the canonical standard in-game printing rather than Secret Lair / promo art
+    const namesToLookup = rawList.map(c => ({ name: c.name }));
 
     const arenaCardIndex = new Map<string, Card>();
 
@@ -125,8 +126,8 @@ export async function fetchArenaCommunityMeta(
     }
 
     // Lookup in batches of 75 from Scryfall collection API
-    for (let i = 0; i < idsToLookup.length; i += 75) {
-      const batch = idsToLookup.slice(i, i + 75);
+    for (let i = 0; i < namesToLookup.length; i += 75) {
+      const batch = namesToLookup.slice(i, i + 75);
       try {
         const collRes = await fetch('https://api.scryfall.com/cards/collection', {
           method: 'POST',
@@ -136,7 +137,11 @@ export async function fetchArenaCommunityMeta(
         if (collRes.ok) {
           const collData = await collRes.json();
           for (const raw of collData.data || []) {
-            if (raw.games?.includes('arena') && (raw.legalities?.brawl === 'legal' || raw.legalities?.historic === 'legal')) {
+            const isArenaLegal = raw.legalities?.brawl === 'legal' || 
+              raw.legalities?.standardbrawl === 'legal' || 
+              (raw.games?.includes('arena') && (raw.legalities?.historic === 'legal' || raw.legalities?.timeless === 'legal'));
+
+            if (isArenaLegal) {
               const card = transformScryfallCard(raw);
               arenaCardIndex.set(card.name.toLowerCase(), card);
               if (card.id) arenaCardIndex.set(card.id, card);
@@ -170,6 +175,7 @@ export async function fetchArenaCommunityMeta(
     for (const [name, rawItem] of rawCardsMap.entries()) {
       // Check if this card exists on MTG Arena and is legal in Brawl
       const lower = name.toLowerCase();
+      // Prioritize the canonical regular card printing by name to avoid promo / secret lair art
       const arenaCard = arenaCardIndex.get(lower) || (rawItem.id ? arenaCardIndex.get(rawItem.id) : undefined);
 
       if (arenaCard) {

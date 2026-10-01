@@ -226,6 +226,11 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     parts.push(trimmed);
   }
 
+  // Always prefer canonical default card art over promo/secret lair variants
+  if (!parts.some(p => p.includes('prefer:'))) {
+    parts.push('prefer:default');
+  }
+
   const queryString = parts.join(' ');
   const page = params.page || 1;
   const order = params.order || 'edhrec';

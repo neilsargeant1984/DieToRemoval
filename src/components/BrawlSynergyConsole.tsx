@@ -20,10 +20,12 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchArenaCommunityMeta, EDHRECCardView } from '../services/edhrecService';
+import { getCommanderTriggerConfig } from '../utils/commanderTriggers';
 
 export type SynergyCategoryTab = 
   | 'meta_consensus'
   | 'meta_staples'
+  | 'commander_triggers'
   | 'creatures' 
   | 'instants' 
   | 'sorceries' 
@@ -72,6 +74,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   const [communityMeta, setCommunityMeta] = useState<EDHRECCardView[]>([]);
   const [isLoading, setIsLoading] = useState(false);
 
+  const triggerConfig = getCommanderTriggerConfig(commander);
+
   // Fetch candidate cards for the Commander's Color Identity across all functional archetypes
   useEffect(() => {
     if (!commander) {
@@ -84,8 +88,17 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
     const fetchPool = async () => {
       try {
+        const triggerPromise = (triggerConfig.hasTriggers && triggerConfig.scryfallQuery)
+          ? searchArenaCards({
+              format: 'brawl',
+              commanderColorIdentity: commander.colorIdentity,
+              query: triggerConfig.scryfallQuery,
+              order: 'edhrec'
+            })
+          : Promise.resolve({ cards: [], totalCards: 0, hasMore: false });
+
         // Query EDHREC Community Consensus + Scryfall role pools concurrently
-        const [communityRes, generalRes, rampRes, removalRes, wipeRes, protRes] = await Promise.allSettled([
+        const [communityRes, generalRes, rampRes, removalRes, wipeRes, protRes, triggerRes] = await Promise.allSettled([
           fetchArenaCommunityMeta(commander),
           searchArenaCards({
             format: 'brawl',
@@ -116,7 +129,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             commanderColorIdentity: commander.colorIdentity,
             roleFilter: 'protection',
             order: 'edhrec'
-          })
+          }),
+          triggerPromise
         ]);
 
         if (communityRes.status === 'fulfilled' && communityRes.value?.cards) {
@@ -147,6 +161,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         addCards(removalRes);
         addCards(wipeRes);
         addCards(protRes);
+        addCards(triggerRes);
 
         const allCards = Array.from(cardMap.values());
         setCandidates(allCards);
@@ -155,16 +170,24 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         const scored: SynergyMatchResult[] = [];
         for (const c of allCards) {
           const match = calculateSynergy(commander, c);
+          const isTrigger = triggerConfig.hasTriggers && triggerConfig.isTriggerCard(c);
+
           if (match) {
+            if (isTrigger) {
+              match.score = Math.max(match.score + 25, 82);
+              match.matchReasons.unshift(triggerConfig.getCardReason(commander, c));
+            }
             scored.push(match);
           } else {
-            // Also include functional role staples (e.g. Arcane Signet, Ramp, Removal, Wipes)
+            // Also include functional role staples and trigger enablers
             const role = classifyCardRoles(c);
-            if (role.roles.length > 0) {
+            if (isTrigger || role.roles.length > 0) {
               scored.push({
                 card: c,
-                score: 65,
-                matchReasons: [role.explanation[0] || 'Functional Role Staple'],
+                score: isTrigger ? 82 : 65,
+                matchReasons: isTrigger 
+                  ? [triggerConfig.getCardReason(commander, c)]
+                  : [role.explanation[0] || 'Functional Role Staple'],
                 category: c.types.includes('Creature') 
                   ? 'Creature' 
                   : (c.types.includes('Instant') || c.types.includes('Sorcery') ? 'Instant/Sorcery' : (c.types.includes('Land') ? 'Land' : 'Artifact/Enchantment'))
@@ -269,8 +292,49 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
       return stapleList;
     }
 
+    if (activeTab === 'commander_triggers' && triggerConfig.hasTriggers) {
+      const triggerCards: { card: Card; score: number; badge: string; reason: string }[] = [];
+      const seen = new Set<string>();
+
+      for (const item of scoredSynergies) {
+        const c = item.card;
+        if (triggerConfig.isTriggerCard(c)) {
+          seen.add(c.id);
+          const score = Math.max(item.score, 75);
+          triggerCards.push({
+            card: c,
+            score,
+            badge: triggerConfig.getCardBadge(c),
+            reason: triggerConfig.getCardReason(commander, c)
+          });
+        }
+      }
+
+      for (const item of communityMeta) {
+        const c = item.card;
+        if (!seen.has(c.id) && triggerConfig.isTriggerCard(c)) {
+          seen.add(c.id);
+          const score = Math.max(item.inclusion, 75);
+          triggerCards.push({
+            card: c,
+            score,
+            badge: triggerConfig.getCardBadge(c),
+            reason: triggerConfig.getCardReason(commander, c)
+          });
+        }
+      }
+
+      triggerCards.sort((a, b) => b.score - a.score);
+      return triggerCards;
+    }
+
     const isArtifactCommander = commander.types.includes('Artifact') || 
-      commander.oracleText.toLowerCase().includes('artifact');
+      (commander.oracleText || '').toLowerCase().includes('artifact');
+
+    const multiColorFixingRocks = new Set([
+      'Chromatic Lantern', 'Commander\'s Sphere', 'Manalith', 'Celestial Prism',
+      'Letter of Acceptance', 'Network Terminal', 'Spinning Wheel', 'Altar of the Pantheon'
+    ]);
 
     return scoredSynergies
       .filter(item => {
@@ -292,7 +356,18 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         if (activeTab === 'lands') return c.types.includes('Land');
         
         const roles = classifyCardRoles(c);
-        if (activeTab === 'ramp') return roles.roles.includes('ramp');
+        if (activeTab === 'ramp') {
+          if (!roles.roles.includes('ramp')) return false;
+          // Filter out 3+ CMC multi-color fixing rocks for mono-color commanders
+          if (commander.colorIdentity.length <= 1) {
+            if (multiColorFixingRocks.has(c.name)) return false;
+            const co = (c.oracleText || '').toLowerCase();
+            if (c.types.includes('Artifact') && c.cmc >= 3 && co.includes('any color') && !co.includes('draw') && !co.includes('sacrifice')) {
+              return false;
+            }
+          }
+          return true;
+        }
         if (activeTab === 'protection') return roles.roles.includes('protection');
         if (activeTab === 'removal') return roles.roles.includes('removal');
         if (activeTab === 'board_wipe') return roles.roles.includes('board_wipe');
@@ -300,18 +375,44 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         
         return false;
       })
-      .map(item => ({
-        card: item.card,
-        score: item.score,
-        badge: `${item.score}% Match`,
-        reason: explainSynergy(commander, item)
-      }))
+      .map(item => {
+        let badge = `${item.score}% Match`;
+        let reason = explainSynergy(commander, item);
+
+        if (activeTab === 'card_draw') {
+          const co = (item.card.oracleText || '').toLowerCase();
+          const isSacDraw = (co.includes('sacrifice') || co.includes('dies')) && (co.includes('draw') || co.includes('investigate'));
+          if (isSacDraw) {
+            badge = `💡 Sac Draw Engine`;
+            reason = `Sacrifice Draw Engine: Converts creatures into steady card draw and commander death triggers`;
+          }
+        }
+
+        return {
+          card: item.card,
+          score: item.score,
+          badge,
+          reason
+        };
+      })
       .sort((a, b) => {
         if (activeTab === 'creatures') {
           // Sort on-color creatures before colorless creatures
           const aColorless = a.card.colors.length === 0 ? 1 : 0;
           const bColorless = b.card.colors.length === 0 ? 1 : 0;
           if (aColorless !== bColorless) return aColorless - bColorless;
+        }
+        if (activeTab === 'ramp' && commander.colorIdentity.length <= 1) {
+          const monoColorRampStaples = new Set([
+            'Arcane Signet', 'Mind Stone', 'Coldsteel Heart', 'Thought Vessel',
+            'Jet Medallion', 'Ruby Medallion', 'Sapphire Medallion', 'Emerald Medallion', 'Pearl Medallion',
+            'Dark Ritual', 'Cabal Stronghold', 'Solemn Simulacrum', 'Wayfarer\'s Bauble',
+            'Guardian Idol', 'Fellwar Stone', 'Bontu\'s Monument', 'Heraldic Banner',
+            'Phyrexian Tower', 'Pitiless Plunderer', 'Black Market Connections'
+          ]);
+          const aStaple = monoColorRampStaples.has(a.card.name) ? 1 : 0;
+          const bStaple = monoColorRampStaples.has(b.card.name) ? 1 : 0;
+          if (aStaple !== bStaple) return bStaple - aStaple;
         }
         return b.score - a.score;
       });
@@ -327,6 +428,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   const tabs: { id: SynergyCategoryTab; label: string; icon: string }[] = [
     { id: 'meta_consensus', label: 'What People Are Playing', icon: '🔥' },
     { id: 'meta_staples', label: 'Staple Cards', icon: '⭐' },
+    ...(triggerConfig.hasTriggers ? [{ id: 'commander_triggers' as SynergyCategoryTab, label: triggerConfig.tabLabel, icon: '🎯' }] : []),
     { id: 'creatures', label: 'Creatures', icon: '🗡️' },
     { id: 'instants', label: 'Instants', icon: '⚡' },
     { id: 'sorceries', label: 'Sorceries', icon: '📜' },
@@ -412,7 +514,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                   key={card.id}
                   className="group relative bg-[#131722] hover:bg-[#1a2030] border border-[#232b3d] hover:border-amber-400/80 rounded-xl overflow-hidden shadow-lg transition duration-200 flex flex-col justify-between hover:scale-[1.02]"
                 >
-                  {/* Card Art Clickable */}
+                  {/* Card Art Clickable (100% Unobscured card title & mana cost) */}
                   <div
                     onClick={() => onSelectCardDetail(card)}
                     className="relative cursor-pointer overflow-hidden"
@@ -423,14 +525,9 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                       className="w-full h-auto object-cover group-hover:brightness-105 transition"
                     />
 
-                    {/* Synergy Match / Community Inclusion Badge */}
-                    <div className="absolute top-1.5 right-1.5 bg-slate-950/90 text-amber-300 font-extrabold text-[10px] px-2 py-0.5 rounded-full border border-amber-500/40 shadow-md flex items-center gap-1">
-                      {badge || `${score}% Match`}
-                    </div>
-
-                    {/* Owned badge */}
+                    {/* Owned badge at subtle bottom corner, away from card title and mana cost */}
                     {isOwned && (
-                      <div className="absolute top-1.5 left-1.5 bg-emerald-950/90 text-emerald-300 font-bold text-[9px] px-1.5 py-0.5 rounded border border-emerald-700/60 shadow">
+                      <div className="absolute bottom-1.5 left-1.5 bg-emerald-950/90 text-emerald-300 font-bold text-[9px] px-1.5 py-0.5 rounded border border-emerald-700/60 shadow pointer-events-none">
                         Owned
                       </div>
                     )}
@@ -439,12 +536,20 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                   {/* Card Meta & 1-Line Tactical Why It Works */}
                   <div className="p-2 space-y-1.5 flex-1 flex flex-col justify-between">
                     <div>
-                      <div className="flex items-center justify-between text-xs">
-                        <span className="font-bold text-slate-200 truncate group-hover:text-amber-300 transition">
+                      {/* Name & Synergy/Staple Badge Row */}
+                      <div className="flex items-center justify-between gap-1 mb-1">
+                        <span 
+                          className="font-bold text-slate-100 text-xs truncate group-hover:text-amber-300 transition"
+                          title={card.name}
+                        >
                           {card.name}
                         </span>
+                        <span className="flex-shrink-0 bg-[#090d14] text-amber-300 font-extrabold text-[9px] px-1.5 py-0.5 rounded border border-amber-500/40 whitespace-nowrap shadow-sm">
+                          {badge || `${score}% Match`}
+                        </span>
                       </div>
-                      <p className="text-[10px] text-amber-200/80 line-clamp-2 leading-tight mt-1 bg-[#0f121a] p-1.5 rounded border border-[#1e2536]">
+
+                      <p className="text-[10px] text-amber-200/80 line-clamp-2 leading-tight bg-[#0f121a] p-1.5 rounded border border-[#1e2536]">
                         💡 {reason}
                       </p>
                     </div>
