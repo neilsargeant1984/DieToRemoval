@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { UserCollection } from '../types/collection';
+import { UserCollection, WildcardInventory } from '../types/collection';
 import { Deck } from '../types/deck';
-import { parsePlayerLog, parsePlayerLogDecks } from '../utils/arenaParser';
+import { parsePlayerLog, parsePlayerLogDecks, parsePlayerLogWildcards } from '../utils/arenaParser';
 import { ARENA_CARDS } from '../data/arenaCards';
 import { 
   X, 
@@ -13,7 +13,8 @@ import {
   Loader2,
   FolderHeart,
   ShieldCheck,
-  Trash2
+  Trash2,
+  Sparkles
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -22,6 +23,8 @@ interface CollectionSyncModalProps {
   onClose: () => void;
   onSyncCollection: (collection: UserCollection) => void;
   onSyncDecks: (decks: Deck[]) => void;
+  onSyncWildcards: (inventory: WildcardInventory) => void;
+  currentWildcards: WildcardInventory;
   currentCollectionCount: number;
 }
 
@@ -29,7 +32,9 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
   isOpen,
   onClose,
   onSyncCollection,
-  onSyncDecks
+  onSyncDecks,
+  onSyncWildcards,
+  currentWildcards
 }) => {
   const [logText, setLogText] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -40,6 +45,33 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
     deckCount?: number;
     cardCount?: number;
   } | null>(null);
+
+  // Manual wildcard adjust state
+  const [wcCommon, setWcCommon] = useState(currentWildcards?.common ?? 0);
+  const [wcUncommon, setWcUncommon] = useState(currentWildcards?.uncommon ?? 0);
+  const [wcRare, setWcRare] = useState(currentWildcards?.rare ?? 0);
+  const [wcMythic, setWcMythic] = useState(currentWildcards?.mythic ?? 0);
+  const [isWcSaved, setIsWcSaved] = useState(false);
+
+  React.useEffect(() => {
+    if (currentWildcards) {
+      setWcCommon(currentWildcards.common);
+      setWcUncommon(currentWildcards.uncommon);
+      setWcRare(currentWildcards.rare);
+      setWcMythic(currentWildcards.mythic);
+    }
+  }, [currentWildcards]);
+
+  const handleManualSaveWildcards = () => {
+    onSyncWildcards({
+      common: Math.max(0, wcCommon),
+      uncommon: Math.max(0, wcUncommon),
+      rare: Math.max(0, wcRare),
+      mythic: Math.max(0, wcMythic)
+    });
+    setIsWcSaved(true);
+    setTimeout(() => setIsWcSaved(false), 2500);
+  };
 
   if (!isOpen) return null;
 
@@ -63,10 +95,16 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
         mergedCollection[cid] = Math.max(mergedCollection[cid] || 0, qty);
       }
 
+      // 3. Try parsing wildcard inventory from Player.log
+      const wildcardsFound = parsePlayerLogWildcards(text);
+      if (wildcardsFound) {
+        onSyncWildcards(wildcardsFound);
+      }
+
       const totalUniqueCards = Object.keys(mergedCollection).length;
       const totalDecksFound = deckResult.decks.length;
 
-      if (totalDecksFound > 0 || totalUniqueCards > 0) {
+      if (totalDecksFound > 0 || totalUniqueCards > 0 || wildcardsFound) {
         if (totalDecksFound > 0) {
           onSyncDecks(deckResult.decks);
         }
@@ -75,16 +113,24 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
         }
 
         confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
+        let summaryText = `Account sync successful!`;
+        if (totalDecksFound > 0 || totalUniqueCards > 0) {
+          summaryText += ` Synced ${totalDecksFound} deck(s) and ${totalUniqueCards} unique card(s).`;
+        }
+        if (wildcardsFound) {
+          summaryText += ` Wildcards updated: ${wildcardsFound.common} Common, ${wildcardsFound.uncommon} Uncommon, ${wildcardsFound.rare} Rare, ${wildcardsFound.mythic} Mythic.`;
+        }
+
         setStatusMessage({
           type: 'success',
-          text: `Account sync successful! Synced ${totalDecksFound} deck(s) and ${totalUniqueCards} unique card(s).`,
+          text: summaryText,
           deckCount: totalDecksFound,
           cardCount: totalUniqueCards
         });
       } else {
         setStatusMessage({
           type: 'error',
-          text: 'No valid decks or card inventory found in this input. Make sure to open the Decks tab in MTG Arena before copying Player.log, or drop an exported inventory JSON.'
+          text: 'No valid decks, cards, or wildcards found in this input. Make sure to enable Detailed Logs in MTG Arena Options > Account before copying Player.log, or drop an exported inventory JSON.'
         });
       }
     } catch (err) {
@@ -262,6 +308,84 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
             placeholder='Paste Player.log text or tracker inventory JSON...'
             className="w-full h-24 bg-[#0d1017] border border-white/10 rounded-xl p-3 text-xs font-mono text-stone-200 focus:outline-none focus:border-amber-500 placeholder-stone-500 shadow-inner"
           />
+        </div>
+
+        {/* Manual Wildcard Stash Quick Editor */}
+        <div className="bg-[#090c12] border border-amber-500/20 rounded-2xl p-3.5 space-y-2.5 shadow-inner">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-fantasy font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Wildcard Stash Quick-Edit</span>
+            </span>
+            {isWcSaved ? (
+              <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1 animate-fadeIn">
+                <CheckCircle2 className="w-3 h-3" /> Stash Updated!
+              </span>
+            ) : (
+              <span className="text-[10px] text-stone-400">
+                Adjust counts directly or import from log above
+              </span>
+            )}
+          </div>
+          <div className="grid grid-cols-4 gap-2">
+            <div className="bg-black/50 border border-white/10 rounded-xl p-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] text-stone-300 font-bold mb-1">
+                <div className="w-2 h-2 rounded-full bg-stone-400" /> Common
+              </div>
+              <input
+                type="number"
+                min="0"
+                value={wcCommon}
+                onChange={e => setWcCommon(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-full bg-transparent text-center font-mono font-bold text-xs text-white focus:outline-none"
+              />
+            </div>
+            <div className="bg-black/50 border border-cyan-500/30 rounded-xl p-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] text-cyan-300 font-bold mb-1">
+                <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-cyan-400/50" /> Uncommon
+              </div>
+              <input
+                type="number"
+                min="0"
+                value={wcUncommon}
+                onChange={e => setWcUncommon(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-full bg-transparent text-center font-mono font-bold text-xs text-white focus:outline-none"
+              />
+            </div>
+            <div className="bg-black/50 border border-amber-500/30 rounded-xl p-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] text-amber-300 font-bold mb-1">
+                <div className="w-2 h-2 rounded-full bg-amber-400 shadow-amber-400/50" /> Rare
+              </div>
+              <input
+                type="number"
+                min="0"
+                value={wcRare}
+                onChange={e => setWcRare(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-full bg-transparent text-center font-mono font-bold text-xs text-white focus:outline-none"
+              />
+            </div>
+            <div className="bg-black/50 border border-orange-500/30 rounded-xl p-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] text-orange-300 font-bold mb-1">
+                <div className="w-2 h-2 rounded-full bg-orange-500 shadow-orange-500/50" /> Mythic
+              </div>
+              <input
+                type="number"
+                min="0"
+                value={wcMythic}
+                onChange={e => setWcMythic(Math.max(0, parseInt(e.target.value, 10) || 0))}
+                className="w-full bg-transparent text-center font-mono font-bold text-xs text-white focus:outline-none"
+              />
+            </div>
+          </div>
+          <div className="flex justify-end pt-0.5">
+            <button
+              type="button"
+              onClick={handleManualSaveWildcards}
+              className="px-3 py-1 bg-gradient-to-r from-amber-500/30 to-orange-500/30 hover:from-amber-500/40 hover:to-orange-500/40 text-amber-300 border border-amber-500/40 rounded-lg text-[11px] font-bold transition shadow-sm"
+            >
+              Update Stash Numbers
+            </button>
+          </div>
         </div>
 
         {/* Status Message */}

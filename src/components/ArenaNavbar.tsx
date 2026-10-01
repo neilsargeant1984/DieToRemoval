@@ -30,6 +30,7 @@ interface ArenaNavbarProps {
   user?: any;
   onOpenAuth?: () => void;
   onSignOut?: () => void;
+  onOpenWildcards?: () => void;
 }
 
 export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
@@ -44,7 +45,8 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
   deckCount = 0,
   user,
   onOpenAuth,
-  onSignOut
+  onSignOut,
+  onOpenWildcards
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#0e121a]/95 border-b border-[#c5a059]/25 backdrop-blur-xl px-4 py-2.5 shadow-2xl">
@@ -124,25 +126,30 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
 
         {/* Right Section: Wildcard Quick Stash & Actions */}
         <div className="flex items-center gap-3">
-          {/* Wildcard Gems Pill */}
-          <div className="hidden sm:flex items-center gap-3 bg-[#0d1017]/90 px-3.5 py-1.5 rounded-xl border border-white/5 text-xs shadow-inner">
+          {/* Wildcard Gems Pill (Clickable) */}
+          <button
+            type="button"
+            onClick={onOpenWildcards}
+            className="hidden sm:flex items-center gap-3 bg-[#0d1017]/90 hover:bg-[#151a26] px-3.5 py-1.5 rounded-xl border border-white/5 hover:border-amber-500/40 text-xs shadow-inner transition cursor-pointer group"
+            title="Click to view & edit your Wildcard Stash"
+          >
             <div className="flex items-center gap-1 text-[11px]" title="Common Wildcards">
               <div className="w-2.5 h-2.5 rounded-full bg-stone-400 shadow-sm" />
-              <span className="font-bold text-stone-300 font-mono">{inventory.common}</span>
+              <span className="font-bold text-stone-300 font-mono group-hover:text-white transition">{inventory.common}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Uncommon Wildcards">
               <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" />
-              <span className="font-bold text-cyan-200 font-mono">{inventory.uncommon}</span>
+              <span className="font-bold text-cyan-200 font-mono group-hover:text-cyan-100 transition">{inventory.uncommon}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Rare Wildcards">
               <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
-              <span className="font-bold text-amber-200 font-mono">{inventory.rare}</span>
+              <span className="font-bold text-amber-200 font-mono group-hover:text-amber-100 transition">{inventory.rare}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Mythic Wildcards">
               <div className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm shadow-orange-500/60 animate-pulse" />
-              <span className="font-bold text-orange-300 font-mono">{inventory.mythic}</span>
+              <span className="font-bold text-orange-300 font-mono group-hover:text-orange-100 transition">{inventory.mythic}</span>
             </div>
-          </div>
+          </button>
 
           {/* Sync Collection */}
           <button

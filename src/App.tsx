@@ -30,6 +30,7 @@ import { Layers } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { deckCloudService } from './services/deckCloudService';
 import { AuthModal } from './components/AuthModal';
+import { WildcardEditModal } from './components/WildcardEditModal';
 
 export const App: React.FC = () => {
   // Navigation State
@@ -44,6 +45,7 @@ export const App: React.FC = () => {
   // User Auth & Cloud State
   const [user, setUser] = useState<any>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+  const [isWildcardModalOpen, setIsWildcardModalOpen] = useState<boolean>(false);
 
   // Saved Decks Collection (All user-created decks)
   const [savedDecks, setSavedDecks] = useState<Deck[]>(() => {
@@ -640,6 +642,15 @@ export const App: React.FC = () => {
     setTimeout(() => setSaveNotification(null), 3500);
   };
 
+  const handleSyncWildcards = (newInventory: WildcardInventory) => {
+    setWildcardInventory(newInventory);
+    if (user && isSupabaseConfigured) {
+      deckCloudService.saveCollection(userCollection, newInventory).catch(console.error);
+    }
+    setSaveNotification(`Wildcard stash updated (${newInventory.common}C / ${newInventory.uncommon}U / ${newInventory.rare}R / ${newInventory.mythic}M)!`);
+    setTimeout(() => setSaveNotification(null), 3500);
+  };
+
   return (
     <div className="min-h-screen bg-[#0b0e14] text-slate-100 flex flex-col font-sans selection:bg-orange-500/30 selection:text-orange-200">
       {/* Top Navigation Shell */}
@@ -656,6 +667,7 @@ export const App: React.FC = () => {
         user={user}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
+        onOpenWildcards={() => setIsWildcardModalOpen(true)}
       />
 
       {/* Main App Content */}
@@ -840,7 +852,17 @@ export const App: React.FC = () => {
         onClose={() => setIsSyncOpen(false)}
         onSyncCollection={setUserCollection}
         onSyncDecks={handleSyncDecks}
+        onSyncWildcards={handleSyncWildcards}
+        currentWildcards={wildcardInventory}
         currentCollectionCount={Object.keys(userCollection).length}
+      />
+
+      {/* Wildcard Stash Manager Modal */}
+      <WildcardEditModal
+        isOpen={isWildcardModalOpen}
+        onClose={() => setIsWildcardModalOpen(false)}
+        inventory={wildcardInventory}
+        onSaveInventory={handleSyncWildcards}
       />
 
       <ImportDeckModal
