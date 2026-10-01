@@ -145,6 +145,8 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
   // 4. TARGETED REMOVAL & INTERACTION (On-Board Threats & Spells)
   const isGyHateOnly = text.includes('from a graveyard') || text.includes('from target player\'s graveyard') || text.includes('from all graveyards');
 
+  const isInstantOrSorcery = card.types.includes('Instant') || card.types.includes('Sorcery');
+
   const isTargetedRemoval = (
     text.includes('destroy target') || 
     (text.includes('exile target') && !isGyHateOnly) || 
@@ -154,9 +156,12 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     text.includes('put two -1/-1 counters on') ||
     (text.includes('counter target') && (text.includes('spell') || text.includes('ability'))) ||
     (text.includes('return target') && (text.includes('to its owner\'s hand') || text.includes('to their owner\'s hand'))) ||
-    (text.includes('deals') && text.includes('damage to target') && (card.types.includes('Instant') || card.types.includes('Sorcery'))) ||
-    text.includes('deals 3 damage to any target') || 
-    text.includes('deals 4 damage to any target') ||
+    (isInstantOrSorcery && (
+      (text.includes('deals') && text.includes('damage to target')) ||
+      text.includes('deals 3 damage to any target') || 
+      text.includes('deals 4 damage to any target') ||
+      text.includes('deals 5 damage to any target')
+    )) ||
     (card.types.includes('Creature') && (
       text.includes('enters the battlefield, destroy target') || 
       text.includes('enters, destroy target') || 
