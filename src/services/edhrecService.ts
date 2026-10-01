@@ -206,13 +206,26 @@ export async function fetchArenaCommunityMeta(
       }
     }
 
-    // Sort: High synergy & top inclusion first
+    // Sort: High synergy cards first, followed by top inclusion
     matchedCards.sort((a, b) => {
-      // Prioritize high synergy / inclusion
+      // 1. EDHREC highsynergy category cards first
+      const aIsHigh = a.category === 'highsynergy' ? 1 : 0;
+      const bIsHigh = b.category === 'highsynergy' ? 1 : 0;
+      if (bIsHigh !== aIsHigh) {
+        return bIsHigh - aIsHigh;
+      }
+
+      // 2. High Synergy Lift percentage
+      if (b.synergy !== a.synergy) {
+        return b.synergy - a.synergy;
+      }
+
+      // 3. Inclusion percentage
       if (b.inclusion !== a.inclusion) {
         return b.inclusion - a.inclusion;
       }
-      return b.synergy - a.synergy;
+
+      return a.card.cmc - b.card.cmc;
     });
 
     const meta: CommanderCommunityMeta = {

@@ -12,6 +12,7 @@ export interface Deck {
   mainboard: DeckCard[];
   sideboard: DeckCard[];
   commander?: DeckCard;
+  deckTileCard?: Card;
   description?: string;
   tags?: string[];
   isImported?: boolean;

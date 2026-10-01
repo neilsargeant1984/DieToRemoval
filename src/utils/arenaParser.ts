@@ -425,15 +425,19 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
     const line = lines[lineIdx];
 
-    // Handle DeckGetDeckSummariesV3 responses (which list ALL user decks!)
-    if (line.includes('DeckGetDeckSummariesV3') || (lineIdx > 0 && lines[lineIdx - 1].includes('DeckGetDeckSummariesV3'))) {
+    // Handle DeckGetDeckSummariesV3 or StartHook responses (which list ALL user decks & cards in DecksInternal!)
+    if (line.includes('DeckGetDeckSummariesV3') || line.includes('StartHook') || (lineIdx > 0 && lines[lineIdx - 1].includes('DeckGetDeckSummariesV3'))) {
       const idx = line.indexOf('{');
       if (idx !== -1) {
         try {
           const jsonStr = line.substring(idx);
           const obj = JSON.parse(jsonStr);
-          const summaries = Array.isArray(obj.Summaries) ? obj.Summaries : (Array.isArray(obj.payload?.Summaries) ? obj.payload.Summaries : []);
+          const summaries = Array.isArray(obj.Summaries) 
+            ? obj.Summaries 
+            : (Array.isArray(obj.DeckSummaries) ? obj.DeckSummaries : (Array.isArray(obj.payload?.Summaries) ? obj.payload.Summaries : []));
           
+          const decksInternal = obj.DecksInternal && typeof obj.DecksInternal === 'object' ? obj.DecksInternal : null;
+
           for (const summary of summaries) {
             if (!summary || !summary.DeckId) continue;
             const name = summary.Name || 'MTG Arena Deck';
@@ -476,14 +480,60 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
               allCardIds.add(deckTileId);
             }
 
+            const mainMap = new Map<number, number>();
+            const sideMap = new Map<number, number>();
+            let commanderId: number | undefined;
+
+            // Check if full deck card list exists in DecksInternal!
+            if (decksInternal && decksInternal[deckId]) {
+              const fullDeck = decksInternal[deckId];
+              if (Array.isArray(fullDeck.MainDeck)) {
+                for (const item of fullDeck.MainDeck) {
+                  const cid = item.cardId || item.id;
+                  const q = item.quantity || 1;
+                  if (cid) {
+                    mainMap.set(cid, (mainMap.get(cid) || 0) + q);
+                    allCardIds.add(cid);
+                    newCollectionCards[cid] = Math.max(newCollectionCards[cid] || 0, q);
+                  }
+                }
+              }
+              if (Array.isArray(fullDeck.Sideboard)) {
+                for (const item of fullDeck.Sideboard) {
+                  const cid = item.cardId || item.id;
+                  const q = item.quantity || 1;
+                  if (cid) {
+                    sideMap.set(cid, (sideMap.get(cid) || 0) + q);
+                    allCardIds.add(cid);
+                    newCollectionCards[cid] = Math.max(newCollectionCards[cid] || 0, q);
+                  }
+                }
+              }
+              if (Array.isArray(fullDeck.CommandZone) && fullDeck.CommandZone.length > 0) {
+                commanderId = fullDeck.CommandZone[0].cardId || fullDeck.CommandZone[0].id;
+                if (commanderId) {
+                  allCardIds.add(commanderId);
+                  newCollectionCards[commanderId] = Math.max(newCollectionCards[commanderId] || 0, 1);
+                }
+              }
+            }
+
             if (!extractedDeckMap.has(deckId)) {
               extractedDeckMap.set(deckId, {
                 name,
                 format,
+                commanderId,
                 deckTileId,
-                mainMap: new Map<number, number>(),
-                sideMap: new Map<number, number>()
+                mainMap,
+                sideMap
               });
+            } else if (mainMap.size > 0) {
+              const existing = extractedDeckMap.get(deckId)!;
+              if (existing.mainMap.size === 0) {
+                existing.mainMap = mainMap;
+                existing.sideMap = sideMap;
+                if (commanderId) existing.commanderId = commanderId;
+              }
             }
           }
         } catch {
@@ -663,7 +713,20 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
       }
     }
 
-    if (cmdCard) {
+    let deckTileCard: Card | undefined;
+    if (rawDeck.deckTileId) {
+      const tileCard = resolvedCards.get(rawDeck.deckTileId);
+      if (tileCard && !tileCard.name.startsWith('Arena Card')) {
+        deckTileCard = tileCard;
+      }
+    }
+
+    if (!deckTileCard && cmdCard && !cmdCard.name.startsWith('Arena Card')) {
+      deckTileCard = cmdCard;
+    }
+
+    // Only set commander zone for brawl formats or explicit command zone decks
+    if (cmdCard && (rawDeck.format === 'brawl' || rawDeck.commanderId)) {
       commander = { card: cmdCard, quantity: 1 };
     }
 
@@ -672,6 +735,7 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
       name: rawDeck.name,
       format: rawDeck.format,
       commander,
+      deckTileCard,
       mainboard,
       sideboard,
       isImported: true,

@@ -699,6 +699,8 @@ export const App: React.FC = () => {
           <CardLibraryView
             onSelectCardDetail={setSelectedCardDetail}
             onAddCardToDeck={card => handleAddCard(card, false)}
+            userCollection={userCollection}
+            initialFormat={activeDeck.format}
           />
         ) : activeDeck.format === 'brawl' ? (
           /* Dedicated Brawl Hero Experience */

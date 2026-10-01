@@ -166,9 +166,14 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
     };
   }
 
-  // 5. Exile Cast Trigger (Impulse draw)
-  // e.g. Prosper, Tome-Bound, Pia Nalaar, Consul of Revival, Rocco
-  const isExileCast = o.includes('from exile') || o.includes('card from exile');
+  // 5. Exile Cast Trigger (Impulse draw / Exile-matter payoff)
+  // e.g. Prosper, Tome-Bound, Pia Nalaar, Consul of Revival, Rocco, Street Chef, The War Doctor
+  const isExileCast = 
+    /(whenever|if)\s+you\s+(cast|play)\s+.*from\s+exile/i.test(o) ||
+    name.includes('prosper, tome-bound') ||
+    name.includes('pia nalaar, consul of revival') ||
+    name.includes('rocco, street chef');
+
   if (isExileCast) {
     return {
       hasTriggers: true,
@@ -187,7 +192,14 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
         return false;
       },
       getCardReason: (cmd: Card) => {
-        return `Plays from Exile: Triggers ${cmd.name}'s exile synergy and generates treasures`;
+        const cmdLower = (cmd.oracleText || '').toLowerCase();
+        if (cmdLower.includes('treasure')) {
+          return `Plays from Exile: Casts from exile to trigger ${cmd.name} and create Treasures`;
+        }
+        if (cmdLower.includes('thopter') || cmdLower.includes('token')) {
+          return `Plays from Exile: Casts from exile to trigger ${cmd.name} and generate creature tokens`;
+        }
+        return `Plays from Exile: Triggers ${cmd.name}'s cast-from-exile payoff ability`;
       },
       getCardBadge: () => `✨ Exile Enabler`
     };

@@ -305,36 +305,67 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                     </div>
                   )}
 
-                  {/* Commander / Lead Card Feature Banner */}
-                  {commander ? (
-                    <div className="flex items-center gap-3 bg-[#0d1017] p-2.5 rounded-xl border border-white/5 shadow-inner">
-                      {commander.imageUrl && (
-                        <CardImage
-                          src={commander.imageUrl}
-                          cardName={commander.name}
-                          alt={commander.name}
-                          className="w-10 h-14 object-cover rounded-lg border border-[#d4af37]/60 shadow-md flex-shrink-0"
-                        />
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-1 text-[10px] font-bold text-amber-400 uppercase tracking-wider">
-                          <Crown className="w-3 h-3 text-amber-400" />
-                          <span>Commander</span>
+                  {/* Hero Card Banner: Commander (Brawl) or Featured Card / Deck Tile (Standard/Historic) */}
+                  {(() => {
+                    const heroCard = commander || deck.deckTileCard || deck.mainboard[0]?.card;
+                    const isBrawl = deck.format === 'brawl';
+                    
+                    if (heroCard) {
+                      return (
+                        <div className="relative overflow-hidden rounded-xl border border-white/10 bg-[#0d1017] p-2.5 shadow-inner group-hover:border-amber-500/40 transition">
+                          {/* Ambient Art Background Glow */}
+                          {heroCard.imageUrl && (
+                            <div 
+                              className="absolute inset-0 bg-cover bg-center opacity-15 blur-sm scale-110 pointer-events-none"
+                              style={{ backgroundImage: `url(${heroCard.imageUrl})` }}
+                            />
+                          )}
+                          <div className="relative z-10 flex items-center gap-3">
+                            {heroCard.imageUrl && (
+                              <CardImage
+                                src={heroCard.imageUrl}
+                                cardName={heroCard.name}
+                                alt={heroCard.name}
+                                className={`w-11 h-15 object-cover rounded-lg shadow-md flex-shrink-0 transition-transform group-hover:scale-105 ${
+                                  isBrawl ? 'border border-[#d4af37]/70' : 'border border-blue-400/50'
+                                }`}
+                              />
+                            )}
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider">
+                                {isBrawl ? (
+                                  <>
+                                    <Crown className="w-3 h-3 text-amber-400" />
+                                    <span className="text-amber-400 font-extrabold">Commander</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Layers className="w-3 h-3 text-blue-400" />
+                                    <span className="text-blue-300 font-extrabold">Featured Card</span>
+                                  </>
+                                )}
+                              </div>
+                              <span className="font-bold text-xs text-white block truncate mt-0.5" title={heroCard.name}>
+                                {heroCard.name}
+                              </span>
+                              {heroCard.manaCost && (
+                                <div className="mt-1">
+                                  <ManaCost manaCost={heroCard.manaCost} size="sm" />
+                                </div>
+                              )}
+                            </div>
+                          </div>
                         </div>
-                        <span className="font-bold text-xs text-stone-200 block truncate mt-0.5">
-                          {commander.name}
-                        </span>
-                        <div className="mt-1">
-                          <ManaCost manaCost={commander.manaCost} size="sm" />
-                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="bg-[#0d1017] p-3 rounded-xl border border-white/5 text-[11px] text-stone-400 flex items-center gap-2">
+                        <Layers className="w-4 h-4 text-stone-500" />
+                        <span>Constructed 60-card list</span>
                       </div>
-                    </div>
-                  ) : (
-                    <div className="bg-[#0d1017] p-2.5 rounded-xl border border-white/5 text-[11px] text-stone-400 flex items-center gap-2">
-                      <Layers className="w-3.5 h-3.5 text-stone-500" />
-                      <span>Standard 60-card constructed list</span>
-                    </div>
-                  )}
+                    );
+                  })()}
 
                   {/* Date Stamp */}
                   <div className="flex items-center gap-1.5 text-[10.5px] text-stone-400">
