@@ -179,19 +179,33 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
         </div>
 
         {/* Info guide */}
-        <div className="bg-[#0d1017] border border-white/5 rounded-2xl p-4 text-xs text-stone-300 space-y-2 shadow-inner">
+        <div className="bg-[#0d1017] border border-white/5 rounded-2xl p-4 text-xs text-stone-300 space-y-2.5 shadow-inner">
           <div className="flex items-center gap-1.5 font-bold text-amber-400">
             <Info className="w-4 h-4 flex-shrink-0" />
-            <span>How to locate your Arena Player.log</span>
+            <span>How to sync all your decks & cards from MTG Arena</span>
           </div>
-          <p className="text-stone-400 leading-relaxed">
-            1. In MTG Arena, go to <strong>Options &gt; Account</strong> and check <strong>"Detailed Logs (Plugin Support)"</strong>.<br />
-            2. Visit your <strong>Decks</strong> tab in MTG Arena once so Arena writes your current decks to the log file.<br />
-            3. Locate and drop your log file from:
+          <ol className="text-stone-400 leading-relaxed list-decimal list-inside space-y-1">
+            <li>In MTG Arena, open <strong>Options &gt; Account</strong> and check <strong>"Detailed Logs (Plugin Support)"</strong>.</li>
+            <li>Click on your <strong>Decks</strong> tab in MTG Arena once so Arena broadcasts your deck library.</li>
+            <li>Locate your log in Windows File Explorer:</li>
+          </ol>
+          <div className="space-y-1.5 pt-1">
+            <div className="flex items-center justify-between text-[11px] text-stone-400">
+              <span>Main log (if Arena was just open):</span>
+            </div>
+            <code className="block bg-black/50 px-2.5 py-1.5 rounded-lg text-[11px] text-amber-300 border border-white/10 select-all font-mono break-all font-bold">
+              %APPDATA%\..\LocalLow\Wizards Of The Coast\MTGA\Player.log
+            </code>
+            <div className="flex items-center justify-between text-[11px] text-stone-400 pt-0.5">
+              <span>Previous session (contains full library if Arena was restarted):</span>
+            </div>
+            <code className="block bg-black/50 px-2.5 py-1.5 rounded-lg text-[11px] text-cyan-300 border border-white/10 select-all font-mono break-all font-bold">
+              %APPDATA%\..\LocalLow\Wizards Of The Coast\MTGA\Player-prev.log
+            </code>
+          </div>
+          <p className="text-[11px] text-amber-400/90 italic pt-0.5">
+            💡 Tip: If <code>Player.log</code> only has 1 or 2 decks, drop <code>Player-prev.log</code> to import your entire deck collection!
           </p>
-          <code className="block bg-black/50 px-2.5 py-1.5 rounded-lg text-[11px] text-amber-300 border border-white/10 select-all font-mono break-all font-bold">
-            %APPDATA%\..\LocalLow\Wizards Of The Coast\MTGA\Player.log
-          </code>
         </div>
 
         {/* Upload Drop Zone */}

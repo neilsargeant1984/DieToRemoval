@@ -436,19 +436,39 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
           
           for (const summary of summaries) {
             if (!summary || !summary.DeckId) continue;
-            const deckId = summary.DeckId;
             const name = summary.Name || 'MTG Arena Deck';
             
+            // Filter out Arena system starter precons like ?=?Loc/Decks/Precon/PRECON_EPP2023_UB
+            if (name.startsWith('?=?') || name.startsWith('?=?Loc') || name.startsWith('Loc/Decks/Precon')) {
+              continue;
+            }
+
+            const deckId = summary.DeckId;
+            
             // Format detection
-            const formatAttr = summary.Attributes?.find((a: any) => a.name === 'Format')?.value?.toLowerCase();
+            const rawFormat = (summary.Attributes?.find((a: any) => a.name === 'Format')?.value || '').toLowerCase();
             let format: FormatType = 'historic';
-            if (formatAttr === 'standard') format = 'standard';
-            else if (formatAttr === 'brawl' || formatAttr === 'historicbrawl') format = 'brawl';
-            else if (formatAttr === 'timeless') format = 'timeless';
-            else if (formatAttr === 'explorer') format = 'explorer';
-            else if (formatAttr === 'alchemy') format = 'alchemy';
-            else if (name.toLowerCase().startsWith('(b) ') || name.toLowerCase().includes('brawl')) format = 'brawl';
-            else if (name.toLowerCase().startsWith('(s) ') || name.toLowerCase().includes('standard')) format = 'standard';
+            if (rawFormat.includes('brawl')) {
+              format = 'brawl';
+            } else if (rawFormat.includes('standard')) {
+              format = 'standard';
+            } else if (rawFormat.includes('timeless')) {
+              format = 'timeless';
+            } else if (rawFormat.includes('explorer') || rawFormat.includes('pioneer')) {
+              format = 'explorer';
+            } else if (rawFormat.includes('alchemy')) {
+              format = 'alchemy';
+            } else if (rawFormat.includes('historic')) {
+              format = 'historic';
+            } else if (name.toLowerCase().startsWith('(b) ') || name.toLowerCase().includes('brawl')) {
+              format = 'brawl';
+            } else if (name.toLowerCase().startsWith('(s) ') || name.toLowerCase().includes('standard')) {
+              format = 'standard';
+            } else if (name.toLowerCase().startsWith('(h) ') || name.toLowerCase().includes('historic')) {
+              format = 'historic';
+            } else if (name.toLowerCase().startsWith('(t) ') || name.toLowerCase().includes('timeless')) {
+              format = 'timeless';
+            }
 
             const rawTileId = summary.DeckTileId || summary.Attributes?.find((a: any) => a.name === 'TileID')?.value;
             const deckTileId = rawTileId ? parseInt(String(rawTileId), 10) : undefined;
@@ -472,7 +492,7 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
       }
     }
 
-    if (line.includes('DeckUpsertDeckV3') || line.includes('EventSetDeckV3') || line.includes('DeckGetAllPreconDecksV3')) {
+    if (line.includes('DeckUpsertDeckV3') || line.includes('EventSetDeckV3')) {
       const idx = line.indexOf('{');
       if (idx === -1) continue;
 
@@ -488,8 +508,11 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
         }
 
         if (payload.Deck && payload.Summary) {
-          const deckId = payload.Summary.DeckId || payload.Summary.Name;
           const name = payload.Summary.Name || 'MTG Arena Deck';
+          if (name.startsWith('?=?') || name.startsWith('?=?Loc') || name.startsWith('Loc/Decks/Precon')) {
+            continue;
+          }
+          const deckId = payload.Summary.DeckId || payload.Summary.Name;
           const formatAttr = payload.Summary.Attributes?.find((a: any) => a.name === 'Format')?.value?.toLowerCase();
           
           let format: FormatType = 'brawl';

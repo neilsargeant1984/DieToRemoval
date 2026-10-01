@@ -155,20 +155,31 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
         </div>
 
         {/* Format Filter Pills */}
-        <div className="flex items-center bg-[#0d1017]/90 p-1 rounded-xl border border-white/5">
-          {(['all', 'brawl', 'standard', 'historic', 'timeless'] as const).map(f => (
-            <button
-              key={f}
-              onClick={() => setFilterFormat(f)}
-              className={`text-xs px-3 py-1 rounded-lg font-bold capitalize transition ${
-                filterFormat === f
-                  ? 'btn-mythic-spark shadow-sm'
-                  : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
-              }`}
-            >
-              {f}
-            </button>
-          ))}
+        <div className="flex items-center flex-wrap gap-1 bg-[#0d1017]/90 p-1 rounded-xl border border-white/5">
+          {(['all', 'brawl', 'standard', 'historic', 'timeless'] as const).map(f => {
+            const count = f === 'all' 
+              ? baseDecks.length 
+              : baseDecks.filter(d => d.format === f).length;
+
+            return (
+              <button
+                key={f}
+                onClick={() => setFilterFormat(f)}
+                className={`text-xs px-3 py-1 rounded-lg font-bold capitalize transition flex items-center gap-1.5 ${
+                  filterFormat === f
+                    ? 'btn-mythic-spark shadow-sm'
+                    : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
+                }`}
+              >
+                <span>{f}</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  filterFormat === f ? 'bg-slate-950/30 text-slate-950' : 'bg-white/5 text-stone-500'
+                }`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -219,7 +230,10 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
             const formatBadgeColors: Record<string, string> = {
               brawl: 'bg-orange-950 text-orange-300 border-orange-700',
               standard: 'bg-blue-950 text-blue-300 border-blue-700',
-              pioneer: 'bg-emerald-950 text-emerald-300 border-emerald-700'
+              historic: 'bg-emerald-950 text-emerald-300 border-emerald-700',
+              timeless: 'bg-purple-950 text-purple-300 border-purple-700',
+              explorer: 'bg-amber-950 text-amber-300 border-amber-700',
+              alchemy: 'bg-rose-950 text-rose-300 border-rose-700'
             };
 
             return (
