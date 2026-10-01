@@ -50,6 +50,7 @@ export type SynergyCategoryTab =
   | 'card_draw';
 
 export type MetaSubCategory = 
+  | 'high_synergy'
   | 'creatures' 
   | 'instants' 
   | 'sorceries' 
@@ -68,10 +69,12 @@ export interface MetaSubCategoryOption {
   id: MetaSubCategory;
   label: string;
   icon: string;
-  group: 'types' | 'roles' | 'all';
+  group: 'curated' | 'types' | 'roles' | 'all';
 }
 
 export const META_SUB_CATEGORIES: MetaSubCategoryOption[] = [
+  // Curated / EDHREC Parity
+  { id: 'high_synergy', label: 'High Synergy (+Lift)', icon: '✨', group: 'curated' },
   // Card Types
   { id: 'creatures', label: 'Creatures', icon: '🗡️', group: 'types' },
   { id: 'instants', label: 'Instants', icon: '⚡', group: 'types' },
@@ -90,8 +93,15 @@ export const META_SUB_CATEGORIES: MetaSubCategoryOption[] = [
   { id: 'all', label: 'All Cards', icon: '🌐', group: 'all' },
 ];
 
-export function matchesMetaSubCategory(card: Card, subCat: MetaSubCategory, commander?: Card): boolean {
+export function matchesMetaSubCategory(card: Card, subCat: MetaSubCategory, commander?: Card, communityItem?: EDHRECCardView): boolean {
   if (subCat === 'all') return true;
+
+  if (subCat === 'high_synergy') {
+    if (communityItem) {
+      return communityItem.category === 'highsynergy' || (communityItem.synergy !== undefined && communityItem.synergy >= 15);
+    }
+    return false;
+  }
 
   if (subCat === 'creatures') {
     return card.types.includes('Creature') || (card.typeLine || '').toLowerCase().includes('creature');
@@ -174,7 +184,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   const [expandedReasonCardId, setExpandedReasonCardId] = useState<string | null>(null);
   const [tabSearchQuery, setTabSearchQuery] = useState<string>('');
   const [multiRoleOnly, setMultiRoleOnly] = useState<boolean>(false);
-  const [metaSubCategory, setMetaSubCategory] = useState<MetaSubCategory>('creatures');
+  const [metaSubCategory, setMetaSubCategory] = useState<MetaSubCategory>('high_synergy');
   const [metaFilterMode, setMetaFilterMode] = useState<'dropdown' | 'pills'>('dropdown');
 
   const metaCategoryCounts = useMemo(() => {
@@ -184,7 +194,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     };
     for (const cat of META_SUB_CATEGORIES) {
       if (cat.id === 'all') continue;
-      counts[cat.id] = communityMeta.filter(item => matchesMetaSubCategory(item.card, cat.id, commander)).length;
+      counts[cat.id] = communityMeta.filter(item => matchesMetaSubCategory(item.card, cat.id, commander, item)).length;
     }
     return counts as Record<MetaSubCategory, number>;
   }, [communityMeta, activeTab, commander]);
@@ -488,17 +498,26 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
       const fullConsensusList = communityMeta.map(item => {
         const causalMatch = calculateSynergy(commander, item.card);
         const roleChips = getCardRoleChips(item.card, commander);
-        const causalScore = causalMatch ? causalMatch.score : 35;
-        // Synergy-first weighting: 65% causal synergy + 35% community consensus
-        const blendedScore = Math.min(99, Math.round(causalScore * 0.65 + item.inclusion * 0.35));
+        const hasHighSynergy = item.category === 'highsynergy' || (item.synergy !== undefined && item.synergy >= 15);
+        
+        let badge: string;
+        if (hasHighSynergy && item.synergy > 0) {
+          badge = `✨ +${item.synergy}% Synergy`;
+        } else if (item.inclusion >= 40) {
+          badge = `🔥 ${item.inclusion}% of Decks`;
+        } else {
+          badge = roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Engine` : `⭐ ${item.inclusion}% of Decks`;
+        }
+
         const reason = causalMatch 
           ? explainSynergy(commander, causalMatch)
-          : `Played in ${item.inclusion}% of community decks (${item.numDecks.toLocaleString()} decks)`;
+          : `Played in ${item.inclusion}% of community decks (${item.numDecks.toLocaleString()} decks)${item.synergy > 0 ? ` with +${item.synergy}% synergy lift` : ''}`;
 
         return {
           card: item.card,
-          score: blendedScore,
-          badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Engine` : `🔥 ${item.inclusion}% of Decks`,
+          item,
+          score: hasHighSynergy ? Math.max(item.inclusion, 80 + Math.min(item.synergy, 19)) : item.inclusion,
+          badge,
           reason,
           roleChips
         };
@@ -506,13 +525,31 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
       const filteredList = metaSubCategory === 'all'
         ? fullConsensusList
-        : fullConsensusList.filter(item => matchesMetaSubCategory(item.card, metaSubCategory, commander));
+        : fullConsensusList.filter(entry => matchesMetaSubCategory(entry.card, metaSubCategory, commander, entry.item));
 
       filteredList.sort((a, b) => {
+        // High synergy category first when viewing all or high_synergy
+        if (metaSubCategory === 'high_synergy' || metaSubCategory === 'all') {
+          const aIsHigh = a.item.category === 'highsynergy' ? 1 : 0;
+          const bIsHigh = b.item.category === 'highsynergy' ? 1 : 0;
+          if (bIsHigh !== aIsHigh) return bIsHigh - aIsHigh;
+
+          if (b.item.synergy !== a.item.synergy) {
+            return b.item.synergy - a.item.synergy;
+          }
+        }
+
         if (b.score !== a.score) return b.score - a.score;
         return a.card.cmc - b.card.cmc;
       });
-      return filteredList;
+
+      return filteredList.map(entry => ({
+        card: entry.card,
+        score: entry.score,
+        badge: entry.badge,
+        reason: entry.reason,
+        roleChips: entry.roleChips
+      }));
     }
 
     if (activeTab === 'meta_staples') {
