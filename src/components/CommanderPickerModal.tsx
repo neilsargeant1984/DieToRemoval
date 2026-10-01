@@ -24,22 +24,48 @@ export const CommanderPickerModal: React.FC<CommanderPickerModalProps> = ({
     setIsLoading(true);
     const delay = searchTerm.trim() ? 320 : 50;
 
+    let isCancelled = false;
+    const term = searchTerm.trim();
+
     const timer = setTimeout(async () => {
       try {
+        // When user types a name in the commander picker, prefix with name: if simple word to target card name specifically
+        const scryfallQuery = term
+          ? (term.includes(':') || term.includes('(') ? term : `name:${term}`)
+          : undefined;
+
         const result = await searchArenaCards({
-          query: searchTerm.trim() || undefined,
+          query: scryfallQuery,
           isCommander: true,
           format: 'brawl'
         });
-        setCommanders(result.cards);
+
+        if (isCancelled) return;
+
+        // Strict name filtering when user searches: guarantees that cards without the search term in their name/subtypes are never shown
+        if (term) {
+          const lowerTerm = term.toLowerCase();
+          const filtered = result.cards.filter(c => 
+            c.name.toLowerCase().includes(lowerTerm) || 
+            (c.subtypes && c.subtypes.some(s => s.toLowerCase().includes(lowerTerm)))
+          );
+          setCommanders(filtered);
+        } else {
+          setCommanders(result.cards);
+        }
       } catch (err) {
         console.error('Error fetching commanders:', err);
       } finally {
-        setIsLoading(false);
+        if (!isCancelled) {
+          setIsLoading(false);
+        }
       }
     }, delay);
 
-    return () => clearTimeout(timer);
+    return () => {
+      isCancelled = true;
+      clearTimeout(timer);
+    };
   }, [isOpen, searchTerm]);
 
   if (!isOpen) return null;
