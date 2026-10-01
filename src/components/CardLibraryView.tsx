@@ -155,15 +155,30 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     );
   };
 
-  // Filter Sets catalog for picker
+  // Filter Sets catalog for picker (sorted chronologically with most recent set first)
   const filteredSets = useMemo(() => {
     return ARENA_SETS.filter(s => {
-      if (setSelectedCategory !== 'all' && s.category !== setSelectedCategory) return false;
+      if (setSelectedCategory !== 'all') {
+        if (setSelectedCategory === 'eternal') {
+          if (s.category !== 'eternal' && s.category !== 'anthology') return false;
+        } else if (s.category !== setSelectedCategory) {
+          return false;
+        }
+      }
       if (setSearchQuery.trim()) {
         const query = setSearchQuery.toLowerCase();
-        return s.name.toLowerCase().includes(query) || s.code.toLowerCase().includes(query);
+        return (
+          s.name.toLowerCase().includes(query) || 
+          s.code.toLowerCase().includes(query) ||
+          s.releaseYear.toString().includes(query)
+        );
       }
       return true;
+    }).sort((a, b) => {
+      if (a.releaseDate && b.releaseDate) {
+        return b.releaseDate.localeCompare(a.releaseDate);
+      }
+      return b.releaseYear - a.releaseYear;
     });
   }, [setSelectedCategory, setSearchQuery]);
 
@@ -684,13 +699,18 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                             : 'bg-black/20 text-stone-400 border-transparent hover:text-stone-200 hover:bg-black/40'
                         }`}
                       >
-                        <div className="flex items-center gap-1.5 min-w-0">
+                        <div className="flex items-center gap-1.5 min-w-0 flex-1">
                           <span className="font-mono text-[10px] px-1 rounded bg-white/10 text-stone-300 flex-shrink-0">
                             {s.code}
                           </span>
                           <span className="truncate text-[11px]">{s.name}</span>
                         </div>
-                        {isSelected && <Check className="w-3 h-3 text-amber-400 flex-shrink-0" />}
+                        <div className="flex items-center gap-1.5 flex-shrink-0 ml-1.5">
+                          <span className="text-[10px] font-mono font-medium text-stone-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                            {s.releaseYear}
+                          </span>
+                          {isSelected && <Check className="w-3 h-3 text-amber-400 flex-shrink-0" />}
+                        </div>
                       </button>
                     );
                   })}

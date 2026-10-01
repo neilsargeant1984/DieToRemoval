@@ -3,73 +3,87 @@ export interface ArenaSet {
   name: string;
   category: 'standard' | 'eternal' | 'remastered' | 'anthology' | 'alchemy';
   releaseYear: number;
+  releaseDate?: string;
 }
 
+/**
+ * MTG Arena Sets arranged in reverse chronological order (most recent first).
+ */
 export const ARENA_SETS: ArenaSet[] = [
-  // Current & Recent Standard Sets
-  { code: 'FDN', name: 'Foundations', category: 'standard', releaseYear: 2024 },
-  { code: 'DSK', name: 'Duskmourn: House of Horror', category: 'standard', releaseYear: 2024 },
-  { code: 'BLB', name: 'Bloomburrow', category: 'standard', releaseYear: 2024 },
-  { code: 'OTJ', name: 'Outlaws of Thunder Junction', category: 'standard', releaseYear: 2024 },
-  { code: 'BIG', name: 'The Big Score', category: 'standard', releaseYear: 2024 },
-  { code: 'OTP', name: 'Breaking News', category: 'standard', releaseYear: 2024 },
-  { code: 'MKM', name: 'Murders at Karlov Manor', category: 'standard', releaseYear: 2024 },
-  { code: 'LCI', name: 'The Lost Caverns of Ixalan', category: 'standard', releaseYear: 2023 },
-  { code: 'WOE', name: 'Wilds of Eldraine', category: 'standard', releaseYear: 2023 },
-  { code: 'MOM', name: 'March of the Machine', category: 'standard', releaseYear: 2023 },
-  { code: 'MUL', name: 'Multiverse Legends', category: 'eternal', releaseYear: 2023 },
-  { code: 'ONE', name: 'Phyrexia: All Will Be One', category: 'standard', releaseYear: 2023 },
-  { code: 'BRO', name: 'The Brothers\' War', category: 'standard', releaseYear: 2022 },
-  { code: 'DMU', name: 'Dominaria United', category: 'standard', releaseYear: 2022 },
-  { code: 'SNC', name: 'Streets of New Capenna', category: 'eternal', releaseYear: 2022 },
-  { code: 'NEO', name: 'Kamigawa: Neon Dynasty', category: 'eternal', releaseYear: 2022 },
-  { code: 'VOW', name: 'Innistrad: Crimson Vow', category: 'eternal', releaseYear: 2021 },
-  { code: 'MID', name: 'Innistrad: Midnight Hunt', category: 'eternal', releaseYear: 2021 },
-  { code: 'AFR', name: 'Adventures in the Forgotten Realms', category: 'eternal', releaseYear: 2021 },
-  { code: 'STX', name: 'Strixhaven: School of Mages', category: 'eternal', releaseYear: 2021 },
-  { code: 'STA', name: 'Mystical Archive', category: 'eternal', releaseYear: 2021 },
-  { code: 'KHM', name: 'Kaldheim', category: 'eternal', releaseYear: 2021 },
-  { code: 'ZNR', name: 'Zendikar Rising', category: 'eternal', releaseYear: 2020 },
-  { code: 'IKO', name: 'Ikoria: Lair of Behemoths', category: 'eternal', releaseYear: 2020 },
-  { code: 'THB', name: 'Theros Beyond Death', category: 'eternal', releaseYear: 2020 },
-  { code: 'ELD', name: 'Throne of Eldraine', category: 'eternal', releaseYear: 2019 },
-  { code: 'WAR', name: 'War of the Spark', category: 'eternal', releaseYear: 2019 },
-  { code: 'RNA', name: 'Ravnica Allegiance', category: 'eternal', releaseYear: 2019 },
-  { code: 'GRN', name: 'Guilds of Ravnica', category: 'eternal', releaseYear: 2018 },
-  { code: 'DOM', name: 'Dominaria', category: 'eternal', releaseYear: 2018 },
-  { code: 'RIX', name: 'Rivals of Ixalan', category: 'eternal', releaseYear: 2018 },
-  { code: 'XLN', name: 'Ixalan', category: 'eternal', releaseYear: 2017 },
+  // 2024
+  { code: 'PIO', name: 'Pioneer Masters', category: 'remastered', releaseYear: 2024, releaseDate: '2024-12-10' },
+  { code: 'FDN', name: 'Foundations', category: 'standard', releaseYear: 2024, releaseDate: '2024-11-15' },
+  { code: 'Y25', name: 'Alchemy: Duskmourn / Foundations', category: 'alchemy', releaseYear: 2024, releaseDate: '2024-10-15' },
+  { code: 'DSK', name: 'Duskmourn: House of Horror', category: 'standard', releaseYear: 2024, releaseDate: '2024-09-27' },
+  { code: 'BLB', name: 'Bloomburrow', category: 'standard', releaseYear: 2024, releaseDate: '2024-08-02' },
+  { code: 'MH3', name: 'Modern Horizons 3', category: 'eternal', releaseYear: 2024, releaseDate: '2024-06-14' },
+  { code: 'FRC', name: 'Reality Fracture Commander', category: 'eternal', releaseYear: 2024, releaseDate: '2024-06-14' },
+  { code: 'OTJ', name: 'Outlaws of Thunder Junction', category: 'standard', releaseYear: 2024, releaseDate: '2024-04-19' },
+  { code: 'BIG', name: 'The Big Score', category: 'standard', releaseYear: 2024, releaseDate: '2024-04-19' },
+  { code: 'OTP', name: 'Breaking News', category: 'standard', releaseYear: 2024, releaseDate: '2024-04-19' },
+  { code: 'Y24', name: 'Alchemy: Karlov / Thunder Junction / Bloomburrow', category: 'alchemy', releaseYear: 2024, releaseDate: '2024-03-05' },
+  { code: 'MKM', name: 'Murders at Karlov Manor', category: 'standard', releaseYear: 2024, releaseDate: '2024-02-09' },
+  { code: 'SPG', name: 'Special Guests', category: 'eternal', releaseYear: 2024, releaseDate: '2024-02-09' },
+  { code: 'TA1', name: 'Timeless Anthology 1', category: 'anthology', releaseYear: 2023, releaseDate: '2023-12-12' },
 
-  // Horizons & Eternal Sets
-  { code: 'MH3', name: 'Modern Horizons 3', category: 'eternal', releaseYear: 2024 },
-  { code: 'LTR', name: 'The Lord of the Rings: Tales of Middle-earth', category: 'eternal', releaseYear: 2023 },
-  { code: 'LTC', name: 'Tales of Middle-earth Commander', category: 'eternal', releaseYear: 2023 },
-  { code: 'SPG', name: 'Special Guests', category: 'eternal', releaseYear: 2024 },
-  { code: 'FRC', name: 'Reality Fracture Commander', category: 'eternal', releaseYear: 2024 },
+  // 2023
+  { code: 'LCI', name: 'The Lost Caverns of Ixalan', category: 'standard', releaseYear: 2023, releaseDate: '2023-11-17' },
+  { code: 'WOE', name: 'Wilds of Eldraine', category: 'standard', releaseYear: 2023, releaseDate: '2023-09-08' },
+  { code: 'HA7', name: 'Historic Anthology 7', category: 'anthology', releaseYear: 2023, releaseDate: '2023-07-18' },
+  { code: 'EA3', name: 'Explorer Anthology 3', category: 'anthology', releaseYear: 2023, releaseDate: '2023-07-18' },
+  { code: 'LTR', name: 'The Lord of the Rings: Tales of Middle-earth', category: 'eternal', releaseYear: 2023, releaseDate: '2023-06-23' },
+  { code: 'LTC', name: 'Tales of Middle-earth Commander', category: 'eternal', releaseYear: 2023, releaseDate: '2023-06-23' },
+  { code: 'MOM', name: 'March of the Machine', category: 'standard', releaseYear: 2023, releaseDate: '2023-04-21' },
+  { code: 'MUL', name: 'Multiverse Legends', category: 'eternal', releaseYear: 2023, releaseDate: '2023-04-21' },
+  { code: 'SIR', name: 'Shadows over Innistrad Remastered', category: 'remastered', releaseYear: 2023, releaseDate: '2023-03-21' },
+  { code: 'SIS', name: 'Shadows of the Past', category: 'remastered', releaseYear: 2023, releaseDate: '2023-03-21' },
+  { code: 'ONE', name: 'Phyrexia: All Will Be One', category: 'standard', releaseYear: 2023, releaseDate: '2023-02-10' },
 
-  // Remastered Sets
-  { code: 'SIR', name: 'Shadows over Innistrad Remastered', category: 'remastered', releaseYear: 2023 },
-  { code: 'SIS', name: 'Shadows of the Past', category: 'remastered', releaseYear: 2023 },
-  { code: 'KLR', name: 'Kaladesh Remastered', category: 'remastered', releaseYear: 2020 },
-  { code: 'AKR', name: 'Amonkhet Remastered', category: 'remastered', releaseYear: 2020 },
+  // 2022
+  { code: 'Y23', name: 'Alchemy: The Brothers\' War / Phyrexia', category: 'alchemy', releaseYear: 2022, releaseDate: '2022-12-13' },
+  { code: 'EA2', name: 'Explorer Anthology 2', category: 'anthology', releaseYear: 2022, releaseDate: '2022-12-13' },
+  { code: 'BRO', name: 'The Brothers\' War', category: 'standard', releaseYear: 2022, releaseDate: '2022-11-18' },
+  { code: 'DMU', name: 'Dominaria United', category: 'standard', releaseYear: 2022, releaseDate: '2022-09-09' },
+  { code: 'HA6', name: 'Historic Anthology 6', category: 'anthology', releaseYear: 2022, releaseDate: '2022-07-28' },
+  { code: 'EA1', name: 'Explorer Anthology 1', category: 'anthology', releaseYear: 2022, releaseDate: '2022-07-28' },
+  { code: 'HBG', name: 'Alchemy Horizons: Baldur\'s Gate', category: 'alchemy', releaseYear: 2022, releaseDate: '2022-07-07' },
+  { code: 'SNC', name: 'Streets of New Capenna', category: 'eternal', releaseYear: 2022, releaseDate: '2022-04-29' },
+  { code: 'Y22', name: 'Alchemy: Innistrad / Kamigawa / New Capenna', category: 'alchemy', releaseYear: 2022, releaseDate: '2022-03-17' },
+  { code: 'NEO', name: 'Kamigawa: Neon Dynasty', category: 'eternal', releaseYear: 2022, releaseDate: '2022-02-18' },
 
-  // Anthologies & Historic / Timeless Expansions
-  { code: 'EA1', name: 'Explorer Anthology 1', category: 'anthology', releaseYear: 2022 },
-  { code: 'EA2', name: 'Explorer Anthology 2', category: 'anthology', releaseYear: 2022 },
-  { code: 'EA3', name: 'Explorer Anthology 3', category: 'anthology', releaseYear: 2023 },
-  { code: 'HA1', name: 'Historic Anthology 1', category: 'anthology', releaseYear: 2019 },
-  { code: 'HA2', name: 'Historic Anthology 2', category: 'anthology', releaseYear: 2020 },
-  { code: 'HA3', name: 'Historic Anthology 3', category: 'anthology', releaseYear: 2020 },
-  { code: 'HA4', name: 'Historic Anthology 4', category: 'anthology', releaseYear: 2021 },
-  { code: 'HA5', name: 'Historic Anthology 5', category: 'anthology', releaseYear: 2021 },
-  { code: 'HA6', name: 'Historic Anthology 6', category: 'anthology', releaseYear: 2022 },
-  { code: 'HA7', name: 'Historic Anthology 7', category: 'anthology', releaseYear: 2023 },
-  { code: 'TA1', name: 'Timeless Anthology 1', category: 'anthology', releaseYear: 2024 },
+  // 2021
+  { code: 'VOW', name: 'Innistrad: Crimson Vow', category: 'eternal', releaseYear: 2021, releaseDate: '2021-11-19' },
+  { code: 'MID', name: 'Innistrad: Midnight Hunt', category: 'eternal', releaseYear: 2021, releaseDate: '2021-09-24' },
+  { code: 'AFR', name: 'Adventures in the Forgotten Realms', category: 'eternal', releaseYear: 2021, releaseDate: '2021-07-23' },
+  { code: 'HA5', name: 'Historic Anthology 5', category: 'anthology', releaseYear: 2021, releaseDate: '2021-05-27' },
+  { code: 'STX', name: 'Strixhaven: School of Mages', category: 'eternal', releaseYear: 2021, releaseDate: '2021-04-23' },
+  { code: 'STA', name: 'Mystical Archive', category: 'eternal', releaseYear: 2021, releaseDate: '2021-04-23' },
+  { code: 'HA4', name: 'Historic Anthology 4', category: 'anthology', releaseYear: 2021, releaseDate: '2021-03-11' },
+  { code: 'KHM', name: 'Kaldheim', category: 'eternal', releaseYear: 2021, releaseDate: '2021-02-05' },
 
-  // Alchemy Sets
-  { code: 'Y25', name: 'Alchemy: Duskmourn / Foundations', category: 'alchemy', releaseYear: 2024 },
-  { code: 'Y24', name: 'Alchemy: Karlov / Thunder Junction / Bloomburrow', category: 'alchemy', releaseYear: 2024 },
-  { code: 'Y23', name: 'Alchemy: The Brothers\' War / Phyrexia', category: 'alchemy', releaseYear: 2023 },
-  { code: 'Y22', name: 'Alchemy: Innistrad / Kamigawa / New Capenna', category: 'alchemy', releaseYear: 2022 },
-  { code: 'HBG', name: 'Alchemy Horizons: Baldur\'s Gate', category: 'alchemy', releaseYear: 2022 }
+  // 2020
+  { code: 'KLR', name: 'Kaladesh Remastered', category: 'remastered', releaseYear: 2020, releaseDate: '2020-11-12' },
+  { code: 'ZNR', name: 'Zendikar Rising', category: 'eternal', releaseYear: 2020, releaseDate: '2020-09-25' },
+  { code: 'AKR', name: 'Amonkhet Remastered', category: 'remastered', releaseYear: 2020, releaseDate: '2020-08-13' },
+  { code: 'M21', name: 'Core Set 2021', category: 'eternal', releaseYear: 2020, releaseDate: '2020-07-03' },
+  { code: 'HA3', name: 'Historic Anthology 3', category: 'anthology', releaseYear: 2020, releaseDate: '2020-05-21' },
+  { code: 'IKO', name: 'Ikoria: Lair of Behemoths', category: 'eternal', releaseYear: 2020, releaseDate: '2020-04-17' },
+  { code: 'HA2', name: 'Historic Anthology 2', category: 'anthology', releaseYear: 2020, releaseDate: '2020-03-12' },
+  { code: 'THB', name: 'Theros Beyond Death', category: 'eternal', releaseYear: 2020, releaseDate: '2020-01-24' },
+
+  // 2019
+  { code: 'HA1', name: 'Historic Anthology 1', category: 'anthology', releaseYear: 2019, releaseDate: '2019-11-21' },
+  { code: 'ELD', name: 'Throne of Eldraine', category: 'eternal', releaseYear: 2019, releaseDate: '2019-10-04' },
+  { code: 'M20', name: 'Core Set 2020', category: 'eternal', releaseYear: 2019, releaseDate: '2019-07-12' },
+  { code: 'WAR', name: 'War of the Spark', category: 'eternal', releaseYear: 2019, releaseDate: '2019-05-03' },
+  { code: 'RNA', name: 'Ravnica Allegiance', category: 'eternal', releaseYear: 2019, releaseDate: '2019-01-25' },
+
+  // 2018
+  { code: 'GRN', name: 'Guilds of Ravnica', category: 'eternal', releaseYear: 2018, releaseDate: '2018-10-05' },
+  { code: 'M19', name: 'Core Set 2019', category: 'eternal', releaseYear: 2018, releaseDate: '2018-07-13' },
+  { code: 'DOM', name: 'Dominaria', category: 'eternal', releaseYear: 2018, releaseDate: '2018-04-27' },
+  { code: 'RIX', name: 'Rivals of Ixalan', category: 'eternal', releaseYear: 2018, releaseDate: '2018-01-19' },
+
+  // 2017
+  { code: 'XLN', name: 'Ixalan', category: 'eternal', releaseYear: 2017, releaseDate: '2017-09-29' }
 ];
