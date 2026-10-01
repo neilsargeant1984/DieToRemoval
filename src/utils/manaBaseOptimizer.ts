@@ -242,7 +242,7 @@ export function generateOptimalManaBase(options: ManaBaseOptimizerOptions): Mana
     const fetches = findCycleLands('fetch', colorIdentity);
     // Find fetch that precisely matches these two colors
     for (const f of fetches) {
-      if (f.colorsProduced.every(c => colorIdentity.includes(c))) {
+      if (f.colorsProduced.every(c => (colorIdentity as ManaColor[]).includes(c))) {
         addLandIfLegal(f);
       }
     }
