@@ -11,6 +11,7 @@ export type FunctionalRole =
   | 'drain'
   | 'mdfc_land'
   | 'utility_land'
+  | 'graveyard_hate'
   | 'tutor';
 
 export interface CardRoleProfile {
@@ -141,10 +142,12 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     explanations.push('Mass Board Sweeper');
   }
 
-  // 4. TARGETED REMOVAL & INTERACTION
+  // 4. TARGETED REMOVAL & INTERACTION (On-Board Threats & Spells)
+  const isGyHateOnly = text.includes('from a graveyard') || text.includes('from target player\'s graveyard') || text.includes('from all graveyards');
+
   const isTargetedRemoval = (
     text.includes('destroy target') || 
-    text.includes('exile target') || 
+    (text.includes('exile target') && !isGyHateOnly) || 
     text.includes('target creature gets -') ||
     text.includes('target nonland permanent gets -') ||
     text.includes('put a -1/-1 counter on') ||
@@ -157,14 +160,29 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     (card.types.includes('Creature') && (
       text.includes('enters the battlefield, destroy target') || 
       text.includes('enters, destroy target') || 
-      text.includes('enters the battlefield, exile target') ||
-      text.includes('enters, exile target')
+      (text.includes('enters the battlefield, exile target') && !isGyHateOnly) ||
+      (text.includes('enters, exile target') && !isGyHateOnly)
     ))
   );
 
   if (isTargetedRemoval) {
     roles.push('removal');
     explanations.push('Targeted Spot Removal / Interaction');
+  }
+
+  // 4b. GRAVEYARD HATE (Exiling cards from graveyards)
+  const isGraveyardHate = (
+    text.includes('exile target card from a graveyard') ||
+    text.includes('exile target card from target opponent\'s graveyard') ||
+    text.includes('exile all cards from all graveyards') ||
+    text.includes('exile all cards from target player\'s graveyard') ||
+    text.includes('exile target player\'s graveyard') ||
+    (text.includes('graveyard') && text.includes('exile') && !isTargetedRemoval && !text.includes('exile that token'))
+  );
+
+  if (isGraveyardHate && !roles.includes('recursion')) {
+    roles.push('graveyard_hate');
+    explanations.push('Graveyard Hate / Interaction');
   }
 
   // 5. PROTECTION (Hexproof, Indestructible, Phase Out, Ward, Shield Counters)
@@ -300,6 +318,9 @@ export function getCardRoleChips(card: Card): RoleChip[] {
         break;
       case 'tutor':
         chips.push({ id: 'tutor', label: 'Tutor', icon: '🔍', style: 'bg-indigo-950/80 text-indigo-300 border-indigo-700/60' });
+        break;
+      case 'graveyard_hate':
+        chips.push({ id: 'graveyard_hate', label: 'GY Hate', icon: '⚰️', style: 'bg-stone-900/90 text-stone-300 border-stone-600/70' });
         break;
     }
   }

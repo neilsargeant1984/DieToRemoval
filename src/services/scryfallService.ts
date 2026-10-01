@@ -209,7 +209,7 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     } else if (params.roleFilter === 'protection') {
       parts.push('(o:hexproof or o:indestructible or o:"phase out" or o:"ward {" or o:"protection from")');
     } else if (params.roleFilter === 'removal') {
-      parts.push('((o:"destroy target" or o:"exile target" or o:"counter target" or o:"deals 3 damage to any target") and -o:"destroy all" and -o:"exile all")');
+      parts.push('((o:"destroy target" or o:"exile target" or o:"counter target" or o:"deals 3 damage to any target") and -o:"destroy all" and -o:"exile all" and -o:"from a graveyard" and -o:"from target player\'s graveyard")');
     } else if (params.roleFilter === 'board_wipe') {
       parts.push('(o:"destroy all" or o:"exile all" or o:"each creature gets -" or o:"all creatures get -")');
     } else if (params.roleFilter === 'card_advantage') {
