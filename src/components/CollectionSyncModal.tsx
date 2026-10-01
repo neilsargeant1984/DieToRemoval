@@ -12,7 +12,8 @@ import {
   Info, 
   Loader2,
   FolderHeart,
-  ShieldCheck
+  ShieldCheck,
+  Trash2
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
