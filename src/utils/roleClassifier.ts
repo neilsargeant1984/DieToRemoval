@@ -9,6 +9,8 @@ export type FunctionalRole =
   | 'sac_outlet'
   | 'recursion'
   | 'drain'
+  | 'mdfc_land'
+  | 'utility_land'
   | 'tutor';
 
 export interface CardRoleProfile {
@@ -230,6 +232,23 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     explanations.push('Library Search / Tutor');
   }
 
+  // 10. MODAL DOUBLE-FACED LANDS (MDFC) & UTILITY LANDS
+  const isMdfcLand = 
+    (typeLine.includes('//') && typeLine.includes('land')) || 
+    (card.types.includes('Land') && (card.types.includes('Instant') || card.types.includes('Sorcery') || card.types.includes('Creature') || card.types.includes('Artifact') || card.types.includes('Enchantment')));
+
+  if (isMdfcLand) {
+    roles.unshift('mdfc_land');
+    explanations.unshift('Modal Double-Faced Land (Spell on front, Land on back)');
+  } else {
+    const isLand = card.types.includes('Land') || typeLine.includes('land');
+    // If a land provides functional utility beyond basic mana
+    if (isLand && roles.length > 0) {
+      roles.unshift('utility_land');
+      explanations.unshift('Utility Land (Provides on-board tactical utility from mana base)');
+    }
+  }
+
   return {
     roles,
     primaryRole: roles[0],
@@ -249,6 +268,12 @@ export function getCardRoleChips(card: Card): RoleChip[] {
 
   for (const role of profile.roles) {
     switch (role) {
+      case 'mdfc_land':
+        chips.push({ id: 'mdfc_land', label: 'MDFC Land', icon: '🏔️', style: 'bg-emerald-950/80 text-emerald-300 border-emerald-700/60' });
+        break;
+      case 'utility_land':
+        chips.push({ id: 'utility_land', label: 'Utility Land', icon: '🏔️', style: 'bg-teal-950/80 text-teal-300 border-teal-700/60' });
+        break;
       case 'sac_outlet':
         chips.push({ id: 'sac_outlet', label: 'Sac Outlet', icon: '⚡', style: 'bg-amber-950/80 text-amber-300 border-amber-700/60' });
         break;

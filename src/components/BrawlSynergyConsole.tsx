@@ -423,7 +423,9 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         if (activeTab === 'artifacts') return c.types.includes('Artifact') && !c.types.includes('Creature');
         if (activeTab === 'enchantments') return c.types.includes('Enchantment') && !c.types.includes('Creature');
         if (activeTab === 'planeswalkers') return c.types.includes('Planeswalker');
-        if (activeTab === 'lands') return c.types.includes('Land');
+        if (activeTab === 'lands') {
+          return c.types.includes('Land') || (c.typeLine || '').toLowerCase().includes('land');
+        }
         
         const roles = classifyCardRoles(c);
         if (activeTab === 'ramp') {
