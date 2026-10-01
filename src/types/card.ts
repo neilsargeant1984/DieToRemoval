@@ -11,6 +11,7 @@ export type CardTypeCategory =
   | 'Sorcery'
   | 'Artifact'
   | 'Enchantment'
+  | 'Battle'
   | 'Land';
 
 export interface Card {

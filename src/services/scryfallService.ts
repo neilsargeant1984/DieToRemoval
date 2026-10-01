@@ -18,15 +18,25 @@ export interface SearchArenaParams {
   query?: string;
   format?: FormatType;
   color?: string | null;
+  colors?: string[];
+  colorMode?: 'exact' | 'include' | 'at_most';
   type?: CardTypeCategory | null;
+  types?: CardTypeCategory[];
   rarity?: CardRarity | null;
+  rarities?: CardRarity[];
+  set?: string;
+  sets?: string[];
+  cmcValues?: (number | '7+')[];
+  isLegendary?: boolean;
   digitalOnly?: boolean;
   isCommander?: boolean;
   commanderColorIdentity?: string[];
   roleFilter?: FunctionalRole | 'lands' | null;
   order?: 'edhrec' | 'name' | 'cmc' | 'rarity' | 'rank';
+  dir?: 'asc' | 'desc';
   page?: number;
 }
+
 
 export function getScryfallHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
   const headers: Record<string, string> = {
@@ -86,6 +96,7 @@ export function transformScryfallCard(raw: any): Card {
     'Sorcery',
     'Artifact',
     'Enchantment',
+    'Battle',
     'Land'
   ];
 
@@ -187,8 +198,30 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     parts.push('(is:digital or set_type:alchemy or is:rebalanced)');
   }
 
-  // Color filter
-  if (params.color) {
+  // Color filter (array or single)
+  if (params.colors && params.colors.length > 0) {
+    const normalColors = params.colors.filter(c => ['W', 'U', 'B', 'R', 'G'].includes(c));
+    const hasColorless = params.colors.includes('C');
+    const hasMulti = params.colors.includes('M');
+
+    const colorClauses: string[] = [];
+    if (normalColors.length > 0) {
+      if (params.colorMode === 'exact') {
+        colorClauses.push(`c=${normalColors.join('').toLowerCase()}`);
+      } else {
+        colorClauses.push(`(${normalColors.map(c => `c:${c.toLowerCase()}`).join(' or ')})`);
+      }
+    }
+    if (hasColorless) {
+      colorClauses.push('c:c');
+    }
+    if (hasMulti) {
+      colorClauses.push('c:m');
+    }
+    if (colorClauses.length > 0) {
+      parts.push(`(${colorClauses.join(' or ')})`);
+    }
+  } else if (params.color) {
     if (params.color === 'C') {
       parts.push('c:c');
     } else if (params.color === 'M') {
@@ -198,14 +231,39 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     }
   }
 
-  // Type filter
-  if (params.type) {
+  // Mana Value / CMC filter
+  if (params.cmcValues && params.cmcValues.length > 0) {
+    const cmcClauses = params.cmcValues.map(v => {
+      if (v === '7+' || v === 7) return 'cmc>=7';
+      return `cmc:${v}`;
+    });
+    parts.push(`(${cmcClauses.join(' or ')})`);
+  }
+
+  // Type filter (array or single)
+  if (params.types && params.types.length > 0) {
+    parts.push(`(${params.types.map(t => `t:${t.toLowerCase()}`).join(' or ')})`);
+  } else if (params.type) {
     parts.push(`t:${params.type.toLowerCase()}`);
   }
 
-  // Rarity filter
-  if (params.rarity) {
+  // Rarity filter (array or single)
+  if (params.rarities && params.rarities.length > 0) {
+    parts.push(`(${params.rarities.map(r => `r:${r.toLowerCase()}`).join(' or ')})`);
+  } else if (params.rarity) {
     parts.push(`r:${params.rarity}`);
+  }
+
+  // Set filter (array or single)
+  if (params.sets && params.sets.length > 0) {
+    parts.push(`(${params.sets.map(s => `s:${s.toLowerCase()}`).join(' or ')})`);
+  } else if (params.set) {
+    parts.push(`s:${params.set.toLowerCase()}`);
+  }
+
+  // Legendary filter
+  if (params.isLegendary) {
+    parts.push('t:legendary');
   }
 
   // Commander Color Identity constraint (Brawl)
@@ -242,7 +300,6 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
   // Search term
   const trimmed = params.query?.trim();
   if (trimmed) {
-    // If user provided a specific search term with OR operators, wrap in parentheses to preserve AND precedence
     if (trimmed.includes(' or ') || trimmed.includes(' OR ')) {
       parts.push(`(${trimmed})`);
     } else {
@@ -257,8 +314,9 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
 
   const queryString = parts.join(' ');
   const page = params.page || 1;
-  const order = params.order || 'edhrec';
-  const cacheKey = `${queryString}__order_${order}__page_${page}`;
+  const order = params.order || 'cmc';
+  const dir = params.dir || 'asc';
+  const cacheKey = `${queryString}__order_${order}__dir_${dir}__page_${page}`;
 
   // Check cache
   const cached = searchCache.get(cacheKey);
@@ -271,7 +329,7 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
   }
 
   try {
-    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(queryString)}&order=${order}&page=${page}`;
+    const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(queryString)}&order=${order}&dir=${dir}&page=${page}`;
     const response = await fetch(url, {
       headers: getScryfallHeaders()
     });
@@ -289,9 +347,22 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     const rawList = data.data || [];
     const allParsed = rawList.map(transformScryfallCard);
     // Strict commander color identity enforcement on all returned cards
-    const cards = params.commanderColorIdentity !== undefined
+    let cards = params.commanderColorIdentity !== undefined
       ? allParsed.filter((c: Card) => c.colorIdentity.every((col: string) => params.commanderColorIdentity!.includes(col)))
       : allParsed;
+    
+    // Deterministic CMC sort tie-break if sorted by CMC
+    if (order === 'cmc') {
+      cards = [...cards].sort((a, b) => {
+        if (dir === 'asc') {
+          if (a.cmc !== b.cmc) return a.cmc - b.cmc;
+        } else {
+          if (a.cmc !== b.cmc) return b.cmc - a.cmc;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    }
+
     const totalCards = data.total_cards || cards.length;
 
     // Cache results
@@ -306,9 +377,10 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     console.warn('Scryfall live search failed or offline, falling back to local dataset:', error);
 
     // Fallback to local ARENA_CARDS dataset
-    const fallbackFiltered = ARENA_CARDS.filter(c => {
+    let fallbackFiltered = ARENA_CARDS.filter(c => {
       if (params.format && !c.legalities[params.format]) return false;
       if (params.digitalOnly && !c.isDigitalOnly && !c.isAlchemyRebalanced) return false;
+      if (params.isLegendary && !c.typeLine.toLowerCase().includes('legendary')) return false;
       if (params.isCommander) {
         const isLegendary = c.typeLine.toLowerCase().includes('legendary');
         const isCreature = c.types.includes('Creature');
@@ -319,13 +391,40 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
         const isLegal = c.colorIdentity.every(col => params.commanderColorIdentity!.includes(col));
         if (!isLegal) return false;
       }
-      if (params.color) {
+      if (params.colors && params.colors.length > 0) {
+        const matchesColor = params.colors.some(col => {
+          if (col === 'C') return c.colors.length === 0;
+          if (col === 'M') return c.colors.length > 1;
+          return c.colors.includes(col as any);
+        });
+        if (!matchesColor) return false;
+      } else if (params.color) {
         if (params.color === 'C' && c.colors.length > 0) return false;
         if (params.color === 'M' && c.colors.length < 2) return false;
         if (!['C', 'M'].includes(params.color) && !c.colors.includes(params.color as any)) return false;
       }
-      if (params.type && !c.types.includes(params.type)) return false;
-      if (params.rarity && c.rarity !== params.rarity) return false;
+      if (params.cmcValues && params.cmcValues.length > 0) {
+        const matchesCmc = params.cmcValues.some(val => {
+          if (val === '7+' || val === 7) return c.cmc >= 7;
+          return c.cmc === val;
+        });
+        if (!matchesCmc) return false;
+      }
+      if (params.types && params.types.length > 0) {
+        if (!params.types.some(t => c.types.includes(t))) return false;
+      } else if (params.type && !c.types.includes(params.type)) {
+        return false;
+      }
+      if (params.rarities && params.rarities.length > 0) {
+        if (!params.rarities.includes(c.rarity)) return false;
+      } else if (params.rarity && c.rarity !== params.rarity) {
+        return false;
+      }
+      if (params.sets && params.sets.length > 0) {
+        if (!params.sets.map(s => s.toUpperCase()).includes(c.set.toUpperCase())) return false;
+      } else if (params.set && c.set.toUpperCase() !== params.set.toUpperCase()) {
+        return false;
+      }
       if (trimmed) {
         const cleanTerms = trimmed
           .replace(/\((.*?)\)/g, ' $1 ')
@@ -346,6 +445,17 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
       }
       return true;
     });
+
+    if (order === 'cmc') {
+      fallbackFiltered.sort((a, b) => {
+        if (dir === 'asc') {
+          if (a.cmc !== b.cmc) return a.cmc - b.cmc;
+        } else {
+          if (a.cmc !== b.cmc) return b.cmc - a.cmc;
+        }
+        return a.name.localeCompare(b.name);
+      });
+    }
 
     return {
       cards: fallbackFiltered,
