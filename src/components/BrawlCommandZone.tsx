@@ -20,7 +20,9 @@ import {
   BookOpen,
   Mountain,
   Flame,
-  ChevronRight
+  ChevronRight,
+  Save,
+  BookmarkCheck
 } from 'lucide-react';
 
 export type BrawlSubMode = 'brawl_historic' | 'competitive_brawl' | 'standard_brawl';
@@ -31,6 +33,7 @@ interface BrawlCommandZoneProps {
   wildcardCost: DeckWildcardCost;
   onOpenCommanderPicker: () => void;
   onClearDeck: () => void;
+  onSaveDeck?: () => void;
   onToggleDeckDrawer: () => void;
   isDeckDrawerOpen: boolean;
   activeSubMode: BrawlSubMode;
@@ -45,6 +48,7 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   wildcardCost,
   onOpenCommanderPicker,
   onClearDeck,
+  onSaveDeck,
   onToggleDeckDrawer,
   isDeckDrawerOpen,
   activeSubMode,
@@ -293,7 +297,18 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2.5">
+                  {onSaveDeck && (
+                    <button
+                      onClick={onSaveDeck}
+                      className="flex items-center gap-1.5 text-xs font-bold px-3 py-1 bg-amber-500/20 hover:bg-amber-500 text-amber-300 hover:text-slate-950 border border-amber-500/40 hover:border-amber-400 rounded-lg transition shadow-sm"
+                      title="Save this deck to My Decks"
+                    >
+                      <Save className="w-3.5 h-3.5" />
+                      <span>Save to My Decks</span>
+                    </button>
+                  )}
+
                   <button
                     onClick={onClearDeck}
                     className="flex items-center gap-1 text-[11px] text-slate-500 hover:text-rose-400 transition"

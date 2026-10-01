@@ -17,6 +17,7 @@ import { MetaDecksModal } from './components/MetaDecksModal';
 import { ExportImportModal } from './components/ExportImportModal';
 import { CommanderPickerModal } from './components/CommanderPickerModal';
 import { MyDecksView } from './components/MyDecksView';
+import { SaveDeckConflictModal } from './components/SaveDeckConflictModal';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
 import { ARENA_CARDS } from './data/arenaCards';
@@ -113,19 +114,16 @@ export const App: React.FC = () => {
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
 
-  // Sync activeDeck changes back to savedDecks collection
+  // Save Conflict & Notification State
+  const [saveConflict, setSaveConflict] = useState<{
+    deckToSave: Deck;
+    conflictingDeck: Deck;
+  } | null>(null);
+  const [saveNotification, setSaveNotification] = useState<string | null>(null);
+
+  // Persist activeDeck
   useEffect(() => {
     localStorage.setItem('arenaforge_active_deck', JSON.stringify(activeDeck));
-    setSavedDecks(prev => {
-      const idx = prev.findIndex(d => d.id === activeDeck.id);
-      if (idx >= 0) {
-        const next = [...prev];
-        next[idx] = activeDeck;
-        return next;
-      } else {
-        return [activeDeck, ...prev];
-      }
-    });
   }, [activeDeck]);
 
   // Persist savedDecks
@@ -315,6 +313,87 @@ export const App: React.FC = () => {
     }
   };
 
+  // Explicit Save to My Decks with Commander Conflict Check
+  const handleSaveActiveDeck = () => {
+    const commanderName = activeDeck.commander?.card.name;
+
+    // Check if another saved deck exists with the same commander (excluding the same deck id)
+    if (commanderName) {
+      const conflict = savedDecks.find(d => 
+        d.id !== activeDeck.id && 
+        d.commander?.card.name.toLowerCase() === commanderName.toLowerCase()
+      );
+
+      if (conflict) {
+        // Trigger conflict resolution modal (overwrite vs save as new)
+        setSaveConflict({
+          deckToSave: activeDeck,
+          conflictingDeck: conflict
+        });
+        return;
+      }
+    }
+
+    // Direct save / update
+    setSavedDecks(prev => {
+      const idx = prev.findIndex(d => d.id === activeDeck.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...activeDeck, updatedAt: new Date().toISOString() };
+        return next;
+      } else {
+        return [{ ...activeDeck, updatedAt: new Date().toISOString() }, ...prev];
+      }
+    });
+
+    setSaveNotification(`Deck "${activeDeck.name}" successfully saved to My Decks!`);
+    setTimeout(() => setSaveNotification(null), 3500);
+  };
+
+  const handleOverwriteConflict = () => {
+    if (!saveConflict) return;
+    const { deckToSave, conflictingDeck } = saveConflict;
+
+    setSavedDecks(prev => {
+      // Replace the conflicting deck with the current deck data
+      return prev.map(d => {
+        if (d.id === conflictingDeck.id) {
+          return {
+            ...deckToSave,
+            id: conflictingDeck.id,
+            name: conflictingDeck.name,
+            updatedAt: new Date().toISOString()
+          };
+        }
+        return d;
+      });
+    });
+
+    setActiveDeck(prev => ({ ...prev, id: conflictingDeck.id, name: conflictingDeck.name }));
+    setSaveNotification(`Successfully overwrote "${conflictingDeck.name}" in My Decks!`);
+    setTimeout(() => setSaveNotification(null), 3500);
+    setSaveConflict(null);
+  };
+
+  const handleSaveAsNewConflict = (newName: string) => {
+    if (!saveConflict) return;
+    const { deckToSave } = saveConflict;
+
+    const newDeck: Deck = {
+      ...deckToSave,
+      id: `deck-${Date.now()}`,
+      name: newName,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+
+    setSavedDecks(prev => [newDeck, ...prev]);
+    setActiveDeck(newDeck);
+    setSaveNotification(`Saved as new deck: "${newName}" in My Decks!`);
+    setTimeout(() => setSaveNotification(null), 3500);
+    setSaveConflict(null);
+  };
+
   return (
     <div className="min-h-screen bg-[#0b0e14] text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
       {/* Top Navigation Shell */}
@@ -360,6 +439,7 @@ export const App: React.FC = () => {
               wildcardCost={wildcardCost}
               onOpenCommanderPicker={() => setIsCommanderPickerOpen(true)}
               onClearDeck={handleClearDeck}
+              onSaveDeck={handleSaveActiveDeck}
               onToggleDeckDrawer={() => setIsDeckDrawerOpen(!isDeckDrawerOpen)}
               isDeckDrawerOpen={isDeckDrawerOpen}
               activeSubMode={brawlSubMode}
@@ -464,6 +544,26 @@ export const App: React.FC = () => {
         onClose={() => setExportImportMode(null)}
         onImportDeck={handleImportDeck}
       />
+
+      {/* Commander Conflict Resolution Modal */}
+      {saveConflict && (
+        <SaveDeckConflictModal
+          isOpen={true}
+          onClose={() => setSaveConflict(null)}
+          deckToSave={saveConflict.deckToSave}
+          conflictingDeck={saveConflict.conflictingDeck}
+          onOverwrite={handleOverwriteConflict}
+          onSaveAsNew={handleSaveAsNewConflict}
+        />
+      )}
+
+      {/* Save Success Toast Banner */}
+      {saveNotification && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#161d2b] border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="text-xs font-bold">{saveNotification}</span>
+        </div>
+      )}
     </div>
   );
 };
