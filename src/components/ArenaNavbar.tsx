@@ -9,7 +9,10 @@ import {
   Download, 
   Crown,
   FolderHeart,
-  ShieldCheck
+  ShieldCheck,
+  User,
+  LogOut,
+  Cloud
 } from 'lucide-react';
 
 export type MainNavTab = 'deck_builder' | 'card_library' | 'my_collection' | 'my_decks';
@@ -24,6 +27,9 @@ interface ArenaNavbarProps {
   onOpenExport: () => void;
   hasCommander?: boolean;
   deckCount?: number;
+  user?: any;
+  onOpenAuth?: () => void;
+  onSignOut?: () => void;
 }
 
 export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
@@ -35,7 +41,10 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
   onOpenSync,
   onOpenExport,
   hasCommander,
-  deckCount = 0
+  deckCount = 0,
+  user,
+  onOpenAuth,
+  onSignOut
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#0e121a]/95 border-b border-[#c5a059]/25 backdrop-blur-xl px-4 py-2.5 shadow-2xl">
@@ -152,6 +161,31 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
             <Download className="w-3.5 h-3.5" />
             <span>Export to Arena</span>
           </button>
+
+          {/* Supabase Cloud Account */}
+          {user ? (
+            <div className="flex items-center gap-2 bg-[#141926] px-3 py-1.5 rounded-xl border border-emerald-500/30 text-xs shadow-inner">
+              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Cloud Active" />
+              <span className="text-stone-300 font-semibold max-w-[110px] truncate" title={user.email}>
+                {user.email?.split('@')[0]}
+              </span>
+              <button
+                onClick={onSignOut}
+                title="Sign Out"
+                className="p-1 hover:text-rose-400 text-stone-400 transition"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          ) : (
+            <button
+              onClick={onOpenAuth}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-rose-500/20 hover:from-amber-500/30 hover:to-rose-500/30 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/40 transition shadow-sm"
+            >
+              <User className="w-3.5 h-3.5" />
+              <span>Sign In</span>
+            </button>
+          )}
         </div>
       </div>
 

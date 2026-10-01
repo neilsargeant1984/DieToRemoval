@@ -27,6 +27,9 @@ import { calculateDeckStats } from './utils/deckAnalytics';
 import { getMaxCardCopies } from './utils/cardRules';
 import { ARENA_CARDS } from './data/arenaCards';
 import { Layers } from 'lucide-react';
+import { supabase, isSupabaseConfigured } from './services/supabaseClient';
+import { deckCloudService } from './services/deckCloudService';
+import { AuthModal } from './components/AuthModal';
 
 export const App: React.FC = () => {
   // Navigation State
@@ -37,6 +40,10 @@ export const App: React.FC = () => {
     const saved = localStorage.getItem('arenaforge_deck_tray_open');
     return saved !== null ? saved === 'true' : true;
   });
+
+  // User Auth & Cloud State
+  const [user, setUser] = useState<any>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   // Saved Decks Collection (All user-created decks)
   const [savedDecks, setSavedDecks] = useState<Deck[]>(() => {
@@ -194,6 +201,45 @@ export const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('arenaforge_user_collection', JSON.stringify(userCollection));
   }, [userCollection]);
+
+  // Supabase Auth and Cloud Sync Lifecycle
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      const currentUser = session?.user ?? null;
+      setUser(currentUser);
+      if (currentUser) {
+        // Automatically sync cloud decks down to user's library
+        deckCloudService.getUserDecks().then(({ data }) => {
+          if (data && data.length > 0) {
+            setSavedDecks(prev => {
+              const localMap = new Map(prev.map(d => [d.id, d]));
+              data.forEach(d => localMap.set(d.id, d));
+              return Array.from(localMap.values());
+            });
+          }
+        });
+      }
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, []);
+
+  const handleSignOut = async () => {
+    if (isSupabaseConfigured) {
+      await supabase.auth.signOut();
+      setUser(null);
+      setSaveNotification('Signed out of cloud account');
+      setTimeout(() => setSaveNotification(null), 3000);
+    }
+  };
 
   // Derived Calculations
   const wildcardCost = useMemo(() => {
@@ -489,6 +535,16 @@ export const App: React.FC = () => {
 
     setSaveNotification(`Deck "${activeDeck.name}" successfully saved to My Decks!`);
     setTimeout(() => setSaveNotification(null), 3500);
+
+    // If user is authenticated, sync to Supabase Cloud
+    if (user && isSupabaseConfigured) {
+      deckCloudService.saveDeck(activeDeck).then(({ error }) => {
+        if (!error) {
+          setSaveNotification(`Deck "${activeDeck.name}" synced to Supabase Cloud!`);
+          setTimeout(() => setSaveNotification(null), 3500);
+        }
+      }).catch(console.error);
+    }
   };
 
   const handleOverwriteConflict = () => {
@@ -597,6 +653,9 @@ export const App: React.FC = () => {
         onOpenExport={() => setExportImportMode('export')}
         hasCommander={!!activeDeck.commander}
         deckCount={savedDecks.length}
+        user={user}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       {/* Main App Content */}
@@ -795,6 +854,12 @@ export const App: React.FC = () => {
         mode={exportImportMode || 'export'}
         onClose={() => setExportImportMode(null)}
         onImportDeck={handleImportDeck}
+      />
+
+      {/* Supabase Cloud Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
 
       {/* Commander Conflict Resolution Modal */}
