@@ -152,6 +152,18 @@ export const App: React.FC = () => {
     }
   };
 
+  const handleRemoveCard = (card: Card) => {
+    // In Brawl & Singleton formats, remove by card name or ID
+    const nextMain = activeDeck.mainboard.filter(c => c.card.name !== card.name && c.card.id !== card.id);
+    const nextSide = activeDeck.sideboard.filter(c => c.card.name !== card.name && c.card.id !== card.id);
+    setActiveDeck({
+      ...activeDeck,
+      mainboard: nextMain,
+      sideboard: nextSide,
+      updatedAt: new Date().toISOString()
+    });
+  };
+
   const handleUpdateDeck = (updated: Deck) => {
     setActiveDeck(updated);
   };
@@ -247,6 +259,7 @@ export const App: React.FC = () => {
               <BrawlSynergyConsole
                 commander={activeDeck.commander.card}
                 onAddCard={card => handleAddCard(card, false)}
+                onRemoveCard={handleRemoveCard}
                 onSelectCardDetail={setSelectedCardDetail}
                 userCollection={userCollection}
                 deckCardIds={deckCardIds}

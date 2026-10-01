@@ -16,7 +16,9 @@ import {
   ExternalLink,
   Zap,
   Info,
-  Users
+  Users,
+  Trash2,
+  Minus
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchArenaCommunityMeta, EDHRECCardView } from '../services/edhrecService';
@@ -42,6 +44,7 @@ export type SynergyCategoryTab =
 interface BrawlSynergyConsoleProps {
   commander?: Card;
   onAddCard: (card: Card) => void;
+  onRemoveCard?: (card: Card) => void;
   onSelectCardDetail: (card: Card) => void;
   userCollection: UserCollection;
   deckCardIds: Set<string>;
@@ -53,6 +56,7 @@ interface BrawlSynergyConsoleProps {
 export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   commander,
   onAddCard,
+  onRemoveCard,
   onSelectCardDetail,
   userCollection,
   deckCardIds,
@@ -510,6 +514,12 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     confetti({ particleCount: 30, spread: 45 });
   };
 
+  const handleRemove = (card: Card) => {
+    if (onRemoveCard) {
+      onRemoveCard(card);
+    }
+  };
+
   const tabs: { id: SynergyCategoryTab; label: string; icon: string }[] = [
     { id: 'meta_consensus', label: 'What People Are Playing', icon: '🔥' },
     { id: 'meta_staples', label: 'Staple Cards', icon: '⭐' },
@@ -684,20 +694,19 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                       </p>
                     </div>
 
-                    {/* Add to Deck Button (Singleton capped!) */}
+                    {/* Add to Deck / Remove from Deck Toggle Button */}
                     <button
-                      onClick={() => handleAdd(card)}
-                      disabled={isInDeck}
+                      onClick={() => (isInDeck ? handleRemove(card) : handleAdd(card))}
                       className={`w-full flex items-center justify-center gap-1.5 py-1.5 rounded-lg text-xs font-bold transition shadow ${
                         isInDeck
-                          ? 'bg-[#1b2333] text-emerald-400 border border-emerald-800/40 cursor-default'
+                          ? 'bg-rose-950/70 hover:bg-rose-900 text-rose-300 border border-rose-800/80 hover:scale-[1.02]'
                           : 'bg-amber-500 hover:bg-amber-400 text-slate-950 hover:scale-[1.02]'
                       }`}
                     >
                       {isInDeck ? (
                         <>
-                          <Check className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>In Deck</span>
+                          <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                          <span>Remove Card</span>
                         </>
                       ) : (
                         <>
