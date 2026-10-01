@@ -42,17 +42,17 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
       <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Brand & Top-level Navigation Pills */}
         <div className="flex items-center gap-6">
-          {/* ArenaForge Brand */}
+          {/* DieToRemoval Brand */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 flex items-center justify-center shadow-lg shadow-orange-500/25 border border-yellow-300/40">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 via-amber-600 to-rose-700 flex items-center justify-center shadow-lg shadow-rose-500/25 border border-rose-300/40">
               <Crown className="w-4 h-4 text-slate-950 font-bold" />
             </div>
             <div>
               <span className="font-fantasy font-black text-sm tracking-wider text-white uppercase">
-                ARENA<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-200">FORGE</span>
+                DIE<span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-orange-400">TO</span>REMOVAL
               </span>
-              <span className="ml-1.5 px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-orange-950/80 text-orange-300 border border-orange-500/40">
-                HUB
+              <span className="ml-1.5 px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-rose-950/80 text-rose-300 border border-rose-500/40">
+                .GG
               </span>
             </div>
           </div>

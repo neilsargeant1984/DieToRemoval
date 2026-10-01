@@ -1,6 +1,6 @@
-# ArenaForge — MTG Arena Hub & Deckbuilder
+# DieToRemoval (dietoremoval.gg) — MTG Arena Hub & Deckbuilder
 
-An Arena-native Magic: The Gathering deckbuilder and analytics hub. Built specifically to eliminate the friction that MTG Arena players face when using paper-centric tools like Scryfall, Moxfield, and MTGGoldfish.
+An Arena-native Magic: The Gathering deckbuilder, causal synergy engine, and collection hub. Built specifically to eliminate the friction that MTG Arena players face when using paper-centric tools.
 
 ---
 

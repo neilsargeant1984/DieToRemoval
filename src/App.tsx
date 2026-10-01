@@ -842,10 +842,10 @@ export const App: React.FC = () => {
       {/* Footer with WotC Fan Content Policy Disclaimer */}
       <footer className="w-full border-t border-[#c5a059]/20 bg-[#080a0f]/80 backdrop-blur-md py-6 px-4 mt-auto text-center text-xs text-stone-500 space-y-1">
         <p className="font-fantasy font-bold text-stone-300 tracking-wider">
-          ARENA<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">FORGE</span> DECKBUILDER
+          DIE<span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">TO</span>REMOVAL<span className="text-rose-400">.GG</span>
         </p>
         <p className="max-w-3xl mx-auto text-[11px] text-stone-400 leading-relaxed">
-          ArenaForge is unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy.
+          DieToRemoval (dietoremoval.gg) is unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy.
           Portions of the materials used are property of Wizards of the Coast. &copy;Wizards of the Coast LLC.
         </p>
       </footer>
