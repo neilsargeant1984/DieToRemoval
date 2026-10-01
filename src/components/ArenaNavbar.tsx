@@ -39,7 +39,7 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#0e121a]/95 border-b border-[#c5a059]/25 backdrop-blur-xl px-4 py-2.5 shadow-2xl">
-      <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Brand & Top-level Navigation Pills */}
         <div className="flex items-center gap-6">
           {/* ArenaForge Brand */}

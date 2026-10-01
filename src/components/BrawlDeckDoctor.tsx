@@ -24,13 +24,15 @@ interface BrawlDeckDoctorProps {
   onSelectRoleFilter: (role: FunctionalRole | 'lands') => void;
   onOpenCommanderPicker: () => void;
   onOpenSynergyMatrix: () => void;
+  onOpenManaOptimizer?: () => void;
 }
 
 export const BrawlDeckDoctor: React.FC<BrawlDeckDoctorProps> = ({
   deck,
   onSelectRoleFilter,
   onOpenCommanderPicker,
-  onOpenSynergyMatrix
+  onOpenSynergyMatrix,
+  onOpenManaOptimizer
 }) => {
   const commander = deck.commander?.card;
   const health = analyzeBrawlDeckHealth(deck.mainboard, commander);
@@ -148,6 +150,17 @@ export const BrawlDeckDoctor: React.FC<BrawlDeckDoctorProps> = ({
 
         {/* Action Buttons: Synergies & Change Commander */}
         <div className="flex items-center gap-2">
+          {onOpenManaOptimizer && (
+            <button
+              onClick={onOpenManaOptimizer}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs font-bold rounded-lg transition shadow-md hover:scale-105"
+              title="Auto-build optimal mana base with verified MTG Arena lands"
+            >
+              <Mountain className="w-3.5 h-3.5 text-white" />
+              <span>⚡ Mana Base</span>
+            </button>
+          )}
+
           {commander && (
             <button
               onClick={onOpenSynergyMatrix}

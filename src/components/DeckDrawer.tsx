@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Deck, DeckCard } from '../types/deck';
+import { Deck } from '../types/deck';
 import { Card } from '../types/card';
 import { UserCollection, DeckWildcardCost } from '../types/collection';
 import { ManaCost } from './ManaCost';
@@ -10,7 +10,8 @@ import {
   Download, 
   Crown, 
   Plus, 
-  Minus 
+  Minus,
+  PanelRightClose
 } from 'lucide-react';
 
 interface DeckDrawerProps {
@@ -22,6 +23,7 @@ interface DeckDrawerProps {
   onOpenExport: () => void;
   wildcardCost: DeckWildcardCost;
   userCollection: UserCollection;
+  variant?: 'inline' | 'drawer';
 }
 
 export const DeckDrawer: React.FC<DeckDrawerProps> = ({
@@ -32,7 +34,8 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
   onSelectCardDetail,
   onOpenExport,
   wildcardCost,
-  userCollection
+  userCollection,
+  variant = 'drawer'
 }) => {
   const [hoveredCard, setHoveredCard] = useState<Card | null>(null);
 
@@ -43,20 +46,37 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
   const totalDeckCount = mainCount + (commander ? 1 : 0);
   const targetDeckSize = deck.format === 'brawl' ? 100 : 60;
 
-  // Group cards
-  const groups = {
+  // Group cards into complete, clear categories
+  const groups: Record<string, typeof deck.mainboard> = {
     Creatures: deck.mainboard.filter(c => c.card.types.includes('Creature')),
+    Planeswalkers: deck.mainboard.filter(
+      c => c.card.types.includes('Planeswalker') && !c.card.types.includes('Creature')
+    ),
     'Instants & Sorceries': deck.mainboard.filter(
-      c => (c.card.types.includes('Instant') || c.card.types.includes('Sorcery')) && !c.card.types.includes('Creature')
+      c =>
+        (c.card.types.includes('Instant') || c.card.types.includes('Sorcery')) &&
+        !c.card.types.includes('Creature') &&
+        !c.card.types.includes('Planeswalker')
     ),
     'Artifacts & Enchantments': deck.mainboard.filter(
       c =>
         (c.card.types.includes('Artifact') || c.card.types.includes('Enchantment')) &&
         !c.card.types.includes('Creature') &&
         !c.card.types.includes('Instant') &&
-        !c.card.types.includes('Sorcery')
+        !c.card.types.includes('Sorcery') &&
+        !c.card.types.includes('Planeswalker')
     ),
-    Lands: deck.mainboard.filter(c => c.card.types.includes('Land'))
+    Lands: deck.mainboard.filter(c => c.card.types.includes('Land')),
+    'Other Spells': deck.mainboard.filter(
+      c =>
+        !c.card.types.includes('Creature') &&
+        !c.card.types.includes('Planeswalker') &&
+        !c.card.types.includes('Instant') &&
+        !c.card.types.includes('Sorcery') &&
+        !c.card.types.includes('Artifact') &&
+        !c.card.types.includes('Enchantment') &&
+        !c.card.types.includes('Land')
+    )
   };
 
   const handleRemove = (cardId: string) => {
@@ -81,160 +101,216 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
     }
   };
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end">
-      <div className="w-full max-w-md bg-[#0e121a] border-l border-[#c5a059]/25 h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-200">
-        {/* Drawer Header */}
-        <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#121622]">
-          <div className="flex items-center gap-2">
-            <Layers className="w-5 h-5 text-amber-400" />
-            <div>
-              <h3 className="font-fantasy font-black text-sm text-white flex items-center gap-2">
-                <span>Active Deck Tray</span>
-                <span className={`text-xs px-2 py-0.2 rounded font-mono font-bold ${
-                  totalDeckCount === targetDeckSize
-                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                    : 'bg-orange-950 text-orange-300 border border-orange-700'
-                }`}>
-                  {totalDeckCount} / {targetDeckSize}
-                </span>
-              </h3>
-              <span className="text-[11px] text-stone-400">
-                {deck.format === 'brawl' ? 'Brawl Singleton Deck' : 'Constructed Deck'}
-              </span>
-            </div>
+  const panelContent = (
+    <div className={`w-full bg-[#0e121a] border border-[#c5a059]/25 shadow-2xl flex flex-col justify-between overflow-hidden ${
+      variant === 'inline'
+        ? 'rounded-3xl h-[calc(100vh-100px)] arena-panel-elevated'
+        : 'max-w-md h-full rounded-l-3xl border-l'
+    }`}>
+      {/* Header */}
+      <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#121622] flex-shrink-0">
+        <div className="flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
+            <Layers className="w-4 h-4 text-amber-400" />
           </div>
-          <button
-            onClick={onClose}
-            className="p-1 rounded-full text-stone-400 hover:text-stone-200 hover:bg-white/10 transition"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Card Stacks */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {/* Commander Card Row if present */}
-          {commander && (
-            <div className="bg-amber-500/10 border border-amber-500/30 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
-              <div className="flex items-center gap-2 min-w-0">
-                <Crown className="w-4 h-4 text-amber-400 flex-shrink-0" />
-                <div className="min-w-0">
-                  <span className="font-bold text-xs text-amber-300 truncate block">
-                    {commander.name}
-                  </span>
-                  <span className="text-[10px] text-amber-400/80">Commander</span>
-                </div>
-              </div>
-              <ManaCost manaCost={commander.manaCost} size="sm" />
-            </div>
-          )}
-
-          {/* Grouped Mainboard Cards */}
-          {Object.entries(groups).map(([groupName, cards]) => {
-            if (cards.length === 0) return null;
-            const count = cards.reduce((a, b) => a + b.quantity, 0);
-
-            return (
-              <div key={groupName} className="space-y-1.5">
-                <div className="flex items-center justify-between text-[11px] font-fantasy font-bold uppercase tracking-wider text-stone-400 px-1">
-                  <span>{groupName}</span>
-                  <span className="text-stone-500 font-mono">{count}</span>
-                </div>
-
-                <div className="space-y-1">
-                  {cards.map(item => {
-                    const { card, quantity } = item;
-                    const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'].includes(card.name);
-
-                    return (
-                      <div
-                        key={card.id}
-                        onMouseEnter={() => setHoveredCard(card)}
-                        onMouseLeave={() => setHoveredCard(null)}
-                        className="group flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-[#141926] hover:bg-[#1c2335] border border-white/5 hover:border-amber-400/40 transition text-xs shadow-sm"
-                      >
-                        <div className="flex items-center gap-2 min-w-0 flex-1">
-                          {isBasic ? (
-                            <div className="flex items-center gap-0.5 bg-[#0d1017] px-1 rounded border border-white/10">
-                              <button
-                                onClick={() => handleAdjustBasicLand(card.id, -1)}
-                                className="text-stone-400 hover:text-rose-400 p-0.5"
-                              >
-                                <Minus className="w-2.5 h-2.5" />
-                              </button>
-                              <span className="font-mono font-bold text-amber-300 w-3 text-center text-[10px]">
-                                {quantity}
-                              </span>
-                              <button
-                                onClick={() => handleAdjustBasicLand(card.id, 1)}
-                                className="text-stone-400 hover:text-emerald-400 p-0.5"
-                              >
-                                <Plus className="w-2.5 h-2.5" />
-                              </button>
-                            </div>
-                          ) : (
-                            <span className="font-mono text-stone-500 font-bold text-[10px] w-3">1</span>
-                          )}
-
-                          <button
-                            onClick={() => onSelectCardDetail(card)}
-                            className="font-bold text-stone-200 hover:text-amber-300 truncate text-left"
-                          >
-                            {card.name}
-                          </button>
-                        </div>
-
-                        <div className="flex items-center gap-2 flex-shrink-0">
-                          {card.manaCost && (
-                            <ManaCost manaCost={card.manaCost} size="sm" />
-                          )}
-
-                          {!isBasic && (
-                            <button
-                              onClick={() => handleRemove(card.id)}
-                              className="text-stone-400 hover:text-rose-400 p-0.5 opacity-0 group-hover:opacity-100 transition"
-                              title="Remove from deck"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        {/* Drawer Footer & Actions */}
-        <div className="p-4 border-t border-white/10 bg-[#121622] space-y-3">
-          <div className="flex items-center justify-between text-xs">
-            <span className="text-stone-400">Crafting Cost:</span>
-            <span className="text-amber-300 font-bold font-mono">
-              {wildcardCost.missing.rare} Rare • {wildcardCost.missing.mythic} Mythic
+          <div>
+            <h3 className="font-fantasy font-black text-sm text-white flex items-center gap-2">
+              <span>Active Deck Tray</span>
+              <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold ${
+                totalDeckCount === targetDeckSize
+                  ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                  : 'bg-orange-950 text-orange-300 border border-orange-700'
+              }`}>
+                {totalDeckCount} / {targetDeckSize}
+              </span>
+            </h3>
+            <span className="text-[11px] text-stone-400">
+              {deck.format === 'brawl' ? 'Brawl Singleton Deck' : 'Constructed Deck'}
             </span>
           </div>
+        </div>
 
-          <div className="flex gap-2">
-            <button
-              onClick={onOpenExport}
-              className="btn-mythic-spark flex-1 flex items-center justify-center gap-2 py-2.5 text-xs font-extrabold rounded-xl transition shadow-md"
+        <button
+          onClick={onClose}
+          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-stone-400 hover:text-amber-300 hover:bg-white/10 transition border border-transparent hover:border-white/10"
+          title="Hide Deck Tray"
+        >
+          <PanelRightClose className="w-4 h-4 text-stone-400" />
+          <span className="text-xs font-bold">Hide</span>
+        </button>
+      </div>
+
+      {/* Card Stacks */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Commander Card Row if present */}
+        {commander && (
+          <div className="bg-gradient-to-r from-amber-500/15 to-orange-500/10 border border-amber-500/40 rounded-xl p-2.5 flex items-center justify-between shadow-sm">
+            <div 
+              className="flex items-center gap-2.5 min-w-0 cursor-pointer group"
+              onClick={() => onSelectCardDetail(commander)}
+              onMouseEnter={() => setHoveredCard(commander)}
+              onMouseLeave={() => setHoveredCard(null)}
             >
-              <Download className="w-4 h-4" />
-              <span>Export for MTG Arena</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="px-4 py-2.5 bg-[#171c28] hover:bg-[#202738] text-stone-300 font-bold text-xs rounded-xl border border-white/10 transition"
-            >
-              Close
-            </button>
+              <Crown className="w-4 h-4 text-amber-400 flex-shrink-0 group-hover:scale-110 transition" />
+              <div className="min-w-0">
+                <span className="font-bold text-xs text-amber-300 truncate block group-hover:underline">
+                  {commander.name}
+                </span>
+                <span className="text-[10px] text-amber-400/80 font-medium">Commander</span>
+              </div>
+            </div>
+            <ManaCost manaCost={commander.manaCost} size="sm" />
           </div>
+        )}
+
+        {/* Empty State */}
+        {deck.mainboard.length === 0 && (
+          <div className="py-12 px-4 flex flex-col items-center justify-center text-center text-stone-500">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-3 border border-white/10">
+              <Layers className="w-6 h-6 text-stone-400" />
+            </div>
+            <p className="font-fantasy font-bold text-stone-300 text-sm">Tray is empty</p>
+            <p className="text-xs text-stone-500 mt-1 max-w-[220px]">
+              Browse synergies on the left and click &quot;+ Add to Deck&quot; to populate your Brawl deck!
+            </p>
+          </div>
+        )}
+
+        {/* Grouped Mainboard Cards */}
+        {Object.entries(groups).map(([groupName, cards]) => {
+          if (cards.length === 0) return null;
+          const count = cards.reduce((a, b) => a + b.quantity, 0);
+
+          return (
+            <div key={groupName} className="space-y-1.5">
+              <div className="flex items-center justify-between text-[11px] font-fantasy font-bold uppercase tracking-wider text-stone-400 px-1">
+                <span>{groupName}</span>
+                <span className="text-stone-500 font-mono font-bold">{count}</span>
+              </div>
+
+              <div className="space-y-1">
+                {cards.map(item => {
+                  const { card, quantity } = item;
+                  const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'].includes(card.name);
+
+                  return (
+                    <div
+                      key={card.id}
+                      onMouseEnter={() => setHoveredCard(card)}
+                      onMouseLeave={() => setHoveredCard(null)}
+                      className="group flex items-center justify-between py-1.5 px-2.5 rounded-xl bg-[#141926] hover:bg-[#1c2335] border border-white/5 hover:border-amber-400/40 transition text-xs shadow-sm"
+                    >
+                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                        {isBasic ? (
+                          <div className="flex items-center gap-0.5 bg-[#0d1017] px-1 rounded border border-white/10">
+                            <button
+                              onClick={() => handleAdjustBasicLand(card.id, -1)}
+                              className="text-stone-400 hover:text-rose-400 p-0.5 transition"
+                              title="Decrease count"
+                            >
+                              <Minus className="w-2.5 h-2.5" />
+                            </button>
+                            <span className="font-mono font-bold text-amber-300 w-3 text-center text-[10px]">
+                              {quantity}
+                            </span>
+                            <button
+                              onClick={() => handleAdjustBasicLand(card.id, 1)}
+                              className="text-stone-400 hover:text-emerald-400 p-0.5 transition"
+                              title="Increase count"
+                            >
+                              <Plus className="w-2.5 h-2.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <span className="font-mono text-stone-500 font-bold text-[10px] w-3">1</span>
+                        )}
+
+                        <button
+                          onClick={() => onSelectCardDetail(card)}
+                          className="font-bold text-stone-200 hover:text-amber-300 truncate text-left transition"
+                        >
+                          {card.name}
+                        </button>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {card.manaCost && (
+                          <ManaCost manaCost={card.manaCost} size="sm" />
+                        )}
+
+                        {!isBasic && (
+                          <button
+                            onClick={() => handleRemove(card.id)}
+                            className="text-stone-500 hover:text-rose-400 p-0.5 opacity-0 group-hover:opacity-100 transition"
+                            title="Remove from deck"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Drawer Footer & Actions */}
+      <div className="p-4 border-t border-white/10 bg-[#121622] space-y-3 flex-shrink-0">
+        <div className="flex items-center justify-between text-xs">
+          <span className="text-stone-400 font-medium">Crafting Cost:</span>
+          <span className="text-amber-300 font-bold font-mono">
+            {wildcardCost.missing.rare} Rare • {wildcardCost.missing.mythic} Mythic
+          </span>
+        </div>
+
+        <div className="flex gap-2">
+          <button
+            onClick={onOpenExport}
+            className="btn-mythic-spark flex-1 flex items-center justify-center gap-2 py-2 text-xs font-extrabold rounded-xl transition shadow-md"
+          >
+            <Download className="w-3.5 h-3.5" />
+            <span>Export for Arena</span>
+          </button>
+          <button
+            onClick={onClose}
+            className="px-3.5 py-2 bg-[#171c28] hover:bg-[#202738] text-stone-300 hover:text-white font-bold text-xs rounded-xl border border-white/10 transition"
+          >
+            Hide Tray
+          </button>
         </div>
       </div>
+    </div>
+  );
+
+  const hoverPreview = hoveredCard ? (
+    <div className="fixed z-50 pointer-events-none w-56 rounded-2xl shadow-2xl border-2 border-amber-400/80 overflow-hidden bg-black/95 right-6 bottom-6 animate-in fade-in zoom-in-95 duration-150">
+      <img
+        src={hoveredCard.imageUrl}
+        alt={hoveredCard.name}
+        className="w-full h-auto object-cover rounded-xl"
+      />
+    </div>
+  ) : null;
+
+  if (variant === 'inline') {
+    return (
+      <>
+        {panelContent}
+        {hoverPreview}
+      </>
+    );
+  }
+
+  // Drawer variant (modal slide-in for small screens)
+  return (
+    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
+      <div className="w-full max-w-md h-full animate-in slide-in-from-right duration-200">
+        {panelContent}
+      </div>
+      {hoverPreview}
     </div>
   );
 };

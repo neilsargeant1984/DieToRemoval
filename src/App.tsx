@@ -21,17 +21,22 @@ import { SaveDeckConflictModal } from './components/SaveDeckConflictModal';
 import { SaveBeforeCommanderChangeModal } from './components/SaveBeforeCommanderChangeModal';
 import { ImportDeckModal } from './components/ImportDeckModal';
 import { MyCollectionView } from './components/MyCollectionView';
+import { ManaBaseModal } from './components/ManaBaseModal';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
 import { getMaxCardCopies } from './utils/cardRules';
 import { ARENA_CARDS } from './data/arenaCards';
+import { Layers } from 'lucide-react';
 
 export const App: React.FC = () => {
   // Navigation State
   const [navTab, setNavTab] = useState<MainNavTab>('deck_builder');
   const [brawlSubMode, setBrawlSubMode] = useState<BrawlSubMode>('brawl_historic');
   const [synergyTab, setSynergyTab] = useState<SynergyCategoryTab>('creatures');
-  const [isDeckDrawerOpen, setIsDeckDrawerOpen] = useState(false);
+  const [isDeckDrawerOpen, setIsDeckDrawerOpen] = useState<boolean>(() => {
+    const saved = localStorage.getItem('arenaforge_deck_tray_open');
+    return saved !== null ? saved === 'true' : true;
+  });
 
   // Saved Decks Collection (All user-created decks)
   const [savedDecks, setSavedDecks] = useState<Deck[]>(() => {
@@ -152,6 +157,11 @@ export const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('arenaforge_active_deck', JSON.stringify(activeDeck));
   }, [activeDeck]);
+
+  // Persist deck tray open/close preference
+  useEffect(() => {
+    localStorage.setItem('arenaforge_deck_tray_open', String(isDeckDrawerOpen));
+  }, [isDeckDrawerOpen]);
 
   // Synchronize active commander imageUrl with canonical catalog if outdated
   useEffect(() => {
@@ -561,7 +571,7 @@ export const App: React.FC = () => {
       />
 
       {/* Main App Content */}
-      <main className="max-w-7xl mx-auto w-full px-4 py-6 flex-1 flex flex-col space-y-6">
+      <main className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto w-full px-4 sm:px-6 py-6 flex-1 flex flex-col space-y-6">
         {navTab === 'my_decks' ? (
           /* Multi-Deck Library View */
           <MyDecksView
@@ -616,21 +626,45 @@ export const App: React.FC = () => {
               }}
             />
 
-            {/* Multi-Tabbed Synergy Console Directly Below */}
-            {activeDeck.commander && (
-              <BrawlSynergyConsole
-                commander={activeDeck.commander.card}
-                onAddCard={card => handleAddCard(card, false)}
-                onRemoveCard={handleRemoveCard}
-                onSelectCardDetail={setSelectedCardDetail}
-                userCollection={userCollection}
-                deckCardIds={deckCardIds}
-                deckCardNames={deckCardNames}
-                deckCardCounts={deckCardCounts}
-                activeTab={synergyTab}
-                onSelectTab={setSynergyTab}
-              />
-            )}
+            {/* Side-by-Side: Synergy Console + Active Deck Tray */}
+            <div className="relative flex flex-col lg:flex-row items-start gap-6">
+              {/* Synergy Console */}
+              <div className="flex-1 min-w-0 w-full transition-all duration-300">
+                {activeDeck.commander && (
+                  <BrawlSynergyConsole
+                    commander={activeDeck.commander.card}
+                    onAddCard={card => handleAddCard(card, false)}
+                    onRemoveCard={handleRemoveCard}
+                    onSelectCardDetail={setSelectedCardDetail}
+                    userCollection={userCollection}
+                    deckCardIds={deckCardIds}
+                    deckCardNames={deckCardNames}
+                    deckCardCounts={deckCardCounts}
+                    activeTab={synergyTab}
+                    onSelectTab={setSynergyTab}
+                    isDeckTrayOpen={isDeckDrawerOpen}
+                    onToggleDeckTray={() => setIsDeckDrawerOpen(prev => !prev)}
+                  />
+                )}
+              </div>
+
+              {/* Side-by-Side Active Deck Tray (Desktop) */}
+              {isDeckDrawerOpen && (
+                <aside className="hidden lg:block w-[360px] xl:w-[400px] flex-shrink-0 sticky top-20 z-20">
+                  <DeckDrawer
+                    isOpen={true}
+                    variant="inline"
+                    onClose={() => setIsDeckDrawerOpen(false)}
+                    deck={activeDeck}
+                    onUpdateDeck={handleUpdateDeck}
+                    onSelectCardDetail={setSelectedCardDetail}
+                    onOpenExport={() => setExportImportMode('export')}
+                    wildcardCost={wildcardCost}
+                    userCollection={userCollection}
+                  />
+                </aside>
+              )}
+            </div>
           </div>
         ) : (
           /* Constructed Formats (Standard / Pioneer) Dual Panel */
@@ -654,17 +688,34 @@ export const App: React.FC = () => {
         )}
       </main>
 
-      {/* Slide-out Deck Tray (Drawer) */}
-      <DeckDrawer
-        isOpen={isDeckDrawerOpen}
-        onClose={() => setIsDeckDrawerOpen(false)}
-        deck={activeDeck}
-        onUpdateDeck={handleUpdateDeck}
-        onSelectCardDetail={setSelectedCardDetail}
-        onOpenExport={() => setExportImportMode('export')}
-        wildcardCost={wildcardCost}
-        userCollection={userCollection}
-      />
+      {/* Mobile Slide-out Deck Tray (Drawer for < lg screens) */}
+      <div className="lg:hidden">
+        <DeckDrawer
+          isOpen={isDeckDrawerOpen}
+          variant="drawer"
+          onClose={() => setIsDeckDrawerOpen(false)}
+          deck={activeDeck}
+          onUpdateDeck={handleUpdateDeck}
+          onSelectCardDetail={setSelectedCardDetail}
+          onOpenExport={() => setExportImportMode('export')}
+          wildcardCost={wildcardCost}
+          userCollection={userCollection}
+        />
+      </div>
+
+      {/* Floating Edge Tab to easily unhide Deck Tray when scrolled down on desktop */}
+      {!isDeckDrawerOpen && navTab === 'deck_builder' && activeDeck.format === 'brawl' && (
+        <button
+          onClick={() => setIsDeckDrawerOpen(true)}
+          className="hidden lg:flex fixed right-0 top-1/2 -translate-y-1/2 z-30 bg-[#121622]/95 hover:bg-[#1a2030] text-amber-300 border-l border-y border-amber-500/40 px-2.5 py-4 rounded-l-2xl shadow-2xl flex-col items-center gap-2 group transition duration-200 cursor-pointer"
+          title="Show Active Deck Tray"
+        >
+          <Layers className="w-4 h-4 text-amber-400 group-hover:scale-110 transition" />
+          <span className="[writing-mode:vertical-rl] text-[10px] font-fantasy font-black tracking-wider text-stone-200 uppercase">
+            Deck Tray ({activeDeck.mainboard.reduce((a, b) => a + b.quantity, 0) + (activeDeck.commander ? 1 : 0)}/{activeDeck.format === 'brawl' ? 100 : 60})
+          </span>
+        </button>
+      )}
 
       {/* Modals */}
       <CommanderPickerModal

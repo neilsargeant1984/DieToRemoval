@@ -3,6 +3,26 @@ import { Card } from '../types/card';
 export const ARENA_CARDS: Card[] = [
   // --- DIGITAL / ALCHEMY EXCLUSIVES & SPELLBOOKS ---
   {
+    id: "jace-multiverse-architect",
+    arenaId: 106576,
+    name: "Jace, Multiverse Architect",
+    manaCost: "{1}{W}{U}{B}{R}",
+    cmc: 5,
+    colors: ["W", "U", "B", "R"],
+    colorIdentity: ["W", "U", "B", "R"],
+    typeLine: "Legendary Planeswalker — Jace",
+    types: ["Planeswalker"],
+    subtypes: ["Jace"],
+    loyalty: "5",
+    rarity: "mythic",
+    set: "FRC",
+    setName: "Fractured Horizons",
+    collectorNumber: "1",
+    imageUrl: "https://cards.scryfall.io/normal/front/5/5/55cd03d9-2535-4cf3-a8b2-1418e1190f4a.jpg?1789644316",
+    oracleText: "+1: Draw a card, then exile a card from your hand.\n-2: Target player mills three cards, then you may cast an instant or sorcery from a graveyard.\n-7: You get an emblem with 'You may cast spells from exile without paying their mana costs.'",
+    legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
+  },
+  {
     id: "oracle-of-the-alpha",
     arenaId: 83204,
     name: "Oracle of the Alpha",

@@ -308,7 +308,7 @@ function createFallbackCard(arenaId: number, name: string = `Arena Card #${arena
     set: 'MTGA',
     setName: 'MTG Arena',
     collectorNumber: `${arenaId}`,
-    imageUrl: 'https://cards.scryfall.io/back.jpg',
+    imageUrl: 'https://upload.wikimedia.org/wikipedia/en/a/aa/Magic_the_gathering-card_back.jpg',
     oracleText: '',
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   };

@@ -20,12 +20,14 @@ import {
   Trash2,
   Minus,
   Search,
-  X
+  X,
+  Mountain
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { fetchArenaCommunityMeta, EDHRECCardView } from '../services/edhrecService';
 import { getCommanderTriggerConfig } from '../utils/commanderTriggers';
 import { getMaxCardCopies } from '../utils/cardRules';
+import { ARENA_LANDS_DATABASE, convertArenaLandToCard } from '../data/arenaLands';
 
 export type SynergyCategoryTab = 
   | 'meta_consensus'
@@ -55,6 +57,9 @@ interface BrawlSynergyConsoleProps {
   deckCardCounts?: Map<string, number>;
   activeTab?: SynergyCategoryTab;
   onSelectTab?: (tab: SynergyCategoryTab) => void;
+  isDeckTrayOpen?: boolean;
+  onToggleDeckTray?: () => void;
+  onOpenManaOptimizer?: () => void;
 }
 
 export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
@@ -67,7 +72,10 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   deckCardNames,
   deckCardCounts,
   activeTab: controlledTab,
-  onSelectTab
+  onSelectTab,
+  isDeckTrayOpen,
+  onToggleDeckTray,
+  onOpenManaOptimizer
 }) => {
   const [internalTab, setInternalTab] = useState<SynergyCategoryTab>('meta_consensus');
   const activeTab = controlledTab || internalTab;
@@ -86,6 +94,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [expandedReasonCardId, setExpandedReasonCardId] = useState<string | null>(null);
   const [tabSearchQuery, setTabSearchQuery] = useState<string>('');
+  const [multiRoleOnly, setMultiRoleOnly] = useState<boolean>(false);
 
   const triggerConfig = getCommanderTriggerConfig(commander);
 
@@ -337,12 +346,43 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     fetchPool();
   }, [commander]);
 
-  if (!commander) return null;
-
-  const [multiRoleOnly, setMultiRoleOnly] = useState<boolean>(false);
-
   // Filter based on active tab
   const getTabResults = (): { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[] }[] => {
+    if (!commander) return [];
+
+    if (activeTab === 'lands') {
+      const commanderColors = new Set(commander.colorIdentity);
+      const legalLands = ARENA_LANDS_DATABASE.filter(land => {
+        if (land.colorIdentity.length === 0) return true;
+        return land.colorIdentity.every(c => commanderColors.has(c));
+      });
+
+      return legalLands.map(land => {
+        const card = convertArenaLandToCard(land);
+        const roleChips = getCardRoleChips(card);
+        let badge = '🏔️ Arena Land';
+        if (land.cycle === 'shock') badge = '⚡ Shockland';
+        else if (land.cycle === 'fetch') badge = '🎯 Fetchland';
+        else if (land.cycle === 'triome') badge = '🔮 Triome';
+        else if (land.cycle === 'surveil') badge = '👁️ Surveil Land';
+        else if (land.cycle === 'channel') badge = '⛩️ Channel Land';
+        else if (land.cycle === 'castle') badge = '🏰 Castle';
+        else if (land.cycle === 'rainbow_staple') badge = '🌈 Rainbow Staple';
+        else if (land.cycle === 'fastland') badge = '⚡ Fastland';
+        else if (land.cycle === 'slowland') badge = '🛡️ Slowland';
+        else if (land.cycle === 'painland') badge = '🩸 Painland';
+        else if (land.cycle === 'pathway') badge = '🔄 Pathway';
+
+        return {
+          card,
+          score: land.cycle === 'rainbow_staple' || land.cycle === 'shock' || land.cycle === 'fetch' ? 95 : 85,
+          badge,
+          reason: `Verified MTG Arena ${land.typeLine} (${land.arenaSet})`,
+          roleChips
+        };
+      });
+    }
+
     if (activeTab === 'meta_consensus') {
       const consensusList = communityMeta.map(item => {
         const causalMatch = calculateSynergy(commander, item.card);
@@ -529,9 +569,6 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         if (activeTab === 'artifacts') return c.types.includes('Artifact') && !c.types.includes('Creature');
         if (activeTab === 'enchantments') return c.types.includes('Enchantment') && !c.types.includes('Creature');
         if (activeTab === 'planeswalkers') return c.types.includes('Planeswalker') || (c.typeLine || '').toLowerCase().includes('planeswalker');
-        if (activeTab === 'lands') {
-          return c.types.includes('Land') || (c.typeLine || '').toLowerCase().includes('land');
-        }
         
         const roles = classifyCardRoles(c, commander);
         if (activeTab === 'ramp') {
@@ -660,6 +697,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
   const currentTabObj = tabs.find(t => t.id === activeTab);
 
+  if (!commander) return null;
+
   return (
     <div className="arena-panel rounded-3xl p-6 shadow-2xl space-y-4">
       {/* Console Header */}
@@ -679,8 +718,23 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           </div>
         </div>
 
-        {/* Multi-Role Filter Toggle & Card Count */}
+        {/* Multi-Role Filter Toggle, Tray Toggle & Card Count */}
         <div className="flex items-center gap-2.5">
+          {onToggleDeckTray && (
+            <button
+              onClick={onToggleDeckTray}
+              title={isDeckTrayOpen ? 'Hide Active Deck Tray' : 'Show Active Deck Tray'}
+              className={`text-xs px-3 py-1.5 rounded-xl font-bold border transition flex items-center gap-1.5 shadow-sm ${
+                isDeckTrayOpen
+                  ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
+                  : 'bg-[#0d1017]/90 text-stone-300 hover:text-white border-white/5 hover:bg-[#141926]'
+              }`}
+            >
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
+              <span>{isDeckTrayOpen ? 'Hide Deck Tray' : 'Show Deck Tray'}</span>
+            </button>
+          )}
+
           <button
             onClick={() => setMultiRoleOnly(!multiRoleOnly)}
             title="Filter to show only multi-role powerhouses that fulfill 2 or more functional roles"
@@ -762,6 +816,37 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         </div>
       </div>
 
+      {/* 1-Click Auto-Build Banner for Lands Tab */}
+      {activeTab === 'lands' && onOpenManaOptimizer && (
+        <div className="p-4 rounded-2xl bg-gradient-to-r from-emerald-950/70 via-slate-900 to-teal-950/70 border border-emerald-500/30 flex items-center justify-between flex-wrap gap-3 shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 shadow-sm">
+              <Mountain className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h4 className="text-sm font-bold text-white font-fantasy">
+                  1-Click Arena Mana Base Optimizer
+                </h4>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-900/60 text-emerald-300 border border-emerald-700">
+                  {commander.colorIdentity.length}-Color {commander.colorIdentity.length === 0 ? 'Colorless' : commander.colorIdentity.join('')}
+                </span>
+              </div>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Automatically balance fetches, shocks, triomes, surveil lands, and pip-weighted basics for {commander.name}.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenManaOptimizer}
+            className="px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-400 hover:from-emerald-400 hover:to-teal-300 text-slate-950 text-xs font-extrabold rounded-xl transition shadow-md flex items-center gap-1.5 hover:scale-105"
+          >
+            <Sparkles className="w-3.5 h-3.5 text-slate-950 font-bold" />
+            <span>⚡ Auto-Build Mana Base</span>
+          </button>
+        </div>
+      )}
+
       {/* Cards Visual Grid (Clean In-Game Presentation) */}
       <div className="min-h-[420px]">
         {isLoading ? (
@@ -799,7 +884,11 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             </div>
           )
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
+          <div className={`grid gap-3.5 ${
+            isDeckTrayOpen
+              ? 'grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
+              : 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6'
+          }`}>
             {displayedList.map(item => {
               const { card, score, badge, reason, roleChips } = item;
               const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'].includes(card.name);

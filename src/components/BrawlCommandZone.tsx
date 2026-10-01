@@ -35,6 +35,7 @@ interface BrawlCommandZoneProps {
   onSelectSubMode: (mode: BrawlSubMode) => void;
   selectedRoleTab?: string;
   onSelectRoleFilter?: (role: FunctionalRole | 'lands') => void;
+  onOpenManaOptimizer?: () => void;
 }
 
 export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
@@ -49,7 +50,8 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   activeSubMode,
   onSelectSubMode,
   selectedRoleTab,
-  onSelectRoleFilter
+  onSelectRoleFilter,
+  onOpenManaOptimizer
 }) => {
   const mainCount = deck.mainboard.reduce((a, b) => a + b.quantity, 0);
   const totalDeckCount = mainCount + (commander ? 1 : 0);
@@ -265,12 +267,13 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
               onClick={onToggleDeckDrawer}
               className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition border shadow-sm ${
                 isDeckDrawerOpen
-                  ? 'btn-mythic-spark'
-                  : 'bg-[#141926] hover:bg-[#1c2335] text-stone-200 border-white/10'
+                  ? 'btn-mythic-spark text-slate-950 font-black shadow-amber-500/20'
+                  : 'bg-[#141926] hover:bg-[#1c2335] text-stone-200 border-white/10 hover:border-amber-400/30'
               }`}
+              title={isDeckDrawerOpen ? 'Hide Deck Tray' : 'Show Deck Tray'}
             >
-              <Layers className="w-4 h-4 text-amber-400" />
-              <span>Deck Tray ({totalDeckCount}/{targetDeckSize})</span>
+              <Layers className={`w-4 h-4 ${isDeckDrawerOpen ? 'text-slate-950' : 'text-amber-400'}`} />
+              <span>{isDeckDrawerOpen ? 'Hide Deck Tray' : 'Show Deck Tray'} ({totalDeckCount}/{targetDeckSize})</span>
             </button>
           </div>
 
@@ -345,6 +348,18 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2.5">
+                  {onOpenManaOptimizer && (
+                    <button
+                      type="button"
+                      onClick={onOpenManaOptimizer}
+                      className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white transition shadow-sm hover:scale-105"
+                      title="Optimize mana base with 100% MTG Arena verified lands"
+                    >
+                      <Mountain className="w-3.5 h-3.5" />
+                      <span>⚡ Auto-Build Mana Base</span>
+                    </button>
+                  )}
+
                   {onSaveDeck && (
                     <button
                       onClick={onSaveDeck}
