@@ -21,10 +21,25 @@ export interface SearchArenaParams {
   type?: CardTypeCategory | null;
   rarity?: CardRarity | null;
   digitalOnly?: boolean;
+  isCommander?: boolean;
   commanderColorIdentity?: string[];
   roleFilter?: FunctionalRole | 'lands' | null;
   order?: 'edhrec' | 'name' | 'cmc' | 'rarity' | 'rank';
   page?: number;
+}
+
+export function getScryfallHeaders(extraHeaders: Record<string, string> = {}): Record<string, string> {
+  const headers: Record<string, string> = {
+    'Accept': 'application/json',
+    ...extraHeaders
+  };
+  // In Node.js / CLI testing environments, Scryfall requires a custom User-Agent.
+  // In browser environments, setting User-Agent is forbidden by W3C Fetch spec
+  // and causes CORS preflight rejections.
+  if (typeof window === 'undefined') {
+    headers['User-Agent'] = 'BrawlDeckBuilder/1.0 (Web; MTGA)';
+  }
+  return headers;
 }
 
 export interface SearchResult {
@@ -202,6 +217,11 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     }
   }
 
+  // Commander filter
+  if (params.isCommander) {
+    parts.push('(t:legendary t:creature or t:planeswalker)');
+  }
+
   // Functional Role filter
   if (params.roleFilter) {
     if (params.roleFilter === 'ramp') {
@@ -253,10 +273,7 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
   try {
     const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(queryString)}&order=${order}&page=${page}`;
     const response = await fetch(url, {
-      headers: {
-        'User-Agent': 'BrawlDeckBuilder/1.0 (Web; MTGA)',
-        'Accept': 'application/json'
-      }
+      headers: getScryfallHeaders()
     });
 
     if (response.status === 404) {
@@ -292,6 +309,12 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     const fallbackFiltered = ARENA_CARDS.filter(c => {
       if (params.format && !c.legalities[params.format]) return false;
       if (params.digitalOnly && !c.isDigitalOnly && !c.isAlchemyRebalanced) return false;
+      if (params.isCommander) {
+        const isLegendary = c.typeLine.toLowerCase().includes('legendary');
+        const isCreature = c.types.includes('Creature');
+        const isPlaneswalker = c.types.includes('Planeswalker');
+        if (!((isLegendary && isCreature) || isPlaneswalker)) return false;
+      }
       if (params.commanderColorIdentity) {
         const isLegal = c.colorIdentity.every(col => params.commanderColorIdentity!.includes(col));
         if (!isLegal) return false;
@@ -304,8 +327,22 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
       if (params.type && !c.types.includes(params.type)) return false;
       if (params.rarity && c.rarity !== params.rarity) return false;
       if (trimmed) {
-        const q = trimmed.toLowerCase();
-        if (!c.name.toLowerCase().includes(q) && !c.oracleText.toLowerCase().includes(q)) return false;
+        const cleanTerms = trimmed
+          .replace(/\((.*?)\)/g, ' $1 ')
+          .replace(/[tofri]:\S+/gi, ' ')
+          .replace(/\b(or|and|not)\b/gi, ' ')
+          .replace(/["']/g, '')
+          .trim()
+          .toLowerCase()
+          .split(/\s+/)
+          .filter(Boolean);
+
+        if (cleanTerms.length > 0) {
+          const matchAll = cleanTerms.every(term => 
+            c.name.toLowerCase().includes(term) || c.oracleText.toLowerCase().includes(term)
+          );
+          if (!matchAll) return false;
+        }
       }
       return true;
     });
@@ -377,10 +414,7 @@ export async function fetchCardByArenaId(arenaId: number): Promise<Card | null> 
 
   try {
     const res = await fetch(`https://api.scryfall.com/cards/arena/${arenaId}`, {
-      headers: {
-        'Accept': 'application/json',
-        'User-Agent': 'ArenaForge/1.0'
-      }
+      headers: getScryfallHeaders()
     });
 
     if (!res.ok) {
@@ -435,11 +469,7 @@ export async function fetchCardsBatch(
     try {
       let res = await fetch('https://api.scryfall.com/cards/collection', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json',
-          'User-Agent': 'ArenaForge/1.0'
-        },
+        headers: getScryfallHeaders({ 'Content-Type': 'application/json' }),
         body: JSON.stringify({ identifiers: scryfallPayload })
       });
 
@@ -449,11 +479,7 @@ export async function fetchCardsBatch(
         await new Promise(r => setTimeout(r, 1500));
         res = await fetch('https://api.scryfall.com/cards/collection', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Accept': 'application/json',
-            'User-Agent': 'ArenaForge/1.0'
-          },
+          headers: getScryfallHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ identifiers: scryfallPayload })
         });
       }

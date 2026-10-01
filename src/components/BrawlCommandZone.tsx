@@ -126,6 +126,25 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
     }
   ];
 
+  const [imgSrc, setImgSrc] = React.useState<string | undefined>(commander?.imageUrl);
+  const [hasFailed, setHasFailed] = React.useState<boolean>(false);
+
+  React.useEffect(() => {
+    setImgSrc(commander?.imageUrl);
+    setHasFailed(false);
+  }, [commander?.id, commander?.imageUrl]);
+
+  const handleImageError = () => {
+    if (commander) {
+      const fallbackUrl = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(commander.name.replace(/^A-/, ''))}&format=image`;
+      if (imgSrc !== fallbackUrl) {
+        setImgSrc(fallbackUrl);
+        return;
+      }
+    }
+    setHasFailed(true);
+  };
+
   return (
     <div className="relative arena-panel rounded-3xl p-6 md:p-8 overflow-hidden transition-colors shadow-2xl">
       {/* Radiant Planeswalker Spark Aura Behind Commander */}
@@ -141,12 +160,42 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
           {commander ? (
             <div className="relative group cursor-pointer" onClick={onOpenCommanderPicker}>
               {/* Golden Legendary Crown Frame */}
-              <div className="w-48 sm:w-56 rounded-2xl overflow-hidden altar-pedestal bg-black p-0.5 transition duration-300 transform group-hover:scale-[1.03]">
-                <img
-                  src={commander.imageUrl}
-                  alt={commander.name}
-                  className="w-full h-auto object-cover rounded-[14px]"
-                />
+              <div className="w-48 sm:w-56 aspect-[5/7] rounded-2xl overflow-hidden altar-pedestal bg-black p-0.5 transition duration-300 transform group-hover:scale-[1.03] flex items-center justify-center relative">
+                {!hasFailed && (imgSrc || commander.imageUrl) ? (
+                  <img
+                    src={imgSrc || commander.imageUrl}
+                    alt={commander.name}
+                    onError={handleImageError}
+                    className="w-full h-full object-cover rounded-[14px]"
+                  />
+                ) : (
+                  <div className="w-full h-full rounded-[14px] bg-[#121620] border border-amber-500/30 p-4 flex flex-col justify-between text-center select-none">
+                    <div className="space-y-1 mt-2">
+                      <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                        <Crown className="w-5 h-5" />
+                      </div>
+                      <div className="font-fantasy font-bold text-amber-200 text-sm leading-tight pt-1">
+                        {commander.name}
+                      </div>
+                      <div className="text-[10px] text-stone-400">
+                        {commander.typeLine}
+                      </div>
+                    </div>
+                    {commander.oracleText && (
+                      <div className="text-[10px] text-stone-300 bg-black/40 p-2.5 rounded-lg border border-white/5 line-clamp-5 text-left leading-relaxed">
+                        {commander.oracleText}
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between text-[11px] pt-1">
+                      <span className="text-stone-400 font-mono">{commander.manaCost}</span>
+                      {commander.power !== undefined && commander.toughness !== undefined && (
+                        <span className="bg-amber-950/80 border border-amber-600/40 text-amber-300 font-mono font-bold px-2 py-0.5 rounded">
+                          {commander.power}/{commander.toughness}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Floating Arcane Wax Ribbon Badge */}

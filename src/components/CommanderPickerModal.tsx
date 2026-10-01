@@ -26,12 +26,9 @@ export const CommanderPickerModal: React.FC<CommanderPickerModalProps> = ({
 
     const timer = setTimeout(async () => {
       try {
-        const queryPart = searchTerm.trim() 
-          ? `(t:legendary t:creature or t:planeswalker) ${searchTerm.trim()}`
-          : `(t:legendary t:creature or t:planeswalker)`;
-
         const result = await searchArenaCards({
-          query: queryPart,
+          query: searchTerm.trim() || undefined,
+          isCommander: true,
           format: 'brawl'
         });
         setCommanders(result.cards);
@@ -82,10 +79,17 @@ export const CommanderPickerModal: React.FC<CommanderPickerModalProps> = ({
 
         {/* Commanders Grid */}
         <div className="flex-1 overflow-y-auto min-h-[360px] max-h-[500px] pr-1">
-          {isLoading && commanders.length === 0 ? (
+          {isLoading ? (
             <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2">
               <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
               <p className="font-semibold text-slate-200">Searching Arena Commanders...</p>
+            </div>
+          ) : commanders.length === 0 ? (
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2">
+              <p className="font-semibold text-slate-200">No commanders found</p>
+              <p className="text-xs text-slate-500">
+                {searchTerm.trim() ? `No commanders match "${searchTerm}".` : 'No commanders available.'}
+              </p>
             </div>
           ) : (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">

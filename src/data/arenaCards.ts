@@ -19,7 +19,7 @@ export const ARENA_CARDS: Card[] = [
     set: "Y23",
     setName: "Alchemy: The Brothers' War",
     collectorNumber: "4",
-    imageUrl: "https://cards.scryfall.io/normal/front/0/0/003cb570-3d6a-4104-8b63-1203c7844526.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/f/5/f51d8822-1d4d-417c-a281-8b011b978de2.jpg?1786106273",
     isDigitalOnly: true,
     digitalMechanic: "conjure",
     oracleText: "Flying\nWhen Oracle of the Alpha enters the battlefield, conjure the Power Nine into your library, then shuffle.",
@@ -50,7 +50,7 @@ export const ARENA_CARDS: Card[] = [
     set: "Y22",
     setName: "Alchemy: Innistrad",
     collectorNumber: "59",
-    imageUrl: "https://cards.scryfall.io/normal/front/d/2/d2160927-3634-445d-812e-016fb0fea900.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/d/6/d647773b-0dab-40df-8e25-ed4f437f549b.jpg?1783924531",
     isDigitalOnly: true,
     digitalMechanic: "spellbook",
     oracleText: "Key to the Archive enters the battlefield tapped.\nWhen Key to the Archive enters the battlefield, draft a card from Key to the Archive's spellbook, then discard a card.\n{T}: Add two mana in any combination of colors.",
@@ -85,7 +85,7 @@ export const ARENA_CARDS: Card[] = [
     set: "Y23",
     setName: "Alchemy: The Brothers' War",
     collectorNumber: "17",
-    imageUrl: "https://cards.scryfall.io/normal/front/1/7/17c67752-1677-4820-a4c2-728911672567.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/1/7/17aece62-a208-496b-ab63-70babb89e87f.jpg?1783918538",
     isDigitalOnly: true,
     digitalMechanic: "seek",
     oracleText: "At the beginning of your end step, you may discard a card. If you do, create a Treasure token and seek a card with greater mana value or equal mana value that shares a card type with the discarded card.",
@@ -108,7 +108,7 @@ export const ARENA_CARDS: Card[] = [
     set: "Y22",
     setName: "Alchemy: Innistrad",
     collectorNumber: "44",
-    imageUrl: "https://cards.scryfall.io/normal/front/4/9/4982f15f-2191-4cff-96c6-e42ce6fbc54f.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/4/f/4f095067-cf24-4061-8626-dc68a66a0b36.jpg?1783910543",
     isDigitalOnly: true,
     digitalMechanic: "conjure",
     oracleText: "Haste\nWhenever Toralf's Disciple attacks, conjure four cards named Lightning Bolt into your library, then shuffle.",
@@ -131,7 +131,7 @@ export const ARENA_CARDS: Card[] = [
     set: "STX",
     setName: "Strixhaven Rebalanced",
     collectorNumber: "56",
-    imageUrl: "https://cards.scryfall.io/normal/front/3/e/3e726fc7-36cf-405c-9b7c-d1e41cd6c68f.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/3/e/3e726fc7-36cf-405c-9b7c-d1e41cd6c68f.jpg?1783927373",
     isAlchemyRebalanced: true,
     oracleText: "Flying\nMagecraft — Whenever you cast or copy an instant or sorcery spell, target creature you control has base power 3 until end of turn.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
@@ -152,7 +152,7 @@ export const ARENA_CARDS: Card[] = [
     set: "STA",
     setName: "Mystical Archive",
     collectorNumber: "42",
-    imageUrl: "https://cards.scryfall.io/normal/front/a/e/ae460312-9de0-4c7b-a255-a32057bcc09a.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/7/6/7673784e-db4b-43a1-8d55-1bb9fc1e284f.jpg?1783903008",
     oracleText: "Lightning Bolt deals 3 damage to any target.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -170,7 +170,7 @@ export const ARENA_CARDS: Card[] = [
     set: "STA",
     setName: "Mystical Archive",
     collectorNumber: "13",
-    imageUrl: "https://cards.scryfall.io/normal/front/0/3/0359f212-9564-41a9-870b-d2c57455a695.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/e/c/ec7d6864-7b6b-4f74-8474-9b9ec96b1d33.jpg?1789599806",
     oracleText: "Draw three cards, then put two cards from your hand on top of your library in any order.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -188,7 +188,7 @@ export const ARENA_CARDS: Card[] = [
     set: "STA",
     setName: "Mystical Archive",
     collectorNumber: "26",
-    imageUrl: "https://cards.scryfall.io/normal/front/a/5/a5dc69df-bfe5-4ae0-949b-70172952b407.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/1/1/11e12a84-e7be-4afc-a230-c2e644743fa8.jpg?1783903013",
     oracleText: "Add {B}{B}{B}.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -206,7 +206,7 @@ export const ARENA_CARDS: Card[] = [
     set: "STA",
     setName: "Mystical Archive",
     collectorNumber: "10",
-    imageUrl: "https://cards.scryfall.io/normal/front/a/6/a6ec0b57-61c1-42e7-8178-ff29fbffbd00.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/f/7/f7e12477-d59f-442b-a678-1be746d0b7be.jpg?1789599810",
     oracleText: "Exile target creature. Its controller gains life equal to its power.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -224,7 +224,7 @@ export const ARENA_CARDS: Card[] = [
     set: "STA",
     setName: "Mystical Archive",
     collectorNumber: "15",
-    imageUrl: "https://cards.scryfall.io/normal/front/1/9/1920dae4-fb92-4f19-ae4b-eb3276b8dac7.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630",
     oracleText: "Counter target spell.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -242,7 +242,7 @@ export const ARENA_CARDS: Card[] = [
     set: "OTP",
     setName: "Breaking News",
     collectorNumber: "11",
-    imageUrl: "https://cards.scryfall.io/normal/front/3/c/3c429c40-2389-41e5-8681-4bb274e25eba.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/3/c/3c429c40-2389-41e5-8681-4bb274e25eba.jpg?1783921913",
     oracleText: "Counter target spell. At the beginning of your next main phase, add an amount of {C} equal to that spell's mana value.",
     legalities: { standard: false, timeless: true, historic: false, explorer: false, brawl: true, alchemy: false }
   },
@@ -263,7 +263,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MUL",
     setName: "Multiverse Legends",
     collectorNumber: "86",
-    imageUrl: "https://cards.scryfall.io/normal/front/a/9/a9738cda-adb1-47fb-9f4c-ecd930228c4d.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/a/9/a9738cda-adb1-47fb-9f4c-ecd930228c4d.jpg?1783926839",
     oracleText: "Whenever Ragavan, Nimble Pilferer deals combat damage to a player, create a Treasure token and exile the top card of that player's library. Until end of turn, you may cast that card.\nDash {1}{R}",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -284,7 +284,7 @@ export const ARENA_CARDS: Card[] = [
     set: "LTR",
     setName: "The Lord of the Rings: Tales of Middle-earth",
     collectorNumber: "103",
-    imageUrl: "https://cards.scryfall.io/normal/front/7/c/7c024bae-5631-4e20-ac69-df392ac9e109.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/7/c/7c024bae-5631-4e20-ac69-df392ac9e109.jpg?1783916299",
     oracleText: "Flash\nWhen Orcish Bowmasters enters the battlefield and whenever an opponent draws a card except the first one they draw in each of their draw steps, Orcish Bowmasters deals 1 damage to any target and you amass Orcs 1.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -302,7 +302,7 @@ export const ARENA_CARDS: Card[] = [
     set: "LTR",
     setName: "The Lord of the Rings: Tales of Middle-earth",
     collectorNumber: "246",
-    imageUrl: "https://cards.scryfall.io/normal/front/d/5/d5806e68-1054-458e-866d-5fcf707f6830.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/d/5/d5806e68-1054-458e-866d-1f2470f682b2.jpg?1790212038",
     oracleText: "Indestructible\nWhen The One Ring enters the battlefield, if you cast it, you gain protection from everything until your next turn.\nAt the beginning of your upkeep, you lose 1 life for each burden counter on The One Ring.\n{T}: Put a burden counter on The One Ring, then draw a card for each burden counter on it.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -323,7 +323,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MH3",
     setName: "Modern Horizons 3",
     collectorNumber: "197",
-    imageUrl: "https://cards.scryfall.io/normal/front/e/4/e419cd0b-2449-4cc5-9ded-b9e483523f99.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/e/4/e419cd0b-2449-4cc5-9ead-b9e45e271700.jpg?1783911247",
     oracleText: "When Phlage enters the battlefield, sacrifice it unless it escaped.\nWhenever Phlage enters the battlefield or attacks, it deals 3 damage to any target and you gain 3 life.\nEscape—{R}{R}{W}{W}, Exile five other cards from your graveyard.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -341,7 +341,7 @@ export const ARENA_CARDS: Card[] = [
     set: "SPG",
     setName: "Special Guests",
     collectorNumber: "21",
-    imageUrl: "https://cards.scryfall.io/normal/front/f/a/fa7b7897-36e0-415a-8bb7-602886164852.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/f/a/fa7b7897-36e0-415a-8bb7-602886164852.jpg?1783937320",
     oracleText: "Each player may put an artifact, creature, enchantment, or land card from their hand onto the battlefield.",
     legalities: { standard: false, timeless: true, historic: false, explorer: false, brawl: true, alchemy: false }
   },
@@ -359,7 +359,7 @@ export const ARENA_CARDS: Card[] = [
     set: "M19",
     setName: "Core Set 2019",
     collectorNumber: "65",
-    imageUrl: "https://cards.scryfall.io/normal/front/d/b/db534b4e-8bff-4924-baea-9988d195fb25.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/d/3/d33d91d0-1506-45e4-9def-975bf901815e.jpg?1783909079",
     oracleText: "You may cast spells from your hand without paying their mana costs.",
     legalities: { standard: false, timeless: true, historic: true, explorer: true, brawl: true, alchemy: false }
   },
@@ -380,7 +380,7 @@ export const ARENA_CARDS: Card[] = [
     set: "ONE",
     setName: "Phyrexia: All Will Be One",
     collectorNumber: "196",
-    imageUrl: "https://cards.scryfall.io/normal/front/4/a/4a1f905f-1d55-4d02-9d24-e58070793d3f.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/4/a/4a1f905f-1d55-4d02-9d24-e58070793d3f.jpg?1783918003",
     oracleText: "Flying, vigilance, deathtouch, lifelink\nWhen Atraxa enters the battlefield, reveal the top ten cards of your library. For each card type, you may put a card of that type into your hand. Put the rest on the bottom of your library in a random order.",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -398,7 +398,7 @@ export const ARENA_CARDS: Card[] = [
     set: "SPG",
     setName: "Special Guests",
     collectorNumber: "26",
-    imageUrl: "https://cards.scryfall.io/normal/front/3/d/3d9709ea-5962-4590-8b14-5213b14f9229.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/a/4/a45b4ca9-4355-4690-84c3-a7d44c367dbf.jpg?1783918452",
     oracleText: "{R}: You may put a creature card from your hand onto the battlefield. That creature gains haste. Sacrifice the creature at the beginning of the next end step.",
     legalities: { standard: false, timeless: true, historic: false, explorer: false, brawl: true, alchemy: false }
   },
@@ -416,7 +416,7 @@ export const ARENA_CARDS: Card[] = [
     set: "AKR",
     setName: "Amonkhet Remastered",
     collectorNumber: "127",
-    imageUrl: "https://cards.scryfall.io/normal/front/b/2/b281a308-ab6b-47b6-bec7-632c9aaecede.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/b/2/b281a308-ab6b-47b6-bec7-632c9aaecede.jpg?1783930173",
     oracleText: "Target player reveals their hand. You choose a nonland card from it. That player discards that card. You lose 2 life.",
     legalities: { standard: false, timeless: true, historic: true, explorer: true, brawl: true, alchemy: false }
   },
@@ -434,7 +434,7 @@ export const ARENA_CARDS: Card[] = [
     set: "KLR",
     setName: "Kaladesh Remastered",
     collectorNumber: "84",
-    imageUrl: "https://cards.scryfall.io/normal/front/6/e/6e9da54f-962f-4102-af48-03657388135b.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/6/e/6e9d8fe4-fd9b-4923-92bf-7dd6b8fa02e7.jpg?1783930180",
     oracleText: "Destroy target creature if it has mana value 2 or less.\nRevolt — Destroy that creature if it has mana value 4 or less instead if a permanent you controlled left the battlefield this turn.",
     legalities: { standard: false, timeless: true, historic: true, explorer: true, brawl: true, alchemy: false }
   },
@@ -455,7 +455,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MH3",
     setName: "Modern Horizons 3",
     collectorNumber: "29",
-    imageUrl: "https://cards.scryfall.io/normal/front/7/6/76c3cad2-1e25-4abe-878d-9194de6fcc48.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/7/6/76c3cad2-1e25-4abe-878d-9194de6fcc27.jpg?1790212061",
     oracleText: "Whenever another creature enters the battlefield under your control, you gain 1 life and get {E} (an energy counter).\nWhenever you attack, you may pay {E}{E}{E}. If you do, put two +1/+1 counters and a flying counter on target attacking creature. It becomes an Angel in addition to its other types.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -497,7 +497,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MH3",
     setName: "Modern Horizons 3",
     collectorNumber: "114",
-    imageUrl: "https://cards.scryfall.io/normal/front/1/a/1ac0e78b-0eaf-44f4-9040-3575dd232272.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/1/a/1ac0e78b-0fdd-44f9-8b7b-c4f28a32782e.jpg?1783911274",
     oracleText: "First strike\nWhen Amped Raptor enters the battlefield, you get {E}{E}. Then exile cards from the top of your library until you exile a nonland card. You may cast that card by paying an amount of {E} equal to its mana value.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -560,7 +560,7 @@ export const ARENA_CARDS: Card[] = [
     set: "LCI",
     setName: "The Lost Caverns of Ixalan",
     collectorNumber: "102",
-    imageUrl: "https://cards.scryfall.io/normal/front/c/9/c946e340-9a48-4e86-a077-ca9efca78ee5.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/6/9/69c68c95-b788-43b1-9f22-1b22c5a00b25.jpg?1783913780",
     oracleText: "Flying, lifelink\nWhen Deep-Cavern Bat enters the battlefield, look at target opponent's hand and exile a nonland card from it until Deep-Cavern Bat leaves the battlefield.",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -578,7 +578,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MOM",
     setName: "March of the Machine",
     collectorNumber: "40",
-    imageUrl: "https://cards.scryfall.io/normal/front/3/2/32e29c7d-ed4b-4ef6-b827-713b19f6ae6b.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/a/5/a560b9a7-4c00-4c0c-b63d-774d3f6b9aa9.jpg?1789611521",
     oracleText: "Exile all creatures. Incubate X, where X is the number of creatures exiled this way.",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -596,7 +596,7 @@ export const ARENA_CARDS: Card[] = [
     set: "BRO",
     setName: "The Brothers' War",
     collectorNumber: "102",
-    imageUrl: "https://cards.scryfall.io/normal/front/1/5/155e166e-80a7-4ab5-b339-66c6d1da1f03.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/5/4/5446e1ba-c745-45b2-ad05-b22abf04daec.jpg?1783917160",
     oracleText: "Destroy target nonartifact creature.",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -614,7 +614,7 @@ export const ARENA_CARDS: Card[] = [
     set: "DMU",
     setName: "Dominaria United",
     collectorNumber: "89",
-    imageUrl: "https://cards.scryfall.io/normal/front/7/5/753db023-541e-4666-6daf-774144c17f46.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/7/5/753db072-5d6a-4f37-8f7d-255572ecd3bd.jpg?1783921335",
     oracleText: "Destroy target creature with total power and toughness 5 or less.",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -653,7 +653,7 @@ export const ARENA_CARDS: Card[] = [
     set: "WOE",
     setName: "Wilds of Eldraine",
     collectorNumber: "142",
-    imageUrl: "https://cards.scryfall.io/normal/front/e/6/e695f928-3215-4f14-a01c-f1f1496c38d4.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/e/e/eef5a0ae-5907-42c9-a097-3f973737e392.jpg?1783915091",
     oracleText: "Target creature gets +2/+0 until end of turn. Create a Monster Role token attached to it. (+1/+1 and trample)",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -695,7 +695,7 @@ export const ARENA_CARDS: Card[] = [
     set: "BRO",
     setName: "The Brothers' War",
     collectorNumber: "144",
-    imageUrl: "https://cards.scryfall.io/normal/front/d/6/d6bfa222-930e-423a-8c44-59864538801b.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/d/6/d6bfa227-4309-40ed-952c-279595eab17e.jpg?1783920066",
     oracleText: "Haste\nProwess (Whenever you cast a noncreature spell, this creature gets +1/+1 until end of turn.)",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -715,7 +715,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MH3",
     setName: "Modern Horizons 3",
     collectorNumber: "224",
-    imageUrl: "https://cards.scryfall.io/normal/front/f/a/fa761b0c-a991-477c-a496-c148e64c207c.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/6/e/6e288374-2b71-4ace-b1d2-a19fee6cb4af.jpg?1783911240",
     oracleText: "{T}, Pay 1 life, Sacrifice Polluted Delta: Search your library for an Island or Swamp card, put it onto the battlefield, then shuffle.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -733,7 +733,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MH3",
     setName: "Modern Horizons 3",
     collectorNumber: "220",
-    imageUrl: "https://cards.scryfall.io/normal/front/8/f/8f352ee8-a548-43d9-b363-23a593c2084c.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/8/f/8f85e12c-196b-4459-b81f-0c9c854e9f57.jpg?1783911240",
     oracleText: "{T}, Pay 1 life, Sacrifice Flooded Strand: Search your library for a Plains or Island card, put it onto the battlefield, then shuffle.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -751,7 +751,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MH3",
     setName: "Modern Horizons 3",
     collectorNumber: "230",
-    imageUrl: "https://cards.scryfall.io/normal/front/b/a/ba56a4b1-dfc5-4309-88b1-3ef5a0db9fcb.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/4/e/4e11ea8a-f895-438d-a3b7-f070238e4161.jpg?1783911232",
     oracleText: "{T}, Pay 1 life, Sacrifice Wooded Foothills: Search your library for a Mountain or Forest card, put it onto the battlefield, then shuffle.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -787,7 +787,7 @@ export const ARENA_CARDS: Card[] = [
     set: "MH3",
     setName: "Modern Horizons 3",
     collectorNumber: "228",
-    imageUrl: "https://cards.scryfall.io/normal/front/b/d/bd1d13f6-4927-44fa-a83a-866ec480746f.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/b/d/bd1d13f7-fd38-4f0b-a8e0-1eac78668117.jpg?1783911233",
     oracleText: "{T}, Pay 1 life, Sacrifice Windswept Heath: Search your library for a Forest or Plains card, put it onto the battlefield, then shuffle.",
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
@@ -806,7 +806,7 @@ export const ARENA_CARDS: Card[] = [
     set: "GRN",
     setName: "Guilds of Ravnica",
     collectorNumber: "257",
-    imageUrl: "https://cards.scryfall.io/normal/front/b/8/b8ede3d0-79a6-4526-ba5d-883e5c9d4b10.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/a/8/a83903c7-fd51-4526-aed2-359e946fea36.jpg?1784036844",
     oracleText: "({T}: Add {U} or {R}.)\nAs Steam Vents enters the battlefield, you may pay 2 life. If you don't, it enters tapped.",
     legalities: { standard: false, timeless: true, historic: true, explorer: true, brawl: true, alchemy: false }
   },
@@ -825,7 +825,7 @@ export const ARENA_CARDS: Card[] = [
     set: "GRN",
     setName: "Guilds of Ravnica",
     collectorNumber: "259",
-    imageUrl: "https://cards.scryfall.io/normal/front/0/c/0c96f370-0c88-42e2-b64f-4672914538b3.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/5/5/5525d6a6-e532-4047-9da4-bfae7927fecc.jpg?1784036860",
     oracleText: "({T}: Add {U} or {B}.)\nAs Watery Grave enters the battlefield, you may pay 2 life. If you don't, it enters tapped.",
     legalities: { standard: false, timeless: true, historic: true, explorer: true, brawl: true, alchemy: false }
   },
@@ -844,7 +844,7 @@ export const ARENA_CARDS: Card[] = [
     set: "GRN",
     setName: "Guilds of Ravnica",
     collectorNumber: "254",
-    imageUrl: "https://cards.scryfall.io/normal/front/b/7/b7b598d0-555e-4614-9047-0d9c4901f40d.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/a/7/a7758cc6-4e18-48a5-8720-5f42b5cd9d31.jpg?1784036842",
     oracleText: "({T}: Add {R} or {W}.)\nAs Sacred Foundry enters the battlefield, you may pay 2 life. If you don't, it enters tapped.",
     legalities: { standard: false, timeless: true, historic: true, explorer: true, brawl: true, alchemy: false }
   },
@@ -863,7 +863,7 @@ export const ARENA_CARDS: Card[] = [
     set: "RNA",
     setName: "Ravnica Allegiance",
     collectorNumber: "245",
-    imageUrl: "https://cards.scryfall.io/normal/front/5/7/57adb06a-52ac-4216-8d94-7c1e795a614e.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/1/b/1b7eb998-3ec0-4cbc-a416-5a1e3e5a7316.jpg?1784036817",
     oracleText: "({T}: Add {B} or {R}.)\nAs Blood Crypt enters the battlefield, you may pay 2 life. If you don't, it enters tapped.",
     legalities: { standard: false, timeless: true, historic: true, explorer: true, brawl: true, alchemy: false }
   },
@@ -920,7 +920,7 @@ export const ARENA_CARDS: Card[] = [
     set: "DMU",
     setName: "Dominaria United",
     collectorNumber: "277",
-    imageUrl: "https://cards.scryfall.io/normal/front/1/4/14f5f561-39fd-4dad-b225-40cc1eddb563.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/8/a/8ab0f4c0-b331-4c57-b68f-2e24bb5ba06c.jpg?1785981632",
     oracleText: "({T}: Add {W}.)",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -939,7 +939,7 @@ export const ARENA_CARDS: Card[] = [
     set: "DMU",
     setName: "Dominaria United",
     collectorNumber: "278",
-    imageUrl: "https://cards.scryfall.io/normal/front/f/a/fa6543b5-236b-4e89-beaa-ea5669b73d6e.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/f/3/f3cc07cd-cc79-4745-b0b7-eade60175cc3.jpg?1785981645",
     oracleText: "({T}: Add {U}.)",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -958,7 +958,7 @@ export const ARENA_CARDS: Card[] = [
     set: "DMU",
     setName: "Dominaria United",
     collectorNumber: "279",
-    imageUrl: "https://cards.scryfall.io/normal/front/3/1/31b14e48-916c-45b0-8800-e144917637f1.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/b/7/b7387103-1df1-4fd0-9e91-1544509792c7.jpg?1785981659",
     oracleText: "({T}: Add {B}.)",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -977,7 +977,7 @@ export const ARENA_CARDS: Card[] = [
     set: "DMU",
     setName: "Dominaria United",
     collectorNumber: "280",
-    imageUrl: "https://cards.scryfall.io/normal/front/1/b/1b1a539f-f513-433e-b850-89196b0bc3ee.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/2/a/2a844b96-6616-4c39-8f4f-5d14a3b2bd55.jpg?1785981666",
     oracleText: "({T}: Add {R}.)",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   },
@@ -996,7 +996,7 @@ export const ARENA_CARDS: Card[] = [
     set: "DMU",
     setName: "Dominaria United",
     collectorNumber: "281",
-    imageUrl: "https://cards.scryfall.io/normal/front/3/9/393b3a32-a5ec-44f2-9014-99b82c3c97ae.jpg",
+    imageUrl: "https://cards.scryfall.io/normal/front/d/c/dce15387-4114-4b3e-91aa-5b42b45c44ac.jpg?1785981675",
     oracleText: "({T}: Add {G}.)",
     legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
   }

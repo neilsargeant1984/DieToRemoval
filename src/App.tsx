@@ -40,7 +40,17 @@ export const App: React.FC = () => {
       try {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed;
+          return parsed.map((deck: Deck) => {
+            if (deck?.commander?.card) {
+              const matched = ARENA_CARDS.find(
+                c => c.id === deck.commander?.card.id || c.name.toLowerCase() === deck.commander?.card.name.toLowerCase()
+              );
+              if (matched) {
+                deck.commander.card.imageUrl = matched.imageUrl;
+              }
+            }
+            return deck;
+          });
         }
       } catch {
         // Fallback
@@ -65,7 +75,17 @@ export const App: React.FC = () => {
     const saved = localStorage.getItem('arenaforge_active_deck');
     if (saved) {
       try {
-        return JSON.parse(saved);
+        const parsed: Deck = JSON.parse(saved);
+        if (parsed?.commander?.card) {
+          const cmdCard = parsed.commander.card;
+          const matched = ARENA_CARDS.find(
+            c => c.id === cmdCard.id || c.name.toLowerCase() === cmdCard.name.toLowerCase()
+          );
+          if (matched) {
+            cmdCard.imageUrl = matched.imageUrl;
+          }
+        }
+        return parsed;
       } catch {
         // Fallback
       }
@@ -132,6 +152,24 @@ export const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('arenaforge_active_deck', JSON.stringify(activeDeck));
   }, [activeDeck]);
+
+  // Synchronize active commander imageUrl with canonical catalog if outdated
+  useEffect(() => {
+    if (activeDeck.commander?.card) {
+      const matched = ARENA_CARDS.find(
+        c => c.id === activeDeck.commander?.card.id || c.name.toLowerCase() === activeDeck.commander?.card.name.toLowerCase()
+      );
+      if (matched && matched.imageUrl !== activeDeck.commander.card.imageUrl) {
+        setActiveDeck(prev => ({
+          ...prev,
+          commander: {
+            ...prev.commander!,
+            card: { ...prev.commander!.card, imageUrl: matched.imageUrl }
+          }
+        }));
+      }
+    }
+  }, [activeDeck.commander?.card?.name]);
 
   // Persist savedDecks
   useEffect(() => {

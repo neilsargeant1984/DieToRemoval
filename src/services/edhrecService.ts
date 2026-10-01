@@ -49,10 +49,15 @@ export async function fetchArenaCommunityMeta(
   }
 
   try {
+    const headers: Record<string, string> = {
+      'Accept': 'application/json'
+    };
+    if (typeof window === 'undefined') {
+      headers['User-Agent'] = 'BrawlDeckBuilder/1.0 (Web; MTGA)';
+    }
+
     const response = await fetch(`https://json.edhrec.com/pages/commanders/${slug}.json`, {
-      headers: {
-        'Accept': 'application/json'
-      }
+      headers
     });
 
     if (!response.ok) {
