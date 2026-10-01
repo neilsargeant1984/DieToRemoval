@@ -56,7 +56,17 @@ export function extractCardSynergies(card: Card): CardSynergyProfile {
     demands.push('discard');
     archetypes.push('Discard / Madness');
   }
-  if (/(whenever|if).*(you gain life|gained life)/i.test(text)) {
+  if (
+    /(whenever|if).*(you gain|gained)\s+(\d+|one|two|three|or more|\w+)*\s*life/i.test(text) ||
+    /life total is greater/i.test(text) ||
+    /for each.*life you gained/i.test(text) ||
+    /amount of life you gained/i.test(text) ||
+    /\bextort\b/i.test(text) ||
+    /equal to the life you gained/i.test(text) ||
+    /whenever you gain life/i.test(text) ||
+    /if you gained \d+ or more life/i.test(text) ||
+    (text.includes('life') && (text.includes('starting life total') || text.includes('gained this turn')))
+  ) {
     demands.push('lifegain');
     archetypes.push('Lifegain Payoffs');
   }
@@ -84,9 +94,9 @@ export function extractCardSynergies(card: Card): CardSynergyProfile {
     demands.push('counters');
     archetypes.push('+1/+1 & Counters');
   }
-  if (/\bdelirium\b/i.test(text) || /\bescape\b/i.test(text) || /\bcards in your graveyard\b/i.test(text) || /\bundergrowth\b/i.test(text)) {
+  if (/\bdelirium\b/i.test(text) || /\bescape\b/i.test(text) || /\bcards in your graveyard\b/i.test(text) || /\bundergrowth\b/i.test(text) || /(exile|return|cast|put).*card.*from (your|a) graveyard/i.test(text) || /target creature card from your graveyard/i.test(text) || /creature card in your graveyard/i.test(text) || /creature spell from your graveyard/i.test(text)) {
     demands.push('graveyard');
-    archetypes.push('Graveyard / Delirium');
+    archetypes.push('Graveyard / Reanimation');
   }
   if (/\bpay \{e\}\b/i.test(text) || /(whenever|if).*get \{e\}/i.test(text)) {
     demands.push('energy');
@@ -102,7 +112,16 @@ export function extractCardSynergies(card: Card): CardSynergyProfile {
   }
 
   // --- EXTRACT SUPPLIES (PAYOFFS & ENABLERS) ---
-  if (/\blifelink\b/i.test(text) || /\bgain(s)?\s+(\d+|x)?\s*life\b/i.test(text)) {
+  if (
+    /\blifelink\b/i.test(text) || 
+    /\bgain(s)?\s+(\d+|x)?\s*life\b/i.test(text) ||
+    /food token/i.test(text) ||
+    /\bextort\b/i.test(text) ||
+    /creatures (and planeswalkers )?you control have lifelink/i.test(text) ||
+    /put a lifelink counter/i.test(text) ||
+    /you gain life equal to/i.test(text) ||
+    (text.includes('deals') && text.includes('you gain that much life'))
+  ) {
     supplies.push('gains_life');
   }
   if (text.includes('the ring tempts you')) {
@@ -120,7 +139,7 @@ export function extractCardSynergies(card: Card): CardSynergyProfile {
   if (/\bdeals\s+(\d+|x)?\s*damage to (any target|target player|each opponent|target)/i.test(text)) {
     supplies.push('deals_burn');
   }
-  if (/\bmill(s)?\b/i.test(text) || /\bdiscard(s)?\s+(a|two|three|\d+|x)?\s*card/i.test(text) || /\beach player discards\b/i.test(text)) {
+  if (/\bmill(s|ing)?\b/i.test(text) || /\bsurveil\b/i.test(text) || /\bdiscard(s|ing)?\b/i.test(text) || /\beach player discards\b/i.test(text) || /put.*into your graveyard/i.test(text) || /search your library.*into your graveyard/i.test(text) || /\bentomb\b/i.test(text)) {
     supplies.push('fills_graveyard');
   }
   if (/put.*counter/i.test(text) || /\bproliferate\b/i.test(text)) {
@@ -164,18 +183,69 @@ export function calculateSynergy(
     return null;
   }
 
+  // Strict Color Identity Check: Candidate color identity MUST be a subset of Commander's
+  if (!candidateCard.colorIdentity.every(col => commanderCard.colorIdentity.includes(col))) {
+    return null;
+  }
+
+  const candidateText = (candidateCard.oracleText || '').toLowerCase();
+
+  // Color text restriction: If a colorless card explicitly refers only to an off-color creature/spell/permanent
+  // (e.g. Bontu's Monument specifies "black creature spells you cast cost {1} less", 
+  // Hazoret's Monument specifies "red creature spells", etc.),
+  // it should NEVER synergize with a commander that does not share that color!
+  const colorKeywords: { name: string; code: 'W' | 'U' | 'B' | 'R' | 'G' }[] = [
+    { name: 'white', code: 'W' },
+    { name: 'blue', code: 'U' },
+    { name: 'black', code: 'B' },
+    { name: 'red', code: 'R' },
+    { name: 'green', code: 'G' }
+  ];
+
+  for (const { name: colorName, code: colorCode } of colorKeywords) {
+    if (!commanderCard.colorIdentity.includes(colorCode)) {
+      // If card specifies "{color} creature spells you cast cost" or "{color} spells you cast cost"
+      const costReductionPattern = new RegExp(`\\b${colorName}\\s+(creature\\s+)?spells\\s+you\\s+cast\\s+cost`, 'i');
+      if (costReductionPattern.test(candidateText)) {
+        return null;
+      }
+      // Devotion to off-color
+      const devotionPattern = new RegExp(`devotion\\s+to\\s+${colorName}`, 'i');
+      if (devotionPattern.test(candidateText)) {
+        return null;
+      }
+    }
+  }
+
   const p1 = extractCardSynergies(commanderCard);
   const p2 = extractCardSynergies(candidateCard);
-  const candidateText = (candidateCard.oracleText || '').toLowerCase();
 
   let score = 0;
   const matchReasons: string[] = [];
 
   // Match 1: Candidate supplies what Commander demands
   for (const dem of p1.demands) {
-    if (dem === 'lifegain' && p2.supplies.includes('gains_life')) {
-      score += 40;
-      matchReasons.push(`Supplies Life Gain to trigger ${commanderCard.name}`);
+    if (dem === 'lifegain') {
+      const isWalker = candidateCard.types.includes('Planeswalker') || (candidateCard.typeLine || '').toLowerCase().includes('planeswalker');
+      const isFoodOrSacLife = candidateText.includes('food') || (candidateText.includes('sacrifice') && candidateText.includes('gain'));
+      const commanderCaresAboutSacrifice = p1.demands.includes('death_sacrifice') || (commanderCard.oracleText || '').toLowerCase().includes('sacrifice');
+
+      if (p2.supplies.includes('gains_life')) {
+        // High score for repeatable/creature-based natural lifegain (Soul Warden, Authority of the Consuls, Lifelinkers, Walkers)
+        // Modest score for sac-based food outlets unless the commander actively wants creature sacrifice
+        let lifeScore = isWalker ? 55 : 45;
+        if (isFoodOrSacLife && !commanderCaresAboutSacrifice) {
+          lifeScore = 25; // Modest, non-inflated score for sac-dependent incidental lifegain
+        }
+        score += lifeScore;
+        matchReasons.push(isWalker 
+          ? `Lifegain planeswalker: generates repeatable lifegain to trigger ${commanderCard.name}` 
+          : `Supplies Life Gain to trigger ${commanderCard.name}`);
+      }
+      if (p2.demands.includes('lifegain')) {
+        score += isWalker ? 50 : 38;
+        matchReasons.push(`Synergistic lifegain payoff that scales with ${commanderCard.name}`);
+      }
     }
     if (dem === 'draw' && p2.supplies.includes('draws_cards')) {
       score += 45;
@@ -231,6 +301,28 @@ export function calculateSynergy(
     if (dem === 'counters' && p2.supplies.includes('produces_counters')) {
       score += 35;
       matchReasons.push(`Adds counters to trigger ${commanderCard.name}'s counter abilities`);
+    }
+    if (dem === 'graveyard') {
+      if (p2.supplies.includes('fills_graveyard')) {
+        score += 48;
+        matchReasons.push(`Graveyard Fuel: Discards or mills creature targets into your graveyard for ${commanderCard.name}`);
+      } else if (
+        /additional cost.*discard/i.test(candidateText) ||
+        /discard (a|one|two|\d+)?\s*card/i.test(candidateText) ||
+        /draw.*then discard/i.test(candidateText)
+      ) {
+        score += 45;
+        matchReasons.push(`Discard Outlet: Discards high-cost creatures from hand into graveyard for ${commanderCard.name}`);
+      }
+      // High-impact reanimation targets
+      if (
+        candidateCard.types.includes('Creature') &&
+        candidateCard.cmc >= 5 &&
+        (/(enters|attacks|dies).*deals|destroy|draw|exile|drain|each opponent/i.test(candidateText) || (parseInt(candidateCard.power || '0', 10) >= 6))
+      ) {
+        score += 35;
+        matchReasons.push(`High-Impact Reanimation Target: Devastating body to reanimate with ${commanderCard.name}`);
+      }
     }
     if (dem === 'ring_bearer' && p2.supplies.includes('ring_temptation')) {
       score += 55;
@@ -293,8 +385,20 @@ export function calculateSynergy(
 
   // Match 5: Color Affinity (favor on-color cards over generic colorless filler)
   const isColorless = candidateCard.colors.length === 0;
-  if (!isColorless && candidateCard.colors.some(c => commanderCard.colorIdentity.includes(c))) {
-    score += 10;
+  if (commanderCard.colorIdentity.length > 0) {
+    if (!isColorless && candidateCard.colors.some(c => commanderCard.colorIdentity.includes(c))) {
+      score += 15;
+    } else if (isColorless) {
+      // De-prioritize high-cost generic colorless cards unless commander is colorless or artifact-based
+      const isArtifactCommander = p1.demands.includes('artifact_etb') || (commanderCard.oracleText || '').toLowerCase().includes('colorless');
+      if (!isArtifactCommander) {
+        if (candidateCard.cmc >= 5) {
+          score -= 15;
+        } else {
+          score -= 5;
+        }
+      }
+    }
   }
 
   // Determine Category

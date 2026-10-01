@@ -8,11 +8,11 @@ import {
   UploadCloud, 
   Download, 
   Crown,
-  Flame,
-  FolderHeart
+  FolderHeart,
+  ShieldCheck
 } from 'lucide-react';
 
-export type MainNavTab = 'deck_builder' | 'card_library' | 'my_decks';
+export type MainNavTab = 'deck_builder' | 'card_library' | 'my_collection' | 'my_decks';
 
 interface ArenaNavbarProps {
   currentTab: MainNavTab;
@@ -38,62 +38,73 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
   deckCount = 0
 }) => {
   return (
-    <header className="sticky top-0 z-40 bg-[#0c1017]/95 border-b border-[#232a3b] backdrop-blur-md px-4 py-2.5 shadow-xl">
+    <header className="sticky top-0 z-40 bg-[#0e121a]/95 border-b border-[#c5a059]/25 backdrop-blur-xl px-4 py-2.5 shadow-2xl">
       <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Brand & Top-level Navigation Pills */}
         <div className="flex items-center gap-6">
           {/* ArenaForge Brand */}
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-600 via-amber-500 to-yellow-300 flex items-center justify-center shadow-lg shadow-amber-500/20 border border-amber-300/40">
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-amber-500 via-orange-600 to-amber-700 flex items-center justify-center shadow-lg shadow-orange-500/25 border border-yellow-300/40">
               <Crown className="w-4 h-4 text-slate-950 font-bold" />
             </div>
             <div>
-              <span className="font-extrabold text-sm tracking-wider text-slate-100 uppercase">
-                ARENA<span className="text-amber-400">FORGE</span>
+              <span className="font-fantasy font-black text-sm tracking-wider text-white uppercase">
+                ARENA<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 via-orange-400 to-amber-200">FORGE</span>
               </span>
-              <span className="ml-1.5 px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-amber-500/10 text-amber-300 border border-amber-500/30">
+              <span className="ml-1.5 px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-orange-950/80 text-orange-300 border border-orange-500/40">
                 HUB
               </span>
             </div>
           </div>
 
-          {/* Primary View Pills: Deck Builder vs Card Library vs My Decks */}
-          <div className="flex items-center bg-[#151a24] p-1 rounded-xl border border-[#262f42] shadow-inner">
+          {/* Primary View Pills: Deck Builder vs Card Library vs My Collection vs My Decks */}
+          <div className="flex items-center bg-[#0d1017]/90 p-1 rounded-xl border border-white/5 gap-1">
             <button
               onClick={() => onSelectTab('deck_builder')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
                 currentTab === 'deck_builder'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e2533]'
+                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
               }`}
             >
-              <Layers className="w-3.5 h-3.5" />
+              <Layers className="w-3.5 h-3.5 text-amber-400" />
               <span>Deck Builder</span>
             </button>
             <button
               onClick={() => onSelectTab('card_library')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
                 currentTab === 'card_library'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e2533]'
+                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
               }`}
             >
-              <BookOpen className="w-3.5 h-3.5" />
+              <BookOpen className="w-3.5 h-3.5 text-amber-400" />
               <span>Card Library</span>
+            </button>
+            <button
+              onClick={() => onSelectTab('my_collection')}
+              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
+                currentTab === 'my_collection'
+                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
+              }`}
+            >
+              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
+              <span>My Collection</span>
             </button>
             <button
               onClick={() => onSelectTab('my_decks')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
                 currentTab === 'my_decks'
-                  ? 'bg-gradient-to-r from-amber-500 to-amber-400 text-slate-950 shadow-md shadow-amber-500/20'
-                  : 'text-slate-400 hover:text-slate-200 hover:bg-[#1e2533]'
+                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
               }`}
             >
-              <FolderHeart className="w-3.5 h-3.5" />
+              <FolderHeart className="w-3.5 h-3.5 text-amber-400" />
               <span>My Decks</span>
               {deckCount > 0 && (
-                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${
-                  currentTab === 'my_decks' ? 'bg-slate-950 text-amber-300' : 'bg-[#222a3b] text-slate-300'
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                  currentTab === 'my_decks' ? 'bg-amber-400 text-slate-950' : 'bg-stone-800 text-stone-300'
                 }`}>
                   {deckCount}
                 </span>
@@ -105,29 +116,29 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
         {/* Right Section: Wildcard Quick Stash & Actions */}
         <div className="flex items-center gap-3">
           {/* Wildcard Gems Pill */}
-          <div className="hidden sm:flex items-center gap-3 bg-[#131722] px-3 py-1 rounded-xl border border-[#232a3b] text-xs">
+          <div className="hidden sm:flex items-center gap-3 bg-[#0d1017]/90 px-3.5 py-1.5 rounded-xl border border-white/5 text-xs shadow-inner">
             <div className="flex items-center gap-1 text-[11px]" title="Common Wildcards">
-              <div className="w-2.5 h-2.5 rounded-full bg-slate-400" />
-              <span className="font-bold text-slate-300">{inventory.common}</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-stone-400 shadow-sm" />
+              <span className="font-bold text-stone-300 font-mono">{inventory.common}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Uncommon Wildcards">
-              <div className="w-2.5 h-2.5 rounded-full bg-sky-400" />
-              <span className="font-bold text-slate-300">{inventory.uncommon}</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" />
+              <span className="font-bold text-cyan-200 font-mono">{inventory.uncommon}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Rare Wildcards">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-              <span className="font-bold text-amber-300">{inventory.rare}</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
+              <span className="font-bold text-amber-200 font-mono">{inventory.rare}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Mythic Wildcards">
-              <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-              <span className="font-bold text-orange-400">{inventory.mythic}</span>
+              <div className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm shadow-orange-500/60 animate-pulse" />
+              <span className="font-bold text-orange-300 font-mono">{inventory.mythic}</span>
             </div>
           </div>
 
           {/* Sync Collection */}
           <button
             onClick={onOpenSync}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-[#181d2a] hover:bg-[#232a3b] text-slate-200 text-xs font-semibold rounded-lg border border-[#2b354a] transition"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#141926] hover:bg-[#1c2335] text-stone-300 hover:text-white text-xs font-bold rounded-xl border border-white/10 shadow-sm transition"
           >
             <UploadCloud className="w-3.5 h-3.5 text-sky-400" />
             <span className="hidden sm:inline">Sync Collection</span>
@@ -136,7 +147,7 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
           {/* Export to Arena */}
           <button
             onClick={onOpenExport}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-yellow-400 hover:from-amber-400 hover:to-yellow-300 text-slate-950 text-xs font-bold rounded-lg transition shadow-md shadow-amber-500/20"
+            className="btn-mythic-spark flex items-center gap-1.5 px-4 py-1.5 text-xs font-extrabold rounded-xl transition shadow-md"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export to Arena</span>
@@ -146,9 +157,9 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
 
       {/* Sub-Pill Menu for Deck Builder Formats */}
       {currentTab === 'deck_builder' && (
-        <div className="max-w-7xl mx-auto pt-2 mt-2 border-t border-[#1c2230] flex items-center justify-between">
+        <div className="max-w-7xl mx-auto pt-2 mt-2 border-t border-white/10 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+            <span className="text-[11px] font-fantasy font-bold uppercase tracking-wider text-stone-400">
               Format:
             </span>
             <div className="flex items-center gap-1.5">
@@ -162,15 +173,15 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
                   <button
                     key={fmt.id}
                     onClick={() => onSelectFormat(fmt.id)}
-                    className={`flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold transition ${
+                    className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-bold transition ${
                       isActive
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/50 shadow-sm shadow-amber-500/10'
-                        : 'bg-[#151a24] text-slate-400 hover:text-slate-200 border border-[#262f42] hover:bg-[#1e2533]'
+                        ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/50 shadow-sm'
+                        : 'bg-[#121622] text-stone-400 hover:text-stone-200 border border-white/5 hover:bg-[#171c28]'
                     }`}
                   >
                     <span>{fmt.label}</span>
                     <span className={`text-[9px] px-1 py-0.2 rounded font-normal ${
-                      isActive ? 'bg-amber-400/20 text-amber-200' : 'bg-slate-800 text-slate-500'
+                      isActive ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-stone-800 text-stone-400'
                     }`}>
                       {fmt.badge}
                     </span>
@@ -181,7 +192,7 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
           </div>
 
           {currentFormat === 'brawl' && (
-            <span className="hidden md:inline text-[11px] text-amber-400/80 font-medium">
+            <span className="hidden md:inline text-[11px] text-amber-400/90 font-semibold">
               ⚔️ 100-Card Singleton • Commander Color Identity Locked
             </span>
           )}
@@ -190,3 +201,5 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
     </header>
   );
 };
+
+export default ArenaNavbar;

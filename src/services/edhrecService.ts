@@ -131,7 +131,11 @@ export async function fetchArenaCommunityMeta(
       try {
         const collRes = await fetch('https://api.scryfall.com/cards/collection', {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          headers: { 
+            'User-Agent': 'BrawlDeckBuilder/1.0 (Web; MTGA)',
+            'Content-Type': 'application/json', 
+            'Accept': 'application/json' 
+          },
           body: JSON.stringify({ identifiers: batch })
         });
         if (collRes.ok) {
@@ -143,8 +147,11 @@ export async function fetchArenaCommunityMeta(
 
             if (isArenaLegal) {
               const card = transformScryfallCard(raw);
-              arenaCardIndex.set(card.name.toLowerCase(), card);
-              if (card.id) arenaCardIndex.set(card.id, card);
+              const isLegalIdentity = card.colorIdentity.every(col => commander.colorIdentity.includes(col));
+              if (isLegalIdentity) {
+                arenaCardIndex.set(card.name.toLowerCase(), card);
+                if (card.id) arenaCardIndex.set(card.id, card);
+              }
             }
           }
         }
@@ -178,7 +185,7 @@ export async function fetchArenaCommunityMeta(
       // Prioritize the canonical regular card printing by name to avoid promo / secret lair art
       const arenaCard = arenaCardIndex.get(lower) || (rawItem.id ? arenaCardIndex.get(rawItem.id) : undefined);
 
-      if (arenaCard) {
+      if (arenaCard && arenaCard.colorIdentity.every(col => commander.colorIdentity.includes(col))) {
         const potential = rawItem.potential_decks || totalDecks;
         const num = rawItem.num_decks || 0;
         const inclusion = potential > 0 ? Math.round((num / potential) * 100) : 0;

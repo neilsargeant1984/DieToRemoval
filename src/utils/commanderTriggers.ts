@@ -3,7 +3,7 @@ import { Card } from '../types/card';
 export interface CommanderTriggerConfig {
   hasTriggers: boolean;
   tabLabel: string;
-  triggerType: 'sacrifice' | 'haste_untap' | 'cantrip' | 'lifegain' | 'exile_cast' | 'blink' | 'ring' | null;
+  triggerType: 'sacrifice' | 'haste_untap' | 'cantrip' | 'lifegain' | 'exile_cast' | 'blink' | 'ring' | 'graveyard_fuel' | null;
   scryfallQuery?: string;
   isTriggerCard: (card: Card) => boolean;
   getCardReason: (commander: Card, card: Card) => string;
@@ -76,7 +76,36 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
     };
   }
 
-  // 2. Activated Tap Ability Commander (Haste & Untap)
+  // 2. Spellslinger / Multi-Spell Trigger (PRIORITIZED BEFORE GENERIC TAP)
+  // e.g. Stella Lee, Wild Card, Baral, Veyran, Niv-Mizzet, Kalamax
+  const isSpellslinger = 
+    o.includes('second spell') ||
+    o.includes('three or more spells') ||
+    o.includes('whenever you cast an instant or sorcery') ||
+    o.includes('whenever you cast a noncreature spell') ||
+    o.includes('whenever you cast or copy an instant') ||
+    o.includes('spells you cast cost {1} less') ||
+    o.includes('spells you cast cost {2} less');
+
+  if (isSpellslinger) {
+    return {
+      hasTriggers: true,
+      tabLabel: 'Commander Synergies',
+      triggerType: 'cantrip',
+      scryfallQuery: '(t:instant or t:sorcery) cmc<=2 (o:"draw a card" or o:"scry" or o:"deal" or o:"target" or o:"counter target")',
+      isTriggerCard: (card: Card) => {
+        const isSpell = card.types.includes('Instant') || card.types.includes('Sorcery');
+        if (!isSpell) return false;
+        return card.cmc <= 2;
+      },
+      getCardReason: (cmd: Card) => {
+        return `Low-CMC Spell / Cantrip: Effortlessly triggers and chains ${cmd.name}'s multi-spell engine`;
+      },
+      getCardBadge: () => `⚡ Cheap Spell`
+    };
+  }
+
+  // 3. Activated Tap Ability Commander (Haste & Untap)
   // e.g. Krenko, Mob Boss, Captain Sisay, Lathril, Emry, Prime Speaker Vannifar
   const hasTapAbility = (commander.oracleText || '').includes('{T}:') || (commander.oracleText || '').includes('{t}:');
   if (hasTapAbility) {
@@ -105,33 +134,6 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
         return `Haste & Untap: Lets ${cmd.name} tap immediately and multiple times per turn`;
       },
       getCardBadge: () => `⚡ Tap Enabler`
-    };
-  }
-
-  // 3. Spellslinger / Multi-Spell Trigger
-  // e.g. Stella Lee, Wild Card, Baral, Veyran, Niv-Mizzet, Kalamax
-  const isSpellslinger = 
-    o.includes('second spell') ||
-    o.includes('three or more spells') ||
-    o.includes('whenever you cast an instant or sorcery') ||
-    o.includes('whenever you cast a noncreature spell') ||
-    o.includes('whenever you cast or copy an instant');
-
-  if (isSpellslinger) {
-    return {
-      hasTriggers: true,
-      tabLabel: 'Commander Triggers',
-      triggerType: 'cantrip',
-      scryfallQuery: '(t:instant or t:sorcery) cmc<=1 (o:"draw a card" or o:"scry" or o:"deal" or o:"target")',
-      isTriggerCard: (card: Card) => {
-        const isSpell = card.types.includes('Instant') || card.types.includes('Sorcery');
-        if (!isSpell) return false;
-        return card.cmc <= 1;
-      },
-      getCardReason: (cmd: Card) => {
-        return `1-CMC Cantrip: Cheap instant/sorcery to effortlessly trigger ${cmd.name}`;
-      },
-      getCardBadge: () => `⚡ 1-CMC Trigger`
     };
   }
 
@@ -192,8 +194,18 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
   }
 
   // 6. Blink / ETB Trigger
-  // e.g. Yorion, Sky Nomad, Brago, King Eternal, Abdel Adrian
-  const isBlink = (o.includes('enters the battlefield') && o.includes('exile') && (o.includes('return') || o.includes('until')));
+  // e.g. Yorion, Sky Nomad, Brago, King Eternal, Abdel Adrian, Roon, Thassa Deep-Dwelling
+  const isBlink = (
+    (o.includes('exile') && (o.includes('return') || o.includes('until'))) &&
+    (
+      (o.includes('enters') && (o.includes('other nonland') || o.includes('permanents you own') || o.includes('permanents you control') || o.includes('creature you control'))) ||
+      o.includes('exile target creature you control') ||
+      o.includes('exile another target creature you control') ||
+      o.includes('exile up to one other target creature you control') ||
+      o.includes('exile any number of target nonland permanents you control') ||
+      (o.includes('enters the battlefield') && o.includes('exile') && o.includes('return'))
+    )
+  );
   if (isBlink) {
     return {
       hasTriggers: true,
@@ -203,11 +215,14 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
       isTriggerCard: (card: Card) => {
         const blinkCards = [
           'ephemerate', 'touch the spirit realm', 'teleportation circle', 'displacer kitten',
-          'charming prince', 'flickerwisp', 'golden argosy', 'scrollshift', 'justiciar\'s portal'
+          'charming prince', 'flickerwisp', 'golden argosy', 'scrollshift', 'justiciar\'s portal',
+          'cloudshift', 'ghostly flicker', 'thassa, deep-dwelling', 'soulherder', 'conjurer\'s closet',
+          'abdel adrian', 'brago, king eternal', 'yorion, sky nomad', 'restoration angel'
         ];
         if (blinkCards.some(s => card.name.toLowerCase().includes(s))) return true;
         const co = (card.oracleText || '').toLowerCase();
-        return co.includes('exile target') && co.includes('return it to the battlefield');
+        return (co.includes('exile target') || co.includes('exile another target') || co.includes('exile up to one')) && 
+          (co.includes('return it to the battlefield') || co.includes('return that card to the battlefield') || co.includes('return those cards'));
       },
       getCardReason: (cmd: Card) => {
         return `Blink Enabler: Re-triggers ${cmd.name}'s enters-the-battlefield ability repeatedly`;
@@ -216,13 +231,76 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
     };
   }
 
-  // 7. The Ring Tempts You / Ring-bearer Trigger
-  // e.g. Sauron, the Necromancer, Frodo, Sauron's Bane, Samwise the Stouthearted
+  // 7. Graveyard Fuel & Reanimation Catalyst
+  // e.g. Sauron, the Necromancer, Meren, Muldrotha, Chainer, Araumi, Karador, Feldon, Gisa and Geralf, Syr Konrad
+  const isGraveyardEngine = 
+    o.includes('creature card from your graveyard') ||
+    o.includes('creature card in your graveyard') ||
+    o.includes('creature spell from your graveyard') ||
+    o.includes('permanent card from your graveyard') ||
+    o.includes('creature card is put into a graveyard') ||
+    o.includes('creature card leaves your graveyard') ||
+    (o.includes('from your graveyard') && (o.includes('exile') || o.includes('return') || o.includes('cast')));
+
+  if (isGraveyardEngine) {
+    const hasRingSynergy = o.includes('ring-bearer') || o.includes('the ring tempts you');
+    return {
+      hasTriggers: true,
+      tabLabel: 'Commander Synergies',
+      triggerType: 'graveyard_fuel',
+      scryfallQuery: hasRingSynergy
+        ? '(o:mill or o:"discard a card" or o:"discards a card" or o:surveil or o:"into your graveyard" or o:"the ring tempts you")'
+        : '(o:mill or o:"discard a card" or o:"discards a card" or o:surveil or o:"into your graveyard" or o:entomb)',
+      isTriggerCard: (card: Card) => {
+        const co = (card.oracleText || '').toLowerCase();
+        const cn = card.name.toLowerCase();
+        const staples = [
+          'stitcher\'s supplier', 'undead butler', 'mire triton', 'bitter triumph',
+          'collective brutality', 'bone shards', 'vile entomber', 'buried alive',
+          'entomb', 'unmarked grave', 'altar of dementia', 'palantír of orthanc',
+          'ransack the lab', 'rankle, master of pranks', 'key to the city',
+          'faithless looting', 'tainted indulgence', 'cathartic reunion',
+          'thrill of possibility', 'tormenting voice', 'demand answers', 'big score',
+          'call of the ring', 'inherited envelope', 'nazgûl', 'ringwraiths'
+        ];
+        if (staples.some(s => cn.includes(s))) return true;
+        if (co.includes('discard a card') || co.includes('discards a card') || co.includes('discard one or more') || co.includes('as an additional cost to cast this spell, discard')) return true;
+        if (co.includes('mill ') || co.includes('mills ') || co.includes('surveil ')) return true;
+        if (co.includes('put') && co.includes('into your graveyard')) return true;
+        if (hasRingSynergy && co.includes('the ring tempts you')) return true;
+        return false;
+      },
+      getCardReason: (cmd: Card, card: Card) => {
+        const co = (card.oracleText || '').toLowerCase();
+        if (co.includes('the ring tempts you')) {
+          return `Ring-bearer Catalyst: Designates Ring-bearer to make ${cmd.name}'s Wraith copies permanent`;
+        }
+        if (co.includes('discard') || /additional cost.*discard/i.test(co)) {
+          return `Discard Outlet: Dumps reanimation targets from your hand directly into your graveyard for ${cmd.name}`;
+        }
+        if (co.includes('mill') || co.includes('surveil') || co.includes('into your graveyard')) {
+          return `Graveyard Fuel: Mills/tutors creature targets directly into your graveyard for ${cmd.name}`;
+        }
+        return `Graveyard Catalyst: Fuels ${cmd.name}'s graveyard requirements`;
+      },
+      getCardBadge: (card: Card) => {
+        const co = (card.oracleText || '').toLowerCase();
+        if (co.includes('the ring tempts you')) return `💍 Ring Enabler`;
+        if (co.includes('discard') || /additional cost.*discard/i.test(co)) return `⚡ Discard Outlet`;
+        if (co.includes('mill') || co.includes('surveil')) return `⚰️ GY Fuel`;
+        if (co.includes('into your graveyard')) return `🔍 Entomb Fuel`;
+        return `⚡ GY Catalyst`;
+      }
+    };
+  }
+
+  // 8. The Ring Tempts You / Ring-bearer Trigger
+  // e.g. Frodo, Sauron's Bane, Samwise the Stouthearted
   const isRingCommander = o.includes('ring-bearer') || o.includes('the ring tempts you');
   if (isRingCommander) {
     return {
       hasTriggers: true,
-      tabLabel: 'Commander Triggers',
+      tabLabel: 'Commander Synergies',
       triggerType: 'ring',
       scryfallQuery: 'o:"the ring tempts you"',
       isTriggerCard: (card: Card) => {
@@ -230,7 +308,7 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
         return co.includes('the ring tempts you');
       },
       getCardReason: (cmd: Card) => {
-        return `Ring-bearer Catalyst: Designates Ring-bearer to make ${cmd.name}'s Wraith copies permanent`;
+        return `Ring-bearer Catalyst: Designates Ring-bearer to activate ${cmd.name}'s abilities`;
       },
       getCardBadge: () => `💍 Ring Enabler`
     };

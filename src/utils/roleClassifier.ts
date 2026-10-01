@@ -32,20 +32,25 @@ export interface RoleChip {
 /**
  * Universal functional role classifier that analyzes any Magic card's rules text and types.
  */
-export function classifyCardRoles(card: Card): CardRoleProfile {
+export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile {
   const text = (card.oracleText || '').toLowerCase();
   const typeLine = (card.typeLine || '').toLowerCase();
   const roles: FunctionalRole[] = [];
   const explanations: string[] = [];
   let rampType: 'mana_rock' | 'dork' | 'land_fetch' | 'ritual' | undefined;
 
+  // If commander is provided, check if card specifically references off-color mechanics
+  // (e.g. Bontu's Monument cost reduction for black creatures in a non-black deck)
+  const isOffColorRestricted = (colorName: string, colorCode: 'W' | 'U' | 'B' | 'R' | 'G') => {
+    if (!commander) return false;
+    return !commander.colorIdentity.includes(colorCode);
+  };
+
   // 1. RAMP CLASSIFICATION (Excludes standard lands)
   if (!card.types.includes('Land')) {
     const isManaRock = card.types.includes('Artifact') && (
-      text.includes('{t}: add ') || 
-      text.includes('{t}, sacrifice') || 
-      text.includes('add one mana of any') ||
-      text.includes('add {')
+      (text.includes('{t}: add ') || text.includes('add one mana of any') || (text.includes('add {') && (text.includes('{t}') || text.includes('sacrifice')))) ||
+      (text.includes('{t}, sacrifice') && (text.includes('add ') || text.includes('mana')))
     );
 
     const isManaDork = card.types.includes('Creature') && (
@@ -54,7 +59,23 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
       (text.includes('whenever you cast') && text.includes('add {'))
     );
 
-    const isLandFetch = 
+    // Exclude basic land searches for basic lands outside the commander's color identity
+    // e.g. search for Forest in a Mono-White deck
+    const basicLandTypes: { name: string; code: 'W' | 'U' | 'B' | 'R' | 'G' }[] = [
+      { name: 'plains', code: 'W' },
+      { name: 'island', code: 'U' },
+      { name: 'swamp', code: 'B' },
+      { name: 'mountain', code: 'R' },
+      { name: 'forest', code: 'G' }
+    ];
+    let isOffColorLandFetch = false;
+    for (const b of basicLandTypes) {
+      if (text.includes(b.name) && !text.includes('land') && isOffColorRestricted(b.name, b.code)) {
+        isOffColorLandFetch = true;
+      }
+    }
+
+    const isLandFetch = !isOffColorLandFetch &&
       text.includes('search your library for a') && (
         text.includes('land card') || 
         text.includes('basic land') || 
@@ -74,7 +95,22 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
       text.includes('create two treasure tokens') ||
       text.includes('create three treasure tokens');
 
-    if (isManaRock || isManaDork || isLandFetch || isRitual || (isTreasureGenerator && card.cmc <= 3)) {
+    // Cost reduction artifacts (e.g. Bontu's Monument, Oketra's Monument)
+    const isCostReductionRamp = 
+      text.includes('spells you cast cost') || 
+      text.includes('creature spells you cast cost');
+
+    let isOffColorCostReduction = false;
+    if (isCostReductionRamp && commander) {
+      for (const b of basicLandTypes) {
+        const colorName = b.name === 'plains' ? 'white' : b.name === 'island' ? 'blue' : b.name === 'swamp' ? 'black' : b.name === 'mountain' ? 'red' : 'green';
+        if (text.includes(`${colorName} creature spells you cast cost`) && isOffColorRestricted(colorName, b.code)) {
+          isOffColorCostReduction = true;
+        }
+      }
+    }
+
+    if (!isOffColorCostReduction && (isManaRock || isManaDork || isLandFetch || isRitual || (isTreasureGenerator && card.cmc <= 3))) {
       roles.push('ramp');
       if (isManaRock) {
         rampType = 'mana_rock';
@@ -245,10 +281,30 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
     explanations.push('Life Drain / Aristocrat Ping');
   }
 
-  // 9. TUTORS
+  // 9. TUTORS (Non-land specific library tutors)
+  const isLandSearch = 
+    text.includes('basic land') || 
+    text.includes('plains, island') ||
+    text.includes('plains or island') ||
+    text.includes('swamp or mountain') ||
+    text.includes('forest or') ||
+    text.includes('mountain or') ||
+    text.includes('island or') ||
+    text.includes('plains or') ||
+    text.includes('swamp or') ||
+    text.includes('search your library for a land card');
+
   const isTutor = 
-    text.includes('search your library for a card') ||
-    (text.includes('search your library for a') && !roles.includes('ramp'));
+    !card.types.includes('Land') &&
+    !isLandSearch &&
+    (
+      text.includes('search your library for a card') ||
+      text.includes('search your library for an artifact') ||
+      text.includes('search your library for an enchantment') ||
+      text.includes('search your library for a creature') ||
+      text.includes('search your library for an instant') ||
+      (text.includes('search your library for a') && !roles.includes('ramp'))
+    );
 
   if (isTutor) {
     roles.push('tutor');
@@ -285,8 +341,8 @@ export function classifyCardRoles(card: Card): CardRoleProfile {
  * Returns formatted UI chips for all functional roles a card fulfills.
  * Enables highlighting multi-role powerhouses in the deckbuilder.
  */
-export function getCardRoleChips(card: Card): RoleChip[] {
-  const profile = classifyCardRoles(card);
+export function getCardRoleChips(card: Card, commander?: Card): RoleChip[] {
+  const profile = classifyCardRoles(card, commander);
   const chips: RoleChip[] = [];
 
   for (const role of profile.roles) {

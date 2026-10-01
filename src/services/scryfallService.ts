@@ -222,8 +222,12 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
   // Search term
   const trimmed = params.query?.trim();
   if (trimmed) {
-    // If user provided a specific search term
-    parts.push(trimmed);
+    // If user provided a specific search term with OR operators, wrap in parentheses to preserve AND precedence
+    if (trimmed.includes(' or ') || trimmed.includes(' OR ')) {
+      parts.push(`(${trimmed})`);
+    } else {
+      parts.push(trimmed);
+    }
   }
 
   // Always prefer canonical default card art over promo/secret lair variants
@@ -250,6 +254,7 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     const url = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(queryString)}&order=${order}&page=${page}`;
     const response = await fetch(url, {
       headers: {
+        'User-Agent': 'BrawlDeckBuilder/1.0 (Web; MTGA)',
         'Accept': 'application/json'
       }
     });
@@ -265,7 +270,11 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
 
     const data = await response.json();
     const rawList = data.data || [];
-    const cards = rawList.map(transformScryfallCard);
+    const allParsed = rawList.map(transformScryfallCard);
+    // Strict commander color identity enforcement on all returned cards
+    const cards = params.commanderColorIdentity !== undefined
+      ? allParsed.filter((c: Card) => c.colorIdentity.every((col: string) => params.commanderColorIdentity!.includes(col)))
+      : allParsed;
     const totalCards = data.total_cards || cards.length;
 
     // Cache results
@@ -345,5 +354,181 @@ export async function fetchCardByNameOrSet(
     console.warn(`Failed to fetch card "${name}":`, err);
     return null;
   }
+}
+
+// In-memory cache for Arena ID card fetches
+const arenaIdCardCache = new Map<number, Card>();
+
+/**
+ * Fetches a card by its MTG Arena ID from Scryfall.
+ */
+export async function fetchCardByArenaId(arenaId: number): Promise<Card | null> {
+  // Check memory cache first
+  if (arenaIdCardCache.has(arenaId)) {
+    return arenaIdCardCache.get(arenaId)!;
+  }
+
+  // Check local ARENA_CARDS pool
+  const localMatch = ARENA_CARDS.find(c => c.arenaId === arenaId);
+  if (localMatch) {
+    arenaIdCardCache.set(arenaId, localMatch);
+    return localMatch;
+  }
+
+  try {
+    const res = await fetch(`https://api.scryfall.com/cards/arena/${arenaId}`, {
+      headers: {
+        'Accept': 'application/json',
+        'User-Agent': 'ArenaForge/1.0'
+      }
+    });
+
+    if (!res.ok) {
+      return null;
+    }
+
+    const raw = await res.json();
+    const card = transformScryfallCard(raw);
+    arenaIdCardCache.set(arenaId, card);
+    return card;
+  } catch (err) {
+    console.warn(`Failed to fetch card by Arena ID ${arenaId}:`, err);
+    return null;
+  }
+}
+
+export interface CardIdentifier {
+  name: string;
+  set?: string;
+  collector_number?: string;
+}
+
+/**
+ * Fetches cards in high-performance batches using Scryfall's /cards/collection endpoint.
+ * Chunks requests to 75 items max per Scryfall guidelines.
+ * Includes intelligent fallbacks for set/number mismatches and Alchemy A- prefixes.
+ */
+export async function fetchCardsBatch(
+  identifiers: CardIdentifier[]
+): Promise<{ cards: Card[]; notFound: CardIdentifier[] }> {
+  if (identifiers.length === 0) {
+    return { cards: [], notFound: [] };
+  }
+
+  const cards: Card[] = [];
+  const notFound: CardIdentifier[] = [];
+
+  // Chunk into slices of 75
+  const chunkSize = 75;
+  for (let i = 0; i < identifiers.length; i += chunkSize) {
+    const chunk = identifiers.slice(i, i + chunkSize);
+
+    // Format identifiers for Scryfall
+    const scryfallPayload = chunk.map(item => {
+      if (item.set && item.collector_number) {
+        return { set: item.set.toLowerCase(), collector_number: item.collector_number };
+      }
+      const cleanName = item.name.replace(/^A-/, '').trim();
+      return { name: cleanName };
+    });
+
+    try {
+      let res = await fetch('https://api.scryfall.com/cards/collection', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'User-Agent': 'ArenaForge/1.0'
+        },
+        body: JSON.stringify({ identifiers: scryfallPayload })
+      });
+
+      // Handle 429 rate limit backoff
+      if (res.status === 429) {
+        console.warn('Scryfall rate limit hit. Backing off 1.5 seconds...');
+        await new Promise(r => setTimeout(r, 1500));
+        res = await fetch('https://api.scryfall.com/cards/collection', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'User-Agent': 'ArenaForge/1.0'
+          },
+          body: JSON.stringify({ identifiers: scryfallPayload })
+        });
+      }
+
+      if (!res.ok) {
+        console.warn(`Scryfall batch fetch returned status ${res.status}`);
+        // Fallback to sequential fetching for this chunk
+        for (const item of chunk) {
+          const card = await fetchCardByNameOrSet(item.name, item.set, item.collector_number);
+          if (card) cards.push(card);
+          else notFound.push(item);
+          await new Promise(r => setTimeout(r, 80));
+        }
+        continue;
+      }
+
+      const data = await res.json();
+      if (data.data && Array.isArray(data.data)) {
+        for (const raw of data.data) {
+          cards.push(transformScryfallCard(raw));
+        }
+      }
+
+      // Handle un-matched items from this batch
+      if (data.not_found && Array.isArray(data.not_found) && data.not_found.length > 0) {
+        // Try fallback lookup by name for items that had set/collector_number
+        const retryByName: CardIdentifier[] = [];
+        for (const nf of data.not_found) {
+          const orig = chunk.find(c => 
+            (c.set && c.set.toLowerCase() === nf.set?.toLowerCase() && c.collector_number === nf.collector_number) ||
+            c.name.toLowerCase() === nf.name?.toLowerCase() ||
+            c.name.replace(/^A-/, '').toLowerCase() === nf.name?.toLowerCase()
+          );
+          if (orig && (orig.set || orig.name.startsWith('A-'))) {
+            retryByName.push({ name: orig.name.replace(/^A-/, '').trim() });
+          } else if (orig) {
+            notFound.push(orig);
+          }
+        }
+
+        if (retryByName.length > 0) {
+          try {
+            const retryRes = await fetch('https://api.scryfall.com/cards/collection', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'User-Agent': 'ArenaForge/1.0'
+              },
+              body: JSON.stringify({ identifiers: retryByName.map(r => ({ name: r.name })) })
+            });
+            if (retryRes.ok) {
+              const retryData = await retryRes.json();
+              if (retryData.data) {
+                for (const raw of retryData.data) {
+                  cards.push(transformScryfallCard(raw));
+                }
+              }
+              if (retryData.not_found) {
+                for (const rnf of retryData.not_found) {
+                  const orig = chunk.find(c => c.name.replace(/^A-/, '').toLowerCase() === rnf.name?.toLowerCase());
+                  if (orig) notFound.push(orig);
+                }
+              }
+            }
+          } catch {
+            // Ignore retry error
+          }
+        }
+      }
+    } catch (err) {
+      console.warn('Error during Scryfall batch collection query:', err);
+    }
+  }
+
+  return { cards, notFound };
 }
 

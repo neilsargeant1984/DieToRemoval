@@ -18,8 +18,12 @@ import { ExportImportModal } from './components/ExportImportModal';
 import { CommanderPickerModal } from './components/CommanderPickerModal';
 import { MyDecksView } from './components/MyDecksView';
 import { SaveDeckConflictModal } from './components/SaveDeckConflictModal';
+import { SaveBeforeCommanderChangeModal } from './components/SaveBeforeCommanderChangeModal';
+import { ImportDeckModal } from './components/ImportDeckModal';
+import { MyCollectionView } from './components/MyCollectionView';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
+import { getMaxCardCopies } from './utils/cardRules';
 import { ARENA_CARDS } from './data/arenaCards';
 
 export const App: React.FC = () => {
@@ -111,6 +115,7 @@ export const App: React.FC = () => {
   const [isSyncOpen, setIsSyncOpen] = useState(false);
   const [isMetaOpen, setIsMetaOpen] = useState(false);
   const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
+  const [isImportDeckModalOpen, setIsImportDeckModalOpen] = useState(false);
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
 
@@ -118,7 +123,9 @@ export const App: React.FC = () => {
   const [saveConflict, setSaveConflict] = useState<{
     deckToSave: Deck;
     conflictingDeck: Deck;
+    onResolved?: () => void;
   } | null>(null);
+  const [pendingCommanderChange, setPendingCommanderChange] = useState<Card | null>(null);
   const [saveNotification, setSaveNotification] = useState<string | null>(null);
 
   // Persist activeDeck
@@ -162,23 +169,24 @@ export const App: React.FC = () => {
     return new Set(activeDeck.mainboard.map(c => c.card.id));
   }, [activeDeck.mainboard]);
 
+  const deckCardCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of activeDeck.mainboard) {
+      map.set(item.card.name.toLowerCase().trim(), item.quantity);
+    }
+    return map;
+  }, [activeDeck.mainboard]);
+
   // Deck Manipulation Handlers
   const handleAddCard = (card: Card, toSideboard: boolean = false) => {
-    const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'].includes(card.name);
     const list = toSideboard ? [...activeDeck.sideboard] : [...activeDeck.mainboard];
-    // In Magic formats, card uniqueness and singleton constraints are strictly governed by English card name, not printing/art ID
-    const index = list.findIndex(c => c.card.name === card.name);
-
-    if (activeDeck.format === 'brawl') {
-      // Strict Brawl Singleton Enforcement: Max 1 copy for non-basic lands!
-      if (!isBasic && index >= 0) {
-        return;
-      }
-    }
+    // In Magic formats, card uniqueness and copy constraints are strictly governed by English card name
+    const index = list.findIndex(c => c.card.name.toLowerCase().trim() === card.name.toLowerCase().trim());
+    const maxAllowed = getMaxCardCopies(card, activeDeck.format);
 
     if (index >= 0) {
-      if (!isBasic && list[index].quantity >= 4) {
-        return;
+      if (list[index].quantity >= maxAllowed) {
+        return; // Already reached the maximum copies allowed
       }
       list[index] = { ...list[index], quantity: list[index].quantity + 1 };
     } else {
@@ -192,14 +200,24 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleRemoveCard = (card: Card) => {
-    // In Brawl & Singleton formats, remove by card name or ID
-    const nextMain = activeDeck.mainboard.filter(c => c.card.name !== card.name && c.card.id !== card.id);
-    const nextSide = activeDeck.sideboard.filter(c => c.card.name !== card.name && c.card.id !== card.id);
+  const handleRemoveCard = (card: Card, removeAll: boolean = false) => {
+    const updateList = (items: typeof activeDeck.mainboard) => {
+      const idx = items.findIndex(c => 
+        c.card.name.toLowerCase().trim() === card.name.toLowerCase().trim() || c.card.id === card.id
+      );
+      if (idx < 0) return items;
+      if (removeAll || items[idx].quantity <= 1) {
+        return items.filter((_, i) => i !== idx);
+      }
+      const updated = [...items];
+      updated[idx] = { ...updated[idx], quantity: updated[idx].quantity - 1 };
+      return updated;
+    };
+
     setActiveDeck({
       ...activeDeck,
-      mainboard: nextMain,
-      sideboard: nextSide,
+      mainboard: updateList(activeDeck.mainboard),
+      sideboard: updateList(activeDeck.sideboard),
       updatedAt: new Date().toISOString()
     });
   };
@@ -225,8 +243,7 @@ export const App: React.FC = () => {
     }));
   };
 
-  // Auto-Clean on Commander Pick (Item #1 from user request)
-  const handleSelectCommander = (card: Card) => {
+  const applyNewCommander = (card: Card) => {
     setActiveDeck({
       id: `brawl-${card.id}-${Date.now()}`,
       name: `${card.name} Brawl`,
@@ -237,6 +254,65 @@ export const App: React.FC = () => {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     });
+    setPendingCommanderChange(null);
+    setIsCommanderPickerOpen(false);
+  };
+
+  // Auto-Clean on Commander Pick with Save Prompt if Deck has Cards
+  const handleSelectCommander = (card: Card) => {
+    if (activeDeck.commander?.card.id === card.id) {
+      setIsCommanderPickerOpen(false);
+      return;
+    }
+
+    // If deck is empty (no cards added yet), switch commander without prompting
+    if (activeDeck.mainboard.length === 0) {
+      applyNewCommander(card);
+      return;
+    }
+
+    // Active deck has cards in it: close picker and prompt user about saving changes
+    setIsCommanderPickerOpen(false);
+    setPendingCommanderChange(card);
+  };
+
+  const handleSaveDeckAndSwitchCommander = (newCommander: Card) => {
+    const commanderName = activeDeck.commander?.card.name;
+
+    // Check conflict against existing saved decks (excluding current deck id)
+    if (commanderName) {
+      const conflict = savedDecks.find(d => 
+        d.id !== activeDeck.id && 
+        d.commander?.card.name.toLowerCase() === commanderName.toLowerCase()
+      );
+
+      if (conflict) {
+        setPendingCommanderChange(null);
+        setSaveConflict({
+          deckToSave: activeDeck,
+          conflictingDeck: conflict,
+          onResolved: () => applyNewCommander(newCommander)
+        });
+        return;
+      }
+    }
+
+    // Direct save if no conflict
+    setSavedDecks(prev => {
+      const idx = prev.findIndex(d => d.id === activeDeck.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = { ...activeDeck, updatedAt: new Date().toISOString() };
+        return next;
+      } else {
+        return [{ ...activeDeck, updatedAt: new Date().toISOString() }, ...prev];
+      }
+    });
+
+    setSaveNotification(`Deck "${activeDeck.name}" successfully saved to My Decks!`);
+    setTimeout(() => setSaveNotification(null), 3500);
+
+    applyNewCommander(newCommander);
   };
 
   const handleImportDeck = (imported: Partial<Deck>) => {
@@ -352,7 +428,7 @@ export const App: React.FC = () => {
 
   const handleOverwriteConflict = () => {
     if (!saveConflict) return;
-    const { deckToSave, conflictingDeck } = saveConflict;
+    const { deckToSave, conflictingDeck, onResolved } = saveConflict;
 
     setSavedDecks(prev => {
       // Replace the conflicting deck with the current deck data
@@ -373,11 +449,14 @@ export const App: React.FC = () => {
     setSaveNotification(`Successfully overwrote "${conflictingDeck.name}" in My Decks!`);
     setTimeout(() => setSaveNotification(null), 3500);
     setSaveConflict(null);
+    if (onResolved) {
+      onResolved();
+    }
   };
 
   const handleSaveAsNewConflict = (newName: string) => {
     if (!saveConflict) return;
-    const { deckToSave } = saveConflict;
+    const { deckToSave, onResolved } = saveConflict;
 
     const newDeck: Deck = {
       ...deckToSave,
@@ -392,10 +471,44 @@ export const App: React.FC = () => {
     setSaveNotification(`Saved as new deck: "${newName}" in My Decks!`);
     setTimeout(() => setSaveNotification(null), 3500);
     setSaveConflict(null);
+    if (onResolved) {
+      onResolved();
+    }
+  };
+
+  const handleSaveImportedDeck = (newDeck: Deck, openInBuilder: boolean) => {
+    setSavedDecks(prev => {
+      const idx = prev.findIndex(d => d.id === newDeck.id);
+      if (idx >= 0) {
+        const copy = [...prev];
+        copy[idx] = newDeck;
+        return copy;
+      }
+      return [newDeck, ...prev];
+    });
+
+    if (openInBuilder) {
+      setActiveDeck(newDeck);
+      setNavTab('deck_builder');
+    }
+
+    setSaveNotification(`Successfully imported "${newDeck.name}"!`);
+    setTimeout(() => setSaveNotification(null), 3500);
+  };
+
+  const handleSyncDecks = (newDecks: Deck[]) => {
+    if (newDecks.length === 0) return;
+    setSavedDecks(prev => {
+      const existingNames = new Set(prev.map(d => d.name.toLowerCase()));
+      const toAdd = newDecks.filter(d => !existingNames.has(d.name.toLowerCase()));
+      return [...toAdd, ...prev];
+    });
+    setSaveNotification(`Synced ${newDecks.length} deck(s) from MTG Arena!`);
+    setTimeout(() => setSaveNotification(null), 3500);
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0e14] text-slate-100 flex flex-col font-sans selection:bg-amber-500/30 selection:text-amber-200">
+    <div className="min-h-screen bg-[#0b0e14] text-slate-100 flex flex-col font-sans selection:bg-orange-500/30 selection:text-orange-200">
       {/* Top Navigation Shell */}
       <ArenaNavbar
         currentTab={navTab}
@@ -421,7 +534,17 @@ export const App: React.FC = () => {
             onDeleteDeck={handleDeleteDeck}
             onDuplicateDeck={handleDuplicateDeck}
             onRenameDeck={handleRenameDeck}
+            onOpenImportModal={() => setIsImportDeckModalOpen(true)}
             userCollection={userCollection}
+          />
+        ) : navTab === 'my_collection' ? (
+          /* Full Screen My Collection View */
+          <MyCollectionView
+            userCollection={userCollection}
+            wildcardInventory={wildcardInventory}
+            onSelectCardDetail={setSelectedCardDetail}
+            onAddCardToDeck={card => handleAddCard(card, false)}
+            onOpenSync={() => setIsSyncOpen(true)}
           />
         ) : navTab === 'card_library' ? (
           /* Full Screen Card Library View */
@@ -465,6 +588,7 @@ export const App: React.FC = () => {
                 userCollection={userCollection}
                 deckCardIds={deckCardIds}
                 deckCardNames={deckCardNames}
+                deckCardCounts={deckCardCounts}
                 activeTab={synergyTab}
                 onSelectTab={setSynergyTab}
               />
@@ -515,6 +639,7 @@ export const App: React.FC = () => {
         card={selectedCardDetail}
         onClose={() => setSelectedCardDetail(null)}
         onAddCard={handleAddCard}
+        commander={activeDeck.commander?.card}
       />
 
       <AnalyticsModal
@@ -534,7 +659,14 @@ export const App: React.FC = () => {
         isOpen={isSyncOpen}
         onClose={() => setIsSyncOpen(false)}
         onSyncCollection={setUserCollection}
+        onSyncDecks={handleSyncDecks}
         currentCollectionCount={Object.keys(userCollection).length}
+      />
+
+      <ImportDeckModal
+        isOpen={isImportDeckModalOpen}
+        onClose={() => setIsImportDeckModalOpen(false)}
+        onSaveDeck={handleSaveImportedDeck}
       />
 
       <ExportImportModal
@@ -557,13 +689,36 @@ export const App: React.FC = () => {
         />
       )}
 
+      {/* Save Deck Before Changing Commander Modal */}
+      {pendingCommanderChange && (
+        <SaveBeforeCommanderChangeModal
+          isOpen={true}
+          onClose={() => setPendingCommanderChange(null)}
+          currentDeck={activeDeck}
+          newCommander={pendingCommanderChange}
+          onSaveAndChange={() => handleSaveDeckAndSwitchCommander(pendingCommanderChange)}
+          onDiscardAndChange={() => applyNewCommander(pendingCommanderChange)}
+        />
+      )}
+
       {/* Save Success Toast Banner */}
       {saveNotification && (
-        <div className="fixed bottom-6 right-6 z-50 bg-[#161d2b] border border-emerald-500/50 text-emerald-300 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+        <div className="fixed bottom-6 right-6 z-50 bg-[#121622] border border-emerald-500/60 text-emerald-200 px-4 py-3 rounded-xl shadow-2xl flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200 border-l-4 border-l-emerald-500">
           <div className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
           <span className="text-xs font-bold">{saveNotification}</span>
         </div>
       )}
+
+      {/* Footer with WotC Fan Content Policy Disclaimer */}
+      <footer className="w-full border-t border-[#c5a059]/20 bg-[#080a0f]/80 backdrop-blur-md py-6 px-4 mt-auto text-center text-xs text-stone-500 space-y-1">
+        <p className="font-fantasy font-bold text-stone-300 tracking-wider">
+          ARENA<span className="text-transparent bg-clip-text bg-gradient-to-r from-amber-400 to-orange-400">FORGE</span> DECKBUILDER
+        </p>
+        <p className="max-w-3xl mx-auto text-[11px] text-stone-400 leading-relaxed">
+          ArenaForge is unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy.
+          Portions of the materials used are property of Wizards of the Coast. &copy;Wizards of the Coast LLC.
+        </p>
+      </footer>
     </div>
   );
 };

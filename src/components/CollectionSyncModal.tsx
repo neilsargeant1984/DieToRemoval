@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
 import { UserCollection } from '../types/collection';
-import { parsePlayerLog } from '../utils/arenaParser';
+import { Deck } from '../types/deck';
+import { parsePlayerLog, parsePlayerLogDecks } from '../utils/arenaParser';
 import { ARENA_CARDS } from '../data/arenaCards';
-import { X, UploadCloud, CheckCircle2, FileText, Info } from 'lucide-react';
+import { 
+  X, 
+  UploadCloud, 
+  CheckCircle2, 
+  AlertTriangle, 
+  FileText, 
+  Info, 
+  Loader2,
+  FolderHeart,
+  ShieldCheck
+} from 'lucide-react';
 import confetti from 'canvas-confetti';
 
 interface CollectionSyncModalProps {
   isOpen: boolean;
   onClose: () => void;
   onSyncCollection: (collection: UserCollection) => void;
+  onSyncDecks: (decks: Deck[]) => void;
   currentCollectionCount: number;
 }
 
@@ -16,21 +28,71 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
   isOpen,
   onClose,
   onSyncCollection,
-  currentCollectionCount
+  onSyncDecks
 }) => {
   const [logText, setLogText] = useState('');
-  const [statusMessage, setStatusMessage] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [statusMessage, setStatusMessage] = useState<{
+    type: 'success' | 'error';
+    text: string;
+    deckCount?: number;
+    cardCount?: number;
+  } | null>(null);
 
   if (!isOpen) return null;
 
-  const handleProcessLog = (text: string) => {
-    const result = parsePlayerLog(text);
-    if (result.totalUniqueCards > 0) {
-      onSyncCollection(result.collection);
-      setStatusMessage(`Successfully imported ${result.totalUniqueCards} unique cards (${result.totalOwnedCards} total copies) from MTG Arena!`);
-      confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
-    } else {
-      setStatusMessage('No valid Arena card IDs found in input. Make sure detailed logging is enabled in MTG Arena Settings.');
+  const handleProcessLog = async (text: string) => {
+    if (!text.trim()) return;
+
+    setIsProcessing(true);
+    setStatusMessage(null);
+
+    try {
+      // 1. Try parsing full decks and owned cards from Player.log
+      const deckResult = await parsePlayerLogDecks(text);
+      
+      // 2. Also try parsing direct collection payload or tracker JSON
+      const collectionResult = parsePlayerLog(text);
+
+      // Merge cards found in decks with cards found in collection payload
+      const mergedCollection: UserCollection = { ...collectionResult.collection };
+      for (const [cidStr, qty] of Object.entries(deckResult.newCollectionCards)) {
+        const cid = parseInt(cidStr, 10);
+        mergedCollection[cid] = Math.max(mergedCollection[cid] || 0, qty);
+      }
+
+      const totalUniqueCards = Object.keys(mergedCollection).length;
+      const totalDecksFound = deckResult.decks.length;
+
+      if (totalDecksFound > 0 || totalUniqueCards > 0) {
+        if (totalDecksFound > 0) {
+          onSyncDecks(deckResult.decks);
+        }
+        if (totalUniqueCards > 0) {
+          onSyncCollection(mergedCollection);
+        }
+
+        confetti({ particleCount: 60, spread: 60, origin: { y: 0.6 } });
+        setStatusMessage({
+          type: 'success',
+          text: `Account sync successful! Synced ${totalDecksFound} deck(s) and ${totalUniqueCards} unique card(s).`,
+          deckCount: totalDecksFound,
+          cardCount: totalUniqueCards
+        });
+      } else {
+        setStatusMessage({
+          type: 'error',
+          text: 'No valid decks or card inventory found in this input. Make sure to open the Decks tab in MTG Arena before copying Player.log, or drop an exported inventory JSON.'
+        });
+      }
+    } catch (err) {
+      console.error('Error processing Arena account log:', err);
+      setStatusMessage({
+        type: 'error',
+        text: 'Failed to process log file. Please check the file formatting.'
+      });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -39,20 +101,18 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = event => {
+    reader.onload = async event => {
       const content = event.target?.result as string;
       if (content) {
-        handleProcessLog(content);
+        await handleProcessLog(content);
       }
     };
     reader.readAsText(file);
   };
 
   const handleLoadSampleCollection = () => {
-    // Generate a realistic user collection where the player owns various staples
     const sampleCol: UserCollection = {};
     ARENA_CARDS.forEach((card, index) => {
-      // Player owns 4 of commons/uncommons, 2-4 of staples, 0-2 of mythics
       if (card.rarity === 'common' || card.rarity === 'uncommon') {
         sampleCol[card.arenaId] = 4;
       } else if (card.rarity === 'rare') {
@@ -63,44 +123,52 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
     });
 
     onSyncCollection(sampleCol);
-    setStatusMessage(`Loaded active sample collection with ${Object.keys(sampleCol).length} cards.`);
     confetti({ particleCount: 70, spread: 70 });
+    setStatusMessage({
+      type: 'success',
+      text: `Loaded active sample collection with ${Object.keys(sampleCol).length} cards for testing.`,
+      cardCount: Object.keys(sampleCol).length
+    });
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-xl w-full p-6 shadow-2xl relative space-y-5">
+    <div className="fixed inset-0 z-50 bg-stone-900/60 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="arena-panel rounded-3xl max-w-xl w-full p-6 shadow-2xl relative space-y-5">
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-white/10">
           <div className="flex items-center gap-2">
             <UploadCloud className="w-5 h-5 text-amber-400" />
-            <h2 className="text-lg font-bold text-slate-100">Sync MTG Arena Collection</h2>
+            <div>
+              <h2 className="font-fantasy font-black text-lg text-white">Sync MTG Arena Account</h2>
+              <p className="text-xs text-stone-400">Import your decks to "My Decks" and card collection to "My Collection"</p>
+            </div>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800/80 hover:bg-slate-700 transition"
+            className="text-stone-400 hover:text-stone-200 p-1.5 rounded-full bg-white/5 hover:bg-white/10 transition shadow-sm"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Info guide */}
-        <div className="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 text-xs text-slate-300 space-y-2">
-          <div className="flex items-center gap-1.5 font-semibold text-amber-300">
+        <div className="bg-[#0d1017] border border-white/5 rounded-2xl p-4 text-xs text-stone-300 space-y-2 shadow-inner">
+          <div className="flex items-center gap-1.5 font-bold text-amber-400">
             <Info className="w-4 h-4 flex-shrink-0" />
             <span>How to locate your Arena Player.log</span>
           </div>
-          <p className="text-slate-400 leading-relaxed">
+          <p className="text-stone-400 leading-relaxed">
             1. In MTG Arena, go to <strong>Options &gt; Account</strong> and check <strong>"Detailed Logs (Plugin Support)"</strong>.<br />
-            2. Locate your log file at:
+            2. Visit your <strong>Decks</strong> tab in MTG Arena once so Arena writes your current decks to the log file.<br />
+            3. Locate and drop your log file from:
           </p>
-          <code className="block bg-slate-900 px-2 py-1 rounded text-[11px] text-amber-200 border border-slate-800 select-all font-mono break-all">
+          <code className="block bg-black/50 px-2.5 py-1.5 rounded-lg text-[11px] text-amber-300 border border-white/10 select-all font-mono break-all font-bold">
             %APPDATA%\..\LocalLow\Wizards Of The Coast\MTGA\Player.log
           </code>
         </div>
 
         {/* Upload Drop Zone */}
-        <div className="border-2 border-dashed border-slate-700 hover:border-amber-400 rounded-xl p-6 text-center transition bg-slate-950/40">
+        <div className="border-2 border-dashed border-amber-500/40 hover:border-amber-400 rounded-2xl p-6 text-center transition bg-[#0d1017]/50 hover:bg-[#0d1017] shadow-sm">
           <input
             type="file"
             id="logFileInput"
@@ -110,30 +178,57 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
           />
           <label htmlFor="logFileInput" className="cursor-pointer space-y-2 block">
             <FileText className="w-8 h-8 mx-auto text-amber-400" />
-            <div className="text-sm font-semibold text-slate-200">
-              Click to select Player.log or drag & drop here
+            <div className="text-sm font-bold text-stone-200">
+              Click to select Player.log or drag &amp; drop here
             </div>
-            <p className="text-xs text-slate-500">Supports .log, .txt, or exported inventory JSON</p>
+            <p className="text-xs text-stone-500">Supports Player.log, .txt, or tracker exported JSON</p>
           </label>
         </div>
 
         {/* Or paste directly */}
-        <div className="space-y-2">
-          <label className="text-xs font-semibold text-slate-400 block">
+        <div className="space-y-1.5">
+          <label className="text-xs font-fantasy font-bold text-stone-300 block uppercase tracking-wider">
             Or paste log content / JSON payload:
           </label>
           <textarea
             value={logText}
             onChange={e => setLogText(e.target.value)}
-            placeholder='Paste Player.log text or { "82133": 4, "76543": 2 }...'
-            className="w-full h-24 bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-200 focus:outline-none focus:border-amber-500 placeholder-slate-600"
+            placeholder='Paste Player.log text or tracker inventory JSON...'
+            className="w-full h-24 bg-[#0d1017] border border-white/10 rounded-xl p-3 text-xs font-mono text-stone-200 focus:outline-none focus:border-amber-500 placeholder-stone-500 shadow-inner"
           />
         </div>
 
+        {/* Status Message */}
         {statusMessage && (
-          <div className="p-3 bg-emerald-950/50 border border-emerald-800 text-emerald-300 rounded-xl text-xs flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400" />
-            <span>{statusMessage}</span>
+          <div className={`p-3 rounded-xl text-xs flex items-start gap-2 shadow-sm font-medium ${
+            statusMessage.type === 'success'
+              ? 'bg-emerald-950/60 border border-emerald-500/60 text-emerald-200'
+              : 'bg-rose-950/60 border border-rose-500/60 text-rose-200'
+          }`}>
+            {statusMessage.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 flex-shrink-0 text-emerald-400 mt-0.5" />
+            ) : (
+              <AlertTriangle className="w-4 h-4 flex-shrink-0 text-rose-400 mt-0.5" />
+            )}
+            <div className="space-y-1 flex-1">
+              <p>{statusMessage.text}</p>
+              {statusMessage.type === 'success' && (
+                <div className="flex items-center gap-3 pt-1 text-[11px] font-bold">
+                  {statusMessage.deckCount !== undefined && statusMessage.deckCount > 0 && (
+                    <span className="flex items-center gap-1 text-amber-300">
+                      <FolderHeart className="w-3.5 h-3.5" />
+                      Saved to My Decks &gt; Imported Decks
+                    </span>
+                  )}
+                  {statusMessage.cardCount !== undefined && statusMessage.cardCount > 0 && (
+                    <span className="flex items-center gap-1 text-emerald-300">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Available in My Collection
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -141,22 +236,23 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
         <div className="flex items-center justify-between gap-3 pt-2">
           <button
             onClick={handleLoadSampleCollection}
-            className="text-xs text-amber-400 hover:text-amber-300 font-semibold underline underline-offset-4"
+            className="text-xs text-amber-400 hover:text-amber-300 font-bold underline underline-offset-4"
           >
-            Load Sample Collection (Test Mode)
+            Load Sample Cards (Test Mode)
           </button>
 
           <div className="flex items-center gap-2">
             <button
               onClick={() => handleProcessLog(logText)}
-              disabled={!logText.trim()}
-              className="px-4 py-2 bg-amber-500 hover:bg-amber-400 disabled:opacity-50 text-slate-950 font-bold text-xs rounded-xl shadow transition"
+              disabled={!logText.trim() || isProcessing}
+              className="btn-mythic-spark flex items-center gap-1.5 px-4 py-2 font-extrabold text-xs rounded-xl shadow-sm transition disabled:opacity-50"
             >
-              Process & Sync
+              {isProcessing && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+              <span>{isProcessing ? 'Processing...' : 'Process & Sync'}</span>
             </button>
             <button
               onClick={onClose}
-              className="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-semibold text-xs rounded-xl border border-slate-700 transition"
+              className="px-4 py-2 bg-white/5 hover:bg-white/10 text-stone-300 font-bold text-xs rounded-xl border border-white/10 transition"
             >
               Done
             </button>
@@ -166,3 +262,5 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
     </div>
   );
 };
+
+export default CollectionSyncModal;

@@ -3,6 +3,8 @@ import { Deck, DeckCard } from '../types/deck';
 import { Card, CardRarity } from '../types/card';
 import { UserCollection } from '../types/collection';
 import { Plus, Minus, Trash2, ArrowRightLeft, Sparkles, BookOpen, AlertTriangle } from 'lucide-react';
+import { getMaxCardCopies } from '../utils/cardRules';
+import { ManaCost } from './ManaCost';
 
 interface DeckListWorkspaceProps {
   deck: Deck;
@@ -50,9 +52,9 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
       if (newQty <= 0) {
         list.splice(index, 1);
       } else {
-        // Enforce 4-of maximum for non-basic lands
-        const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'].includes(card.name);
-        if (!isBasic && newQty > 4) {
+        // Enforce maximum copies allowed by MTG rules and card text
+        const maxAllowed = getMaxCardCopies(card, deck.format);
+        if (newQty > maxAllowed) {
           return;
         }
         list[index] = { ...current, quantity: newQty };
@@ -121,24 +123,24 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
     return (
       <div
         key={card.id}
-        className={`group flex items-center justify-between py-1.5 px-2.5 rounded-lg border transition text-sm ${
+        className={`group flex items-center justify-between py-1.5 px-2.5 rounded-xl border transition text-sm shadow-sm card-tile ${
           needsWildcards
-            ? 'bg-amber-950/20 border-amber-900/40 hover:border-amber-700/60'
-            : 'bg-slate-950/40 border-slate-800/80 hover:border-slate-700 hover:bg-slate-800/50'
+            ? 'bg-amber-950/20 border-amber-500/40 hover:border-amber-400 hover:bg-[#181e2b]'
+            : 'bg-[#131722]/80 border-[#c5a059]/20 hover:border-amber-400/50 hover:bg-[#181e2b]'
         }`}
         onMouseEnter={() => setHoveredCard(card)}
         onMouseLeave={() => setHoveredCard(null)}
       >
         {/* Quantity Controls & Card Name */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
-          <div className="flex items-center bg-slate-900 border border-slate-800 rounded px-1 flex-shrink-0">
+          <div className="flex items-center bg-[#0e121a] border border-[#c5a059]/30 rounded-lg px-1 flex-shrink-0 shadow-sm">
             <button
               onClick={() => handleAdjustQuantity(card, -1, isSideboard)}
               className="text-slate-400 hover:text-rose-400 px-1 py-0.5"
             >
               <Minus className="w-3 h-3" />
             </button>
-            <span className="w-5 text-center font-bold text-xs text-amber-300">
+            <span className="w-5 text-center font-black text-xs text-amber-400">
               {quantity}
             </span>
             <button
@@ -150,13 +152,13 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
           </div>
 
           <div
-            className={`w-2 h-2 rounded-full flex-shrink-0 ${rarityGems[card.rarity]}`}
+            className={`w-2 h-2 rounded-full flex-shrink-0 shadow-sm ${rarityGems[card.rarity]}`}
             title={`${card.rarity} card`}
           />
 
           <button
             onClick={() => onSelectCardDetail(card)}
-            className="text-left font-medium text-slate-200 hover:text-amber-300 transition truncate text-sm flex items-center gap-1.5"
+            className="text-left font-bold text-slate-200 hover:text-amber-300 transition truncate text-sm flex items-center gap-1.5"
           >
             <span className="truncate">{card.name}</span>
             {card.spellbook && (
@@ -177,10 +179,10 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
           {/* Wildcard deficiency badge */}
           {!isBasic && (
             <span
-              className={`text-[11px] px-1.5 py-0.5 rounded font-mono ${
+              className={`text-[11px] px-1.5 py-0.5 rounded-lg font-mono ${
                 owned >= quantity
-                  ? 'bg-emerald-950/40 text-emerald-400 border border-emerald-900/50'
-                  : 'bg-amber-950/60 text-amber-300 border border-amber-800/80 font-bold'
+                  ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 font-medium'
+                  : 'bg-amber-950/60 text-amber-300 border border-amber-500/50 font-bold'
               }`}
               title={`You own ${owned} / ${quantity} copies in MTG Arena`}
             >
@@ -189,22 +191,20 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
           )}
 
           {card.manaCost && (
-            <span className="text-xs font-mono text-slate-300 bg-slate-900/80 px-1.5 py-0.5 rounded border border-slate-800">
-              {card.manaCost}
-            </span>
+            <ManaCost manaCost={card.manaCost} size="sm" />
           )}
 
           {/* Action buttons (Swap section, Delete) */}
           <button
             onClick={() => handleMoveSection(card, isSideboard)}
-            className="text-slate-500 hover:text-amber-400 p-1 rounded opacity-0 group-hover:opacity-100 transition"
+            className="text-slate-400 hover:text-amber-400 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition"
             title={isSideboard ? 'Move to Mainboard' : 'Move to Sideboard'}
           >
             <ArrowRightLeft className="w-3.5 h-3.5" />
           </button>
           <button
             onClick={() => handleRemoveCard(card, isSideboard)}
-            className="text-slate-500 hover:text-rose-400 p-1 rounded opacity-0 group-hover:opacity-100 transition"
+            className="text-slate-400 hover:text-rose-400 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition"
             title="Remove card"
           >
             <Trash2 className="w-3.5 h-3.5" />
@@ -215,36 +215,36 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
   };
 
   return (
-    <div className="bg-slate-900/90 border border-slate-800 rounded-xl p-4 shadow-lg flex flex-col h-full relative">
+    <div className="arena-panel rounded-2xl p-4 shadow-xl flex flex-col h-full relative">
       {/* Workspace Header & Stats */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-800">
+      <div className="flex items-center justify-between pb-3 border-b border-[#c5a059]/20">
         <div className="flex items-center gap-3">
-          <h2 className="text-base font-bold text-slate-100">{deck.name}</h2>
-          <span className="text-xs px-2.5 py-0.5 rounded-full capitalize font-semibold bg-slate-800 text-amber-400 border border-slate-700">
+          <h2 className="font-fantasy font-black text-base text-slate-100">{deck.name}</h2>
+          <span className="text-xs px-3 py-0.5 rounded-full capitalize font-bold bg-[#161b26] text-amber-400 border border-[#c5a059]/30">
             {deck.format}
           </span>
         </div>
 
-        <div className="flex items-center gap-3 text-xs font-medium">
-          <span className={`px-2 py-0.5 rounded border ${
+        <div className="flex items-center gap-2 text-xs font-semibold">
+          <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
             mainCount === 60
-              ? 'bg-emerald-950/40 text-emerald-300 border-emerald-800'
-              : 'bg-slate-800 text-slate-300 border-slate-700'
+              ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+              : 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
           }`}>
-            Mainboard: <strong className="text-white">{mainCount}</strong> / 60
+            Mainboard: <strong className="text-slate-100 font-black">{mainCount}</strong> / 60
           </span>
-          <span className={`px-2 py-0.5 rounded border ${
+          <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
             sideCount <= 15
-              ? 'bg-slate-800 text-slate-300 border-slate-700'
-              : 'bg-rose-950/50 text-rose-300 border-rose-800'
+              ? 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
+              : 'bg-rose-950/60 text-rose-300 border-rose-500/40'
           }`}>
-            Sideboard: <strong className="text-white">{sideCount}</strong> / 15
+            Sideboard: <strong className="text-slate-100 font-black">{sideCount}</strong> / 15
           </span>
         </div>
       </div>
 
       {mainCount < 60 && (
-        <div className="mt-2 bg-amber-500/10 border border-amber-500/20 text-amber-300 px-3 py-1.5 rounded-lg text-xs flex items-center gap-2">
+        <div className="mt-2 bg-amber-950/40 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 shadow-sm font-medium">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
           <span>MTG Arena requires a minimum of 60 cards in the mainboard for this format.</span>
         </div>
@@ -258,7 +258,7 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
 
           return (
             <div key={category} className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-semibold text-slate-400 uppercase tracking-wider px-1">
+              <div className="flex items-center justify-between text-xs font-fantasy font-bold text-[#c5a059] uppercase tracking-wider px-1">
                 <span>{category} ({catCount})</span>
               </div>
               <div className="space-y-1">
@@ -270,8 +270,8 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
 
         {/* Sideboard Section */}
         {deck.sideboard.length > 0 && (
-          <div className="pt-3 border-t border-slate-800 space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-semibold text-sky-400 uppercase tracking-wider px-1">
+          <div className="pt-3 border-t border-[#c5a059]/20 space-y-1.5">
+            <div className="flex items-center justify-between text-xs font-fantasy font-bold text-slate-400 uppercase tracking-wider px-1">
               <span>Sideboard ({sideCount})</span>
             </div>
             <div className="space-y-1">
@@ -282,8 +282,8 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
 
         {deck.mainboard.length === 0 && (
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
-            <p className="font-semibold text-slate-400">Your deck is currently empty</p>
-            <p className="text-xs mt-1">
+            <p className="font-fantasy font-bold text-slate-200">Your deck is currently empty</p>
+            <p className="text-xs mt-1 text-slate-400">
               Add Arena cards from the explorer on the left or load a pre-built Meta Deck.
             </p>
           </div>
@@ -292,11 +292,11 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
 
       {/* Floating Card Art Tooltip on Hover */}
       {hoveredCard && (
-        <div className="absolute right-4 bottom-4 pointer-events-none z-50 w-52 rounded-xl shadow-2xl border-2 border-amber-500/50 overflow-hidden animate-in fade-in duration-150">
+        <div className="absolute right-4 bottom-4 pointer-events-none z-50 w-52 rounded-2xl shadow-2xl border-2 border-[#c5a059] overflow-hidden animate-in fade-in duration-150">
           <img
             src={hoveredCard.imageUrl}
             alt={hoveredCard.name}
-            className="w-full h-auto object-cover rounded-lg"
+            className="w-full h-auto object-cover rounded-xl"
           />
         </div>
       )}

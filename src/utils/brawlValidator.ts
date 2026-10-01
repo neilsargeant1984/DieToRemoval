@@ -1,5 +1,6 @@
 import { Card } from '../types/card';
 import { Deck, DeckCard } from '../types/deck';
+import { getMaxCardCopies } from './cardRules';
 
 // Official MTG Arena Brawl Banned List
 export const ARENA_BRAWL_BANNED_CARDS = new Set([
@@ -88,17 +89,23 @@ export function validateBrawlDeck(deck: Deck): BrawlValidationResult {
   const basicLands = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']);
 
   // Aggregate total quantities across all printings by card name
-  const nameCounts = new Map<string, number>();
+  const nameCounts = new Map<string, { qty: number; card: Card }>();
   for (const item of deck.mainboard) {
     if (!basicLands.has(item.card.name)) {
-      nameCounts.set(item.card.name, (nameCounts.get(item.card.name) || 0) + item.quantity);
+      const existing = nameCounts.get(item.card.name);
+      if (existing) {
+        existing.qty += item.quantity;
+      } else {
+        nameCounts.set(item.card.name, { qty: item.quantity, card: item.card });
+      }
     }
   }
 
-  for (const [name, qty] of nameCounts.entries()) {
-    if (qty > 1) {
+  for (const [name, { qty, card }] of nameCounts.entries()) {
+    const maxAllowed = getMaxCardCopies(card, 'brawl');
+    if (qty > maxAllowed) {
       duplicateCards.push({ name, quantity: qty });
-      messages.push(`Singleton violation: ${qty} copies of "${name}" (Max 1 allowed in Brawl).`);
+      messages.push(`Singleton violation: ${qty} copies of "${name}" (Max ${maxAllowed} allowed in Brawl).`);
     }
   }
 

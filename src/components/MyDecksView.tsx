@@ -7,16 +7,17 @@ import {
   FolderHeart, 
   Plus, 
   Trash2, 
-  Play, 
   Copy, 
   Calendar, 
   Layers, 
   Crown, 
-  ExternalLink,
-  Edit2,
-  Check,
-  Sparkles,
-  ArrowRight
+  Edit2, 
+  Check, 
+  Sparkles, 
+  ArrowRight,
+  Download,
+  CloudDownload,
+  FileCode2
 } from 'lucide-react';
 
 interface MyDecksViewProps {
@@ -27,6 +28,7 @@ interface MyDecksViewProps {
   onDeleteDeck: (deckId: string) => void;
   onDuplicateDeck: (deck: Deck) => void;
   onRenameDeck: (deckId: string, newName: string) => void;
+  onOpenImportModal: () => void;
   userCollection: UserCollection;
 }
 
@@ -38,13 +40,20 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
   onDeleteDeck,
   onDuplicateDeck,
   onRenameDeck,
+  onOpenImportModal,
   userCollection
 }) => {
+  const [activeTab, setActiveTab] = useState<'custom' | 'imported'>('custom');
   const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
   const [filterFormat, setFilterFormat] = useState<'all' | 'brawl' | 'standard' | 'historic' | 'timeless' | 'explorer'>('all');
 
-  const filteredDecks = savedDecks.filter(d => {
+  const customDecks = savedDecks.filter(d => !d.isImported);
+  const importedDecks = savedDecks.filter(d => d.isImported);
+
+  const baseDecks = activeTab === 'custom' ? customDecks : importedDecks;
+
+  const filteredDecks = baseDecks.filter(d => {
     if (filterFormat === 'all') return true;
     return d.format === filterFormat;
   });
@@ -67,47 +76,37 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Header Banner */}
-      <div className="bg-[#121622]/90 border border-[#232b3d] rounded-2xl p-5 shadow-2xl backdrop-blur-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="arena-panel rounded-3xl p-6 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+            <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-400 shadow-sm">
               <FolderHeart className="w-4 h-4" />
             </div>
-            <h2 className="text-xl font-extrabold text-slate-100 flex items-center gap-2">
+            <h2 className="font-fantasy font-black text-xl text-white flex items-center gap-2">
               <span>My Decks</span>
-              <span className="text-xs bg-[#1a2130] text-amber-300 font-bold px-2 py-0.5 rounded-full border border-[#2c3750]">
+              <span className="text-xs bg-orange-950/80 text-orange-300 font-bold px-2.5 py-0.5 rounded-full border border-orange-500/40">
                 {savedDecks.length} {savedDecks.length === 1 ? 'Deck' : 'Decks'}
               </span>
             </h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Manage your personal MTG Arena brews. Click <strong>Load into Builder</strong> to edit or playtest any deck.
+          <p className="text-xs text-stone-400 mt-1">
+            Manage your personal brews and MTG Arena imported lists. Click <strong>Load into Builder</strong> to edit or playtest.
           </p>
         </div>
 
-        {/* Action Controls: New Deck & Format Filters */}
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Format Tabs */}
-          <div className="flex items-center bg-[#0d1017] p-1 rounded-xl border border-[#22293a]">
-            {(['all', 'brawl', 'standard', 'historic', 'timeless'] as const).map(f => (
-              <button
-                key={f}
-                onClick={() => setFilterFormat(f)}
-                className={`text-xs px-2.5 py-1 rounded-lg font-bold capitalize transition ${
-                  filterFormat === f
-                    ? 'bg-amber-500 text-slate-950 shadow-sm'
-                    : 'text-slate-400 hover:text-slate-200'
-                }`}
-              >
-                {f}
-              </button>
-            ))}
-          </div>
+        {/* Action Controls: Import Deck & New Brew */}
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={onOpenImportModal}
+            className="flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold bg-[#141a29] hover:bg-[#1c2438] text-amber-300 border border-amber-500/40 rounded-xl transition shadow-sm"
+          >
+            <Download className="w-3.5 h-3.5 text-amber-400" />
+            <span>Import Deck</span>
+          </button>
 
-          {/* Create New Deck Dropdown Buttons */}
           <button
             onClick={() => onCreateNewDeck('brawl')}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 text-xs font-extrabold rounded-xl transition shadow-md hover:scale-105"
+            className="btn-mythic-spark flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition shadow-md hover:scale-105"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>New Brawl Deck</span>
@@ -115,23 +114,96 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
         </div>
       </div>
 
+      {/* Sub-Navigation: Two Tabs (Custom Brews vs Imported Decks) + Format Filters */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
+        {/* Main Tab Toggle: Custom Brews vs Imported Decks */}
+        <div className="flex items-center bg-[#0d1017]/90 p-1 rounded-2xl border border-white/10 shadow-inner gap-1">
+          <button
+            onClick={() => setActiveTab('custom')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition ${
+              activeTab === 'custom'
+                ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            <span>Custom Brews</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeTab === 'custom' ? 'bg-slate-950/20 text-slate-950' : 'bg-stone-800 text-stone-400'
+            }`}>
+              {customDecks.length}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('imported')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition ${
+              activeTab === 'imported'
+                ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <CloudDownload className="w-3.5 h-3.5" />
+            <span>Imported Decks</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeTab === 'imported' ? 'bg-slate-950/20 text-slate-950' : 'bg-stone-800 text-stone-400'
+            }`}>
+              {importedDecks.length}
+            </span>
+          </button>
+        </div>
+
+        {/* Format Filter Pills */}
+        <div className="flex items-center bg-[#0d1017]/90 p-1 rounded-xl border border-white/5">
+          {(['all', 'brawl', 'standard', 'historic', 'timeless'] as const).map(f => (
+            <button
+              key={f}
+              onClick={() => setFilterFormat(f)}
+              className={`text-xs px-3 py-1 rounded-lg font-bold capitalize transition ${
+                filterFormat === f
+                  ? 'btn-mythic-spark shadow-sm'
+                  : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
+              }`}
+            >
+              {f}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Decks Grid */}
       {filteredDecks.length === 0 ? (
-        <div className="bg-[#121622]/60 border border-[#232b3d] rounded-2xl p-12 text-center space-y-4">
-          <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center mx-auto">
+        <div className="arena-panel rounded-3xl p-12 text-center space-y-4 shadow-2xl">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-400 flex items-center justify-center mx-auto shadow-sm">
             <Layers className="w-6 h-6" />
           </div>
-          <h3 className="text-base font-bold text-slate-200">No saved decks in this view</h3>
-          <p className="text-xs text-slate-400 max-w-md mx-auto">
-            You can start a new deck from scratch or continue working on your active deck list.
+          <h3 className="font-fantasy font-bold text-base text-white">
+            {activeTab === 'custom' ? 'No custom brews found' : 'No imported decks yet'}
+          </h3>
+          <p className="text-xs text-stone-400 max-w-md mx-auto">
+            {activeTab === 'custom'
+              ? 'Start building a new deck from scratch or duplicate an imported deck to make it your own.'
+              : 'Paste an MTG Arena export via "Import Deck" or use "Sync Arena Account" to pull decks from Player.log.'}
           </p>
-          <button
-            onClick={() => onCreateNewDeck('brawl')}
-            className="inline-flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-bold rounded-xl transition shadow"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Create New Brawl Deck</span>
-          </button>
+          <div className="flex items-center justify-center gap-3 pt-2">
+            {activeTab === 'imported' ? (
+              <button
+                onClick={onOpenImportModal}
+                className="btn-mythic-spark inline-flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold rounded-xl transition shadow-md"
+              >
+                <Download className="w-3.5 h-3.5" />
+                <span>Import Deck from MTG Arena</span>
+              </button>
+            ) : (
+              <button
+                onClick={() => onCreateNewDeck('brawl')}
+                className="btn-mythic-spark inline-flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold rounded-xl transition shadow-md"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                <span>Create New Brawl Deck</span>
+              </button>
+            )}
+          </div>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -144,29 +216,35 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
             const isComplete = totalCount === targetCount;
 
             const formatBadgeColors: Record<string, string> = {
-              brawl: 'bg-amber-950/70 text-amber-300 border-amber-800/80',
-              standard: 'bg-blue-950/70 text-blue-300 border-blue-800/80',
-              pioneer: 'bg-emerald-950/70 text-emerald-300 border-emerald-800/80'
+              brawl: 'bg-orange-950 text-orange-300 border-orange-700',
+              standard: 'bg-blue-950 text-blue-300 border-blue-700',
+              pioneer: 'bg-emerald-950 text-emerald-300 border-emerald-700'
             };
 
             return (
               <div
                 key={deck.id}
-                className={`group relative bg-[#131722] border rounded-2xl p-4.5 transition flex flex-col justify-between space-y-4 hover:shadow-2xl ${
+                className={`group relative arena-panel rounded-2xl p-5 transition flex flex-col justify-between space-y-4 hover:shadow-2xl ${
                   isActive
-                    ? 'border-amber-400/80 shadow-amber-500/10 bg-[#161c2b]'
-                    : 'border-[#232b3d] hover:border-slate-600'
+                    ? 'border-amber-500 ring-2 ring-amber-400/80 shadow-xl bg-[#182030]'
+                    : 'hover:border-amber-400/60'
                 }`}
               >
                 {/* Top Row: Format & Status */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded border capitalize ${formatBadgeColors[deck.format] || 'bg-slate-800 text-slate-300'}`}>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border capitalize ${formatBadgeColors[deck.format] || 'bg-stone-800 text-stone-300 border-stone-700'}`}>
                         {deck.format}
                       </span>
+                      {deck.isImported && (
+                        <span className="text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-700/60 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                          <CloudDownload className="w-2.5 h-2.5" />
+                          <span>Arena Synced</span>
+                        </span>
+                      )}
                       {isActive && (
-                        <span className="text-[10px] font-bold bg-amber-500 text-slate-950 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                        <span className="text-[10px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm font-sans">
                           <Sparkles className="w-2.5 h-2.5" />
                           <span>Active in Builder</span>
                         </span>
@@ -174,7 +252,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                     </div>
 
                     <span className={`text-[11px] font-mono font-bold ${
-                      isComplete ? 'text-emerald-400' : 'text-slate-400'
+                      isComplete ? 'text-emerald-400' : 'text-stone-400'
                     }`}>
                       {totalCount}/{targetCount} cards
                     </span>
@@ -188,7 +266,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                         value={editName}
                         onChange={e => setEditName(e.target.value)}
                         autoFocus
-                        className="flex-1 bg-[#0d1017] border border-amber-500/50 rounded-lg px-2.5 py-1 text-sm font-bold text-slate-100 focus:outline-none"
+                        className="flex-1 bg-[#0d1017] border border-amber-500 rounded-lg px-2.5 py-1 text-sm font-bold text-white focus:outline-none shadow-sm"
                       />
                       <button
                         type="submit"
@@ -199,12 +277,12 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                     </form>
                   ) : (
                     <div className="flex items-center justify-between gap-2">
-                      <h3 className="text-base font-extrabold text-slate-100 truncate group-hover:text-amber-300 transition">
+                      <h3 className="font-fantasy font-bold text-base text-white truncate group-hover:text-amber-300 transition">
                         {deck.name}
                       </h3>
                       <button
                         onClick={e => handleStartRename(deck, e)}
-                        className="text-slate-500 hover:text-slate-300 p-1 rounded opacity-0 group-hover:opacity-100 transition"
+                        className="text-stone-400 hover:text-stone-200 p-1 rounded opacity-0 group-hover:opacity-100 transition"
                         title="Rename deck"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -214,12 +292,12 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
 
                   {/* Commander / Lead Card Feature Banner */}
                   {commander ? (
-                    <div className="flex items-center gap-3 bg-[#0c1017] p-2.5 rounded-xl border border-[#202738]">
+                    <div className="flex items-center gap-3 bg-[#0d1017] p-2.5 rounded-xl border border-white/5 shadow-inner">
                       {commander.imageUrl && (
                         <img
                           src={commander.imageUrl}
                           alt={commander.name}
-                          className="w-10 h-14 object-cover rounded-lg border border-[#2c364d] shadow-sm flex-shrink-0"
+                          className="w-10 h-14 object-cover rounded-lg border border-[#d4af37]/60 shadow-md flex-shrink-0"
                         />
                       )}
                       <div className="min-w-0 flex-1">
@@ -227,7 +305,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                           <Crown className="w-3 h-3 text-amber-400" />
                           <span>Commander</span>
                         </div>
-                        <span className="font-bold text-xs text-slate-200 block truncate mt-0.5">
+                        <span className="font-bold text-xs text-stone-200 block truncate mt-0.5">
                           {commander.name}
                         </span>
                         <div className="mt-1">
@@ -236,32 +314,32 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="bg-[#0c1017]/50 p-2.5 rounded-xl border border-[#1f2638] text-[11px] text-slate-500 flex items-center gap-2">
-                      <Layers className="w-3.5 h-3.5 text-slate-600" />
+                    <div className="bg-[#0d1017] p-2.5 rounded-xl border border-white/5 text-[11px] text-stone-400 flex items-center gap-2">
+                      <Layers className="w-3.5 h-3.5 text-stone-500" />
                       <span>Standard 60-card constructed list</span>
                     </div>
                   )}
 
                   {/* Date Stamp */}
-                  <div className="flex items-center gap-1.5 text-[10.5px] text-slate-500">
+                  <div className="flex items-center gap-1.5 text-[10.5px] text-stone-400">
                     <Calendar className="w-3 h-3" />
                     <span>Updated {new Date(deck.updatedAt).toLocaleDateString()}</span>
                   </div>
                 </div>
 
                 {/* Bottom Action Footer */}
-                <div className="pt-3 border-t border-[#1f2638] flex items-center justify-between gap-2">
+                <div className="pt-3 border-t border-white/10 flex items-center justify-between gap-2">
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => onDuplicateDeck(deck)}
-                      className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-[#1a2130] rounded-lg transition"
-                      title="Duplicate deck"
+                      className="p-1.5 text-stone-400 hover:text-stone-200 hover:bg-white/5 rounded-lg transition"
+                      title={deck.isImported ? "Duplicate to Custom Brews" : "Duplicate deck"}
                     >
                       <Copy className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => onDeleteDeck(deck.id)}
-                      className="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition"
+                      className="p-1.5 text-stone-400 hover:text-rose-400 hover:bg-rose-950/40 rounded-lg transition"
                       title="Delete deck"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
@@ -271,10 +349,10 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                   {/* Load into Builder Button */}
                   <button
                     onClick={() => onLoadDeck(deck)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow ${
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition shadow-sm ${
                       isActive
-                        ? 'bg-[#1b2333] text-amber-300 border border-amber-500/40 hover:bg-[#232c40]'
-                        : 'bg-amber-500 hover:bg-amber-400 text-slate-950 hover:scale-[1.02]'
+                        ? 'bg-[#1e2538] text-amber-300 border border-amber-500/50 hover:bg-[#252e46]'
+                        : 'btn-mythic-spark hover:scale-[1.02]'
                     }`}
                   >
                     <span>{isActive ? 'Continue Building' : 'Load into Builder'}</span>
@@ -289,3 +367,5 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
     </div>
   );
 };
+
+export default MyDecksView;

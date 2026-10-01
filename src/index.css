@@ -2,59 +2,149 @@
 
 @layer base {
   :root {
-    --arena-bg: #0b0d13;
-    --arena-surface: #121620;
-    --arena-card-bg: #181d2a;
-    --arena-border: #2a3244;
-    --arena-gold: #c89b3c;
-    --arena-gold-bright: #f0c365;
-    --arena-gold-glow: rgba(200, 155, 60, 0.25);
-    --arena-mythic: #ff5500;
-    --arena-rare: #e5b338;
-    --arena-uncommon: #8fa0b5;
-    --arena-common: #4a5568;
+    --arena-bg: #0b0e14;
+    --arena-surface: #121622;
+    --arena-surface-warm: #181d2a;
+    --arena-card-bg: #121622;
+    --arena-border: rgba(197, 160, 89, 0.28);
+    --arena-gold: #c5a059;
+    --arena-gold-bright: #e8c872;
+    --arena-gold-glow: rgba(212, 175, 55, 0.3);
+    --arena-mythic: #ea580c;
+    --arena-rare: #eab308;
+    --arena-uncommon: #0ea5e9;
+    --arena-common: #64748b;
   }
 
   body {
-    background-color: var(--arena-bg);
+    background-color: #0b0e14;
     color: #e2e8f0;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-image: 
-      radial-gradient(circle at 50% 0%, rgba(200, 155, 60, 0.08) 0%, transparent 45%),
-      radial-gradient(circle at 100% 100%, rgba(59, 130, 246, 0.04) 0%, transparent 40%),
-      radial-gradient(circle at 0% 100%, rgba(168, 85, 247, 0.04) 0%, transparent 40%);
+      radial-gradient(ellipse at 50% -10%, rgba(234, 88, 12, 0.14) 0%, transparent 55%),
+      radial-gradient(circle at 10% 25%, rgba(126, 34, 206, 0.08) 0%, transparent 45%),
+      radial-gradient(circle at 90% 65%, rgba(2, 132, 199, 0.07) 0%, transparent 50%),
+      radial-gradient(circle at 50% 90%, rgba(5, 150, 105, 0.05) 0%, transparent 60%),
+      linear-gradient(180deg, #0e121a 0%, #080a0f 100%);
     background-attachment: fixed;
     min-height: 100vh;
   }
 }
 
-/* Custom Arena scrollbars */
+.font-fantasy {
+  font-family: 'Cinzel', Georgia, serif;
+  letter-spacing: 0.025em;
+}
+
+/* MTG Arena Carved Obsidian Panel with Burnished Brass Border */
+.arena-panel, .sanctum-panel {
+  background: linear-gradient(180deg, rgba(22, 27, 39, 0.90) 0%, rgba(15, 18, 27, 0.95) 100%);
+  border: 1px solid rgba(197, 160, 89, 0.28);
+  box-shadow: 
+    0 12px 32px -4px rgba(0, 0, 0, 0.7),
+    0 2px 6px rgba(0, 0, 0, 0.4),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
+}
+
+.arena-panel-elevated {
+  background: linear-gradient(180deg, rgba(28, 35, 51, 0.88) 0%, rgba(20, 25, 38, 0.94) 100%);
+  border: 1px solid rgba(212, 175, 55, 0.35);
+  box-shadow: 
+    0 16px 40px -6px rgba(0, 0, 0, 0.8),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+/* Commander Altar Pedestal with Burnished Gold Double Border */
+.altar-pedestal {
+  box-shadow: 
+    0 14px 44px -4px rgba(0, 0, 0, 0.9),
+    0 0 0 1px rgba(212, 175, 55, 0.6),
+    0 0 24px 2px rgba(234, 88, 12, 0.25);
+}
+
+/* Planeswalker Spark Glow behind Commander */
+.spark-aura, .mandala-glow {
+  background: radial-gradient(circle, rgba(245, 158, 11, 0.28) 0%, rgba(234, 88, 12, 0.16) 45%, rgba(126, 34, 206, 0.08) 65%, transparent 75%);
+}
+
+/* Mythic Spark Button */
+.btn-mythic-spark {
+  background: linear-gradient(135deg, #d97706 0%, #ea580c 50%, #f59e0b 100%);
+  color: #0c0a09;
+  box-shadow: 
+    0 4px 16px rgba(234, 88, 12, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  border: 1px solid rgba(253, 224, 71, 0.5);
+  transition: all 0.2s ease;
+}
+.btn-mythic-spark:hover {
+  background: linear-gradient(135deg, #f59e0b 0%, #f97316 50%, #fde047 100%);
+  box-shadow: 
+    0 6px 22px rgba(234, 88, 12, 0.55),
+    0 0 14px rgba(245, 158, 11, 0.4);
+  transform: translateY(-1px);
+}
+
+/* Jewel Mana Crystal Vials */
+.mana-vial-track {
+  background: rgba(11, 14, 21, 0.85);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+.mana-vial-amber {
+  background: linear-gradient(90deg, #b45309 0%, #f59e0b 60%, #fef08a 100%);
+  box-shadow: 0 0 10px rgba(245, 158, 11, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.mana-vial-crimson, .mana-vial-rose {
+  background: linear-gradient(90deg, #991b1b 0%, #ef4444 60%, #fca5a5 100%);
+  box-shadow: 0 0 10px rgba(239, 68, 68, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.mana-vial-sapphire, .mana-vial-sky {
+  background: linear-gradient(90deg, #0369a1 0%, #0ea5e9 60%, #bae6fd 100%);
+  box-shadow: 0 0 10px rgba(14, 165, 233, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.mana-vial-orange {
+  background: linear-gradient(90deg, #c2410c 0%, #f97316 60%, #fed7aa 100%);
+  box-shadow: 0 0 10px rgba(249, 115, 22, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.mana-vial-amethyst, .mana-vial-indigo {
+  background: linear-gradient(90deg, #581c87 0%, #9333ea 60%, #e9d5ff 100%);
+  box-shadow: 0 0 10px rgba(147, 51, 234, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+.mana-vial-emerald {
+  background: linear-gradient(90deg, #065f46 0%, #10b981 60%, #a7f3d0 100%);
+  box-shadow: 0 0 10px rgba(16, 185, 129, 0.65), inset 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+/* Card Tile Presentation */
+.card-tile, .arena-card-frame {
+  background: rgba(18, 22, 32, 0.95);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+  transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.card-tile:hover, .arena-card-frame:hover {
+  transform: translateY(-4px);
+  border-color: rgba(212, 175, 55, 0.65);
+  box-shadow: 
+    0 14px 30px -4px rgba(0, 0, 0, 0.8),
+    0 0 16px 1px rgba(212, 175, 55, 0.2);
+}
+
+/* Dark Obsidian Scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: rgba(11, 13, 19, 0.8);
+  background: rgba(11, 14, 21, 0.9);
 }
 ::-webkit-scrollbar-thumb {
-  background: #2a3244;
+  background: rgba(197, 160, 89, 0.3);
   border-radius: 9999px;
-  border: 1px solid rgba(200, 155, 60, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.05);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #3e4a63;
-}
-
-/* Card Glow & 3D Hover Effects */
-.arena-card-frame {
-  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.2s ease;
-}
-.arena-card-frame:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.8), 0 0 15px 1px var(--arena-gold-glow);
-}
-
-.arena-gold-border {
-  border: 1px solid var(--arena-gold);
-  box-shadow: 0 0 10px -2px var(--arena-gold-glow);
+  background: rgba(212, 175, 55, 0.5);
 }

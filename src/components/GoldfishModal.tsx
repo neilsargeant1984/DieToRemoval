@@ -53,17 +53,17 @@ export const GoldfishModal: React.FC<GoldfishModalProps> = ({
   const totalMainCards = mainboard.reduce((acc, c) => acc + c.quantity, 0);
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
-      <div className="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full p-6 shadow-2xl relative flex flex-col max-h-[90vh]">
+    <div className="fixed inset-0 z-50 bg-black/75 backdrop-blur-md flex items-center justify-center p-4">
+      <div className="arena-panel rounded-3xl max-w-4xl w-full p-6 shadow-2xl relative flex flex-col max-h-[90vh]">
         {/* Header */}
-        <div className="flex items-center justify-between pb-4 border-b border-slate-800">
+        <div className="flex items-center justify-between pb-4 border-b border-[#c5a059]/20">
           <div className="flex items-center gap-2">
-            <Shuffle className="w-5 h-5 text-amber-400" />
-            <h2 className="text-lg font-bold text-slate-100">Sample Hand & Goldfish Playtest</h2>
+            <Shuffle className="w-5 h-5 text-amber-500" />
+            <h2 className="font-fantasy font-black text-lg text-slate-100">Sample Hand & Goldfish Playtest</h2>
           </div>
           <button
             onClick={onClose}
-            className="text-slate-400 hover:text-white p-1 rounded-full bg-slate-800/80 hover:bg-slate-700 transition"
+            className="text-slate-400 hover:text-slate-200 p-1.5 rounded-full bg-[#161b26] hover:bg-[#1f2637] transition border border-[#c5a059]/30"
           >
             <X className="w-5 h-5" />
           </button>
@@ -71,24 +71,24 @@ export const GoldfishModal: React.FC<GoldfishModalProps> = ({
 
         {totalMainCards < 7 ? (
           <div className="py-16 text-center text-slate-400 space-y-2">
-            <ShieldAlert className="w-8 h-8 mx-auto text-amber-400" />
-            <p className="font-semibold text-slate-200">Not enough cards in mainboard</p>
+            <ShieldAlert className="w-8 h-8 mx-auto text-amber-500" />
+            <p className="font-fantasy font-bold text-slate-200">Not enough cards in mainboard</p>
             <p className="text-xs">Add at least 7 cards to simulate an opening hand.</p>
           </div>
         ) : (
           <div className="flex-1 overflow-y-auto py-4 space-y-5">
             {/* Control Bar */}
-            <div className="flex items-center justify-between flex-wrap gap-3 bg-slate-950/60 p-3 rounded-xl border border-slate-800">
+            <div className="flex items-center justify-between flex-wrap gap-3 bg-[#0e121a] p-3 rounded-2xl border border-[#c5a059]/25 shadow-sm">
               <div className="flex items-center gap-3 text-xs">
                 <span className="text-slate-400">
-                  Hand: <strong className="text-amber-300 font-bold">{hand.length}</strong> cards
+                  Hand: <strong className="text-amber-400 font-extrabold">{hand.length}</strong> cards
                 </span>
                 <span className="text-slate-600">•</span>
                 <span className="text-slate-400">
                   Library: <strong className="text-slate-200 font-bold">{library.length}</strong> left
                 </span>
                 {mulliganCount > 0 && (
-                  <span className="px-2 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-900 text-[11px]">
+                  <span className="px-2 py-0.5 rounded bg-rose-950/60 text-rose-300 border border-rose-500/40 text-[11px] font-bold">
                     Mulligans taken: {mulliganCount} (Bottom {mulliganCount} cards)
                   </span>
                 )}
@@ -98,21 +98,21 @@ export const GoldfishModal: React.FC<GoldfishModalProps> = ({
                 <button
                   onClick={handleDrawOne}
                   disabled={library.length === 0}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 disabled:opacity-50 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#161b26] hover:bg-[#202737] disabled:opacity-50 text-slate-200 rounded-xl text-xs font-bold border border-[#c5a059]/30 transition shadow-sm"
                 >
-                  <PlusCircle className="w-3.5 h-3.5 text-sky-400" />
+                  <PlusCircle className="w-3.5 h-3.5 text-amber-500" />
                   Draw 1 Card
                 </button>
                 <button
                   onClick={handleMulligan}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-semibold border border-slate-700 transition"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-[#161b26] hover:bg-[#202737] text-slate-200 rounded-xl text-xs font-bold border border-[#c5a059]/30 transition shadow-sm"
                 >
-                  <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                  <RefreshCw className="w-3.5 h-3.5 text-amber-500" />
                   London Mulligan
                 </button>
                 <button
                   onClick={resetGame}
-                  className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-lg text-xs font-bold transition shadow"
+                  className="btn-mythic-spark px-3.5 py-1.5 text-slate-950 rounded-xl text-xs font-black transition shadow-sm"
                 >
                   New Hand
                 </button>
@@ -125,18 +125,18 @@ export const GoldfishModal: React.FC<GoldfishModalProps> = ({
                 <div
                   key={`${card.id}-${idx}`}
                   onClick={() => onSelectCardDetail(card)}
-                  className="group relative rounded-xl overflow-hidden shadow-lg border border-slate-800 hover:border-amber-400 hover:scale-105 transition transform cursor-pointer flex flex-col bg-slate-950"
+                  className="group relative rounded-2xl overflow-hidden shadow-md border border-[#c5a059]/30 hover:border-amber-400 hover:scale-105 transition transform cursor-pointer flex flex-col bg-[#121622] card-tile"
                 >
                   <img
                     src={card.imageUrl}
                     alt={card.name}
                     className="w-full h-auto object-cover"
                   />
-                  <div className="p-1.5 bg-slate-950/90 text-center">
-                    <p className="text-[11px] font-semibold text-slate-200 truncate group-hover:text-amber-300">
+                  <div className="p-1.5 bg-[#0e121a] text-center border-t border-[#c5a059]/20">
+                    <p className="text-[11px] font-bold text-slate-200 truncate group-hover:text-amber-300">
                       {card.name}
                     </p>
-                    <span className="text-[10px] text-slate-500 font-mono">
+                    <span className="text-[10px] text-slate-400 font-mono font-medium">
                       {card.manaCost || 'Land'}
                     </span>
                   </div>
