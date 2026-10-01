@@ -188,9 +188,24 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
 
         {/* Or paste directly */}
         <div className="space-y-1.5">
-          <label className="text-xs font-fantasy font-bold text-stone-300 block uppercase tracking-wider">
-            Or paste log content / JSON payload:
-          </label>
+          <div className="flex items-center justify-between">
+            <label className="text-xs font-fantasy font-bold text-stone-300 block uppercase tracking-wider">
+              Or paste log content / JSON payload:
+            </label>
+            {logText && (
+              <button
+                onClick={() => {
+                  setLogText('');
+                  setStatusMessage(null);
+                }}
+                className="flex items-center gap-1 text-[11px] text-amber-400 hover:text-amber-300 font-bold transition hover:underline"
+                title="Wipe text in box"
+              >
+                <Trash2 className="w-3 h-3" />
+                <span>Wipe Box</span>
+              </button>
+            )}
+          </div>
           <textarea
             value={logText}
             onChange={e => setLogText(e.target.value)}
