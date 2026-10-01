@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Card, FormatType } from './types/card';
-import { Deck } from './types/deck';
+import { Deck, DeckCard } from './types/deck';
 import { UserCollection, WildcardInventory } from './types/collection';
 import { ArenaNavbar, MainNavTab } from './components/ArenaNavbar';
 import { BrawlCommandZone, BrawlSubMode } from './components/BrawlCommandZone';
@@ -141,6 +141,7 @@ export const App: React.FC = () => {
   const [isMetaOpen, setIsMetaOpen] = useState(false);
   const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
   const [isImportDeckModalOpen, setIsImportDeckModalOpen] = useState(false);
+  const [isManaModalOpen, setIsManaModalOpen] = useState(false);
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
 
@@ -289,6 +290,22 @@ export const App: React.FC = () => {
       sideboard: [],
       updatedAt: new Date().toISOString()
     }));
+  };
+
+  const handleApplyManaBase = (newLands: DeckCard[]) => {
+    setActiveDeck(prev => {
+      // Keep cards in mainboard that are NOT Lands
+      const nonLands = prev.mainboard.filter(c => !c.card.types.includes('Land'));
+      const updatedMain = [...nonLands, ...newLands];
+      return {
+        ...prev,
+        mainboard: updatedMain,
+        updatedAt: new Date().toISOString()
+      };
+    });
+    const landCount = newLands.reduce((s, c) => s + c.quantity, 0);
+    setSaveNotification(`Applied optimal ${landCount}-land MTG Arena mana base!`);
+    setTimeout(() => setSaveNotification(null), 3500);
   };
 
   const applyNewCommander = (card: Card) => {
@@ -547,9 +564,21 @@ export const App: React.FC = () => {
   const handleSyncDecks = (newDecks: Deck[]) => {
     if (newDecks.length === 0) return;
     setSavedDecks(prev => {
-      const existingNames = new Set(prev.map(d => d.name.toLowerCase()));
-      const toAdd = newDecks.filter(d => !existingNames.has(d.name.toLowerCase()));
-      return [...toAdd, ...prev];
+      let updated = [...prev];
+      for (const newDeck of newDecks) {
+        // If an existing deck has a broken commander or matches name, update it with the clean version
+        const existingIdx = updated.findIndex(d => 
+          d.name.toLowerCase() === newDeck.name.toLowerCase() ||
+          (d.commander?.card.name.startsWith('Arena Card') && newDeck.commander && !newDeck.commander.card.name.startsWith('Arena Card')) ||
+          (d.name.toLowerCase().includes('jace') && newDeck.name.toLowerCase().includes('jace') && d.commander?.card.name.startsWith('Arena Card'))
+        );
+        if (existingIdx >= 0) {
+          updated[existingIdx] = newDeck;
+        } else {
+          updated.unshift(newDeck);
+        }
+      }
+      return updated;
     });
     setSaveNotification(`Synced ${newDecks.length} deck(s) from MTG Arena!`);
     setTimeout(() => setSaveNotification(null), 3500);
@@ -624,6 +653,7 @@ export const App: React.FC = () => {
                 else if (role === 'card_advantage') setSynergyTab('card_draw');
                 else if (role === 'lands') setSynergyTab('lands');
               }}
+              onOpenManaOptimizer={() => setIsManaModalOpen(true)}
             />
 
             {/* Side-by-Side: Synergy Console + Active Deck Tray */}
@@ -644,6 +674,7 @@ export const App: React.FC = () => {
                     onSelectTab={setSynergyTab}
                     isDeckTrayOpen={isDeckDrawerOpen}
                     onToggleDeckTray={() => setIsDeckDrawerOpen(prev => !prev)}
+                    onOpenManaOptimizer={() => setIsManaModalOpen(true)}
                   />
                 )}
               </div>
@@ -789,6 +820,16 @@ export const App: React.FC = () => {
           onDiscardAndChange={() => applyNewCommander(pendingCommanderChange)}
         />
       )}
+
+      {/* Mana Base Optimizer Modal */}
+      <ManaBaseModal
+        isOpen={isManaModalOpen}
+        onClose={() => setIsManaModalOpen(false)}
+        deck={activeDeck}
+        onApplyManaBase={handleApplyManaBase}
+        onSelectCardDetail={setSelectedCardDetail}
+        userCollection={userCollection}
+      />
 
       {/* Save Success Toast Banner */}
       {saveNotification && (

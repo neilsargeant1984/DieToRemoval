@@ -322,6 +322,94 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
   decks: Deck[];
   newCollectionCards: Record<number, number>;
 }> {
+  const finalDecks: Deck[] = [];
+  const processedDeckNames = new Set<string>();
+  const newCollectionCards: Record<number, number> = {};
+
+  // 1. Look for any "Exporting deck data to clipboard:" blocks in the log
+  const exportRegex = /Exporting deck data to clipboard:\s*([\s\S]+?)(?=\n\[|\n\{|$)/gi;
+  let expMatch;
+  while ((expMatch = exportRegex.exec(logContent)) !== null) {
+    const deckText = expMatch[1].trim();
+    if (deckText.length > 20) {
+      try {
+        const parsed = await parseArenaFormatAsync(deckText);
+        if (parsed.mainboard.length > 0 || parsed.commander) {
+          const deckName = parsed.suggestedTitle || 'Exported Arena Deck';
+          processedDeckNames.add(deckName.toLowerCase());
+
+          for (const item of parsed.mainboard) {
+            if (item.card.arenaId) {
+              newCollectionCards[item.card.arenaId] = Math.max(newCollectionCards[item.card.arenaId] || 0, item.quantity);
+            }
+          }
+          if (parsed.commander?.card.arenaId) {
+            newCollectionCards[parsed.commander.card.arenaId] = Math.max(newCollectionCards[parsed.commander.card.arenaId] || 0, 1);
+          }
+
+          finalDecks.push({
+            id: `arena-export-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`,
+            name: deckName,
+            format: parsed.detectedFormat,
+            commander: parsed.commander,
+            mainboard: parsed.mainboard,
+            sideboard: parsed.sideboard,
+            isImported: true,
+            source: 'arena',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+      } catch (err) {
+        console.warn('Failed to parse embedded exported deck in log:', err);
+      }
+    }
+  }
+
+  // 2. Look for any pasted Arena card lists in the log or mixed input: e.g. "1 Archangel of Thune (MAR) 41"
+  const cardLineRegex = /^\s*\d+x?\s+[A-Za-z0-9]/;
+  const inputLines = logContent.split(/\r?\n/);
+  const cardLines = inputLines.filter(l => 
+    cardLineRegex.test(l) && 
+    !l.includes('[Unity') && 
+    !l.includes('{') && 
+    !l.includes('[Accounts') && 
+    !l.includes('[TaskLogger')
+  );
+
+  if (cardLines.length >= 3 && finalDecks.length === 0) {
+    try {
+      const parsedRaw = await parseArenaFormatAsync(cardLines.join('\n'));
+      if (parsedRaw.mainboard.length > 0 || parsedRaw.commander) {
+        const rawName = parsedRaw.suggestedTitle || 'Imported Card List';
+        if (!processedDeckNames.has(rawName.toLowerCase())) {
+          processedDeckNames.add(rawName.toLowerCase());
+          for (const item of parsedRaw.mainboard) {
+            if (item.card.arenaId) {
+              newCollectionCards[item.card.arenaId] = Math.max(newCollectionCards[item.card.arenaId] || 0, item.quantity);
+            }
+          }
+          if (parsedRaw.commander?.card.arenaId) {
+            newCollectionCards[parsedRaw.commander.card.arenaId] = Math.max(newCollectionCards[parsedRaw.commander.card.arenaId] || 0, 1);
+          }
+          finalDecks.push({
+            id: `pasted-deck-${Date.now()}`,
+            name: rawName,
+            format: parsedRaw.detectedFormat,
+            commander: parsedRaw.commander,
+            mainboard: parsedRaw.mainboard,
+            sideboard: parsedRaw.sideboard,
+            isImported: true,
+            source: 'imported',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+      }
+    } catch {}
+  }
+
+  // 3. Scan RPC calls: DeckUpsertDeckV3, EventSetDeckV3, DeckGetAllPreconDecksV3
   const extractedDeckMap = new Map<string, {
     name: string;
     format: FormatType;
@@ -332,9 +420,6 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
   }>();
 
   const allCardIds = new Set<number>();
-  const newCollectionCards: Record<number, number> = {};
-
-  // Process log line by line to safely parse full JSON objects without nested-brace truncation
   const lines = logContent.split(/\r?\n/);
 
   for (const line of lines) {
@@ -346,7 +431,6 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
         const jsonStr = line.substring(idx);
         const obj = JSON.parse(jsonStr);
 
-        // DeckUpsertDeckV3 stores payload in obj.request
         let payload: any = obj;
         if (typeof obj.request === 'string') {
           payload = JSON.parse(obj.request);
@@ -354,7 +438,6 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
           payload = obj.request;
         }
 
-        // 1. Single deck upsert
         if (payload.Deck && payload.Summary) {
           const deckId = payload.Summary.DeckId || payload.Summary.Name;
           const name = payload.Summary.Name || 'MTG Arena Deck';
@@ -455,10 +538,14 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
     }
   }
 
-  // Construct final Deck objects
-  const finalDecks: Deck[] = [];
-
+  // Construct final Deck objects from RPC calls (if not already added via export section)
   for (const [deckId, rawDeck] of extractedDeckMap.entries()) {
+    // If we already parsed this deck via the full export text, skip duplicate degraded list
+    if (processedDeckNames.has(rawDeck.name.toLowerCase()) || 
+        finalDecks.some(d => d.name.toLowerCase().includes(rawDeck.name.toLowerCase()) || rawDeck.name.toLowerCase().includes(d.name.toLowerCase()))) {
+      continue;
+    }
+
     const mainboard: DeckCard[] = [];
     const sideboard: DeckCard[] = [];
 
@@ -474,10 +561,32 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
 
     let commander: DeckCard | undefined;
     let cmdCard = rawDeck.commanderId ? resolvedCards.get(rawDeck.commanderId) : undefined;
+    
+    // Fallback 1: check deckTileId
     if ((!cmdCard || cmdCard.name.startsWith('Arena Card')) && rawDeck.deckTileId) {
       const tileCard = resolvedCards.get(rawDeck.deckTileId);
       if (tileCard && !tileCard.name.startsWith('Arena Card')) {
         cmdCard = tileCard;
+      }
+    }
+
+    // Fallback 2: fuzzy match commander name from deck title, e.g. "(B) Jace" -> "Jace"
+    if (!cmdCard || cmdCard.name.startsWith('Arena Card')) {
+      const cleanTitle = rawDeck.name
+        .replace(/^\([A-Za-z0-9]+\)\s*/, '')
+        .replace(/\s*\(\d+\)$/, '')
+        .trim();
+
+      if (cleanTitle.length >= 3) {
+        const localMatch = ARENA_CARDS.find(c => c.name.toLowerCase().includes(cleanTitle.toLowerCase()));
+        if (localMatch) {
+          cmdCard = localMatch;
+        } else {
+          const fetchedCard = await fetchCardByNameOrSet(cleanTitle);
+          if (fetchedCard) {
+            cmdCard = fetchedCard;
+          }
+        }
       }
     }
 
