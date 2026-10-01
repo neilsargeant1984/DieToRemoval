@@ -713,6 +713,7 @@ export const App: React.FC = () => {
                 else if (role === 'lands') setSynergyTab('lands');
               }}
               onOpenManaOptimizer={() => setIsManaModalOpen(true)}
+              onSelectCardDetail={setSelectedCardDetail}
             />
 
             {/* Side-by-Side: Synergy Console + Active Deck Tray */}

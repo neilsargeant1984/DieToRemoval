@@ -143,7 +143,26 @@ export const ManaCost: React.FC<ManaCostProps> = ({
           );
         }
 
-        // 7. Generic Numbers (0-20, X, etc.)
+        // 7. Tap Symbol (T)
+        if (symbol === 'T') {
+          return (
+            <svg
+              key={idx}
+              viewBox="0 0 100 100"
+              className={`${sizeClasses} flex-shrink-0 drop-shadow-sm rounded-full`}
+              aria-label="Tap"
+            >
+              <title>Tap</title>
+              <circle cx="50" cy="50" r="49" fill="#CAC5C0" stroke="#71717a" strokeWidth="2" />
+              <path
+                d="M50 22 C34.5 22 22 34.5 22 50 C22 57.5 25 64.5 30 69.5 L24 75.5 L44 76 L43 56 L37 62 C33.5 58.5 31.5 54.5 31.5 50 C31.5 39.8 39.8 31.5 50 31.5 C60.2 31.5 68.5 39.8 68.5 50 C68.5 57 64.5 63 58.5 66.5 L63.5 74.5 C72 69.5 78 60.5 78 50 C78 34.5 65.5 22 50 22 Z"
+                fill="#0D0F0F"
+              />
+            </svg>
+          );
+        }
+
+        // 8. Generic Numbers (0-20, X, etc.)
         return (
           <svg
             key={idx}

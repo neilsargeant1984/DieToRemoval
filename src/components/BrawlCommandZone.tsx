@@ -17,8 +17,10 @@ import {
   BookOpen, 
   Mountain, 
   ChevronRight, 
-  Save 
+  Save,
+  Sparkles 
 } from 'lucide-react';
+import { FormattedOracleText } from './FormattedOracleText';
 
 export type BrawlSubMode = 'brawl_historic' | 'competitive_brawl' | 'standard_brawl';
 
@@ -36,6 +38,7 @@ interface BrawlCommandZoneProps {
   selectedRoleTab?: string;
   onSelectRoleFilter?: (role: FunctionalRole | 'lands') => void;
   onOpenManaOptimizer?: () => void;
+  onSelectCardDetail?: (card: Card) => void;
 }
 
 export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
@@ -51,7 +54,8 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   onSelectSubMode,
   selectedRoleTab,
   onSelectRoleFilter,
-  onOpenManaOptimizer
+  onOpenManaOptimizer,
+  onSelectCardDetail
 }) => {
   const mainCount = deck.mainboard.reduce((a, b) => a + b.quantity, 0);
   const totalDeckCount = mainCount + (commander ? 1 : 0);
@@ -148,9 +152,11 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   };
 
   return (
-    <div className="relative arena-panel rounded-3xl p-6 md:p-8 overflow-hidden transition-colors shadow-2xl">
-      {/* Radiant Planeswalker Spark Aura Behind Commander */}
-      <div className="absolute -top-20 -left-12 w-96 h-96 spark-aura rounded-full pointer-events-none" />
+    <div className="relative arena-panel rounded-3xl p-6 md:p-8 transition-colors shadow-2xl">
+      {/* Radiant Planeswalker Spark Aura Behind Commander (safely clipped) */}
+      <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -left-12 w-96 h-96 spark-aura rounded-full" />
+      </div>
 
       <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
         {/* Commander Presentation (Big, Proud, In-Game Card Art) */}
@@ -160,9 +166,13 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
           <div className="absolute -inset-1.5 rounded-2xl border border-amber-300/30 pointer-events-none" />
 
           {commander ? (
-            <div className="relative group cursor-pointer" onClick={onOpenCommanderPicker}>
+            <div
+              className="relative group cursor-pointer z-20 hover:z-50 transition-transform duration-300 ease-out transform hover:scale-[1.65] origin-top md:origin-top-left"
+              onClick={onOpenCommanderPicker}
+              title={`${commander.name} - Click to change commander`}
+            >
               {/* Golden Legendary Crown Frame */}
-              <div className="w-48 sm:w-56 aspect-[5/7] rounded-2xl overflow-hidden altar-pedestal bg-black p-0.5 transition duration-300 transform group-hover:scale-[1.03] flex items-center justify-center relative">
+              <div className="w-48 sm:w-56 aspect-[5/7] rounded-2xl overflow-hidden altar-pedestal bg-black p-0.5 transition duration-300 shadow-2xl group-hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_35px_rgba(245,158,11,0.5)] group-hover:ring-2 group-hover:ring-amber-400 flex items-center justify-center relative">
                 {!hasFailed && (imgSrc || commander.imageUrl) ? (
                   <img
                     src={imgSrc || commander.imageUrl}
@@ -201,14 +211,14 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
               </div>
 
               {/* Floating Arcane Wax Ribbon Badge */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-400 text-slate-950 font-black text-[10px] tracking-wider px-3.5 py-0.5 rounded-full shadow-lg border border-yellow-200 uppercase flex items-center gap-1.5 whitespace-nowrap">
+              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-400 text-slate-950 font-black text-[10px] tracking-wider px-3.5 py-0.5 rounded-full shadow-lg border border-yellow-200 uppercase flex items-center gap-1.5 whitespace-nowrap pointer-events-none z-30">
                 <Crown className="w-3 h-3 text-slate-950" />
                 <span>Commander</span>
               </div>
 
-              {/* Hover overlay hint */}
-              <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 rounded-2xl flex items-center justify-center transition text-xs font-bold text-amber-300">
-                Click to Change
+              {/* Subtle hover action badge at bottom edge that does not cover the card artwork or text */}
+              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-slate-950/95 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-30">
+                Click to Change Commander
               </div>
             </div>
           ) : (
@@ -279,20 +289,31 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
 
           {/* Commander Meta Box */}
           {commander ? (
-            <div className="arena-panel-elevated rounded-2xl p-4 space-y-3.5 shadow-xl">
+            <div className="arena-panel-elevated rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-xl">
               <div className="flex flex-wrap items-center justify-between gap-3">
-                <div>
-                  <h2 className="font-fantasy font-black text-2xl text-white flex items-center gap-2.5">
-                    <span>{commander.name}</span>
+                <div className="min-w-0">
+                  <h2 className="font-fantasy font-black text-2xl text-white flex items-center gap-2.5 flex-wrap">
+                    <span className="truncate">{commander.name}</span>
                     <ManaCost manaCost={commander.manaCost} size="lg" />
                   </h2>
-                  <span className="text-xs text-stone-400 block mt-0.5">
-                    {commander.typeLine} • CMC: {commander.cmc}
-                  </span>
+                  <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-stone-400">
+                    <span>{commander.typeLine} • CMC: {commander.cmc}</span>
+                    {commander.loyalty && (
+                      <span className="inline-flex items-center gap-1 bg-amber-950/80 text-amber-300 font-bold px-2 py-0.5 rounded border border-amber-600/40 text-[11px] shadow-sm">
+                        <Shield className="w-3 h-3 text-amber-400" />
+                        Starting Loyalty: {commander.loyalty}
+                      </span>
+                    )}
+                    {commander.power !== undefined && commander.toughness !== undefined && (
+                      <span className="inline-flex items-center gap-1 bg-amber-950/80 text-amber-300 font-mono font-bold px-2 py-0.5 rounded border border-amber-600/40 text-[11px] shadow-sm">
+                        {commander.power}/{commander.toughness}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Color Identity Runes */}
-                <div className="flex items-center gap-1.5 bg-[#0d1017]/90 px-3 py-1.5 rounded-xl border border-white/5">
+                <div className="flex items-center gap-1.5 bg-[#0d1017]/90 px-3 py-1.5 rounded-xl border border-white/5 flex-shrink-0">
                   <span className="text-[10px] font-fantasy font-bold uppercase tracking-wider text-stone-400 mr-1">
                     Identity:
                   </span>
@@ -317,6 +338,40 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                       );
                     })
                   )}
+                </div>
+              </div>
+
+              {/* Commander Oracle / Rules & Abilities Console */}
+              <div className="bg-[#0a0e17]/95 border border-amber-500/25 rounded-xl p-3.5 shadow-inner">
+                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-white/5">
+                  <div className="flex items-center gap-2">
+                    <span className="text-[10px] font-fantasy font-black tracking-wider uppercase text-amber-400 flex items-center gap-1.5">
+                      <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Card Text & Abilities</span>
+                    </span>
+                    {commander.isDigitalOnly && (
+                      <span className="flex items-center gap-1 text-[9px] font-bold bg-purple-950/80 text-purple-300 border border-purple-500/50 px-2 py-0.5 rounded-full shadow-sm">
+                        <Sparkles className="w-2.5 h-2.5 text-purple-400" />
+                        Digital Only
+                      </span>
+                    )}
+                  </div>
+
+                  {onSelectCardDetail && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectCardDetail(commander)}
+                      className="text-[10px] font-bold text-stone-400 hover:text-amber-300 transition flex items-center gap-1 hover:underline"
+                      title="View Full Card Details in Modal"
+                    >
+                      Inspect Full Card ↗
+                    </button>
+                  )}
+                </div>
+
+                {/* Formatted Oracle text with mana symbol support & loyalty badges */}
+                <div className="text-xs sm:text-sm text-stone-200 leading-relaxed font-sans max-h-48 overflow-y-auto pr-1">
+                  <FormattedOracleText text={commander.oracleText} />
                 </div>
               </div>
 

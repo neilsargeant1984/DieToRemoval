@@ -5,6 +5,7 @@ import { calculateSynergy } from '../utils/synergyGraph';
 import { explainSynergy } from '../utils/synergyExplainer';
 import { getCardRoleChips, classifyCardRoles } from '../utils/roleClassifier';
 import { CardImage } from './CardImage';
+import { FormattedOracleText } from './FormattedOracleText';
 
 interface CardDetailModalProps {
   card: Card | null;
@@ -89,8 +90,8 @@ export const CardDetailModal: React.FC<CardDetailModalProps> = ({
           </div>
 
           {/* Oracle Text */}
-          <div className="bg-[#0e121a] border border-[#c5a059]/25 rounded-2xl p-4 text-sm text-slate-200 whitespace-pre-line leading-relaxed shadow-sm font-sans">
-            {card.oracleText || 'No rules text.'}
+          <div className="bg-[#0e121a] border border-[#c5a059]/25 rounded-2xl p-4 text-sm text-slate-200 leading-relaxed shadow-sm font-sans">
+            <FormattedOracleText text={card.oracleText} />
           </div>
 
           {/* Commander Synergy Breakdown */}
