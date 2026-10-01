@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Deck, DeckCard } from '../types/deck';
 import { Card } from '../types/card';
 import { UserCollection, DeckWildcardCost } from '../types/collection';
+import { ManaCost } from './ManaCost';
 import { 
   X, 
   Trash2, 
@@ -127,9 +128,7 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
                   <span className="text-[10px] text-slate-400">Commander</span>
                 </div>
               </div>
-              <span className="text-xs font-mono text-amber-300 bg-slate-900 px-1.5 py-0.5 rounded">
-                {commander.manaCost}
-              </span>
+              <ManaCost manaCost={commander.manaCost} size="sm" />
             </div>
           )}
 
@@ -191,9 +190,7 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
 
                         <div className="flex items-center gap-2 flex-shrink-0">
                           {card.manaCost && (
-                            <span className="text-[10px] font-mono text-slate-400 bg-slate-900 px-1.5 py-0.2 rounded">
-                              {card.manaCost}
-                            </span>
+                            <ManaCost manaCost={card.manaCost} size="sm" />
                           )}
 
                           {!isBasic && (

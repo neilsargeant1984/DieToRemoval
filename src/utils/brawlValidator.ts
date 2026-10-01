@@ -87,17 +87,26 @@ export function validateBrawlDeck(deck: Deck): BrawlValidationResult {
 
   const basicLands = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']);
 
+  // Aggregate total quantities across all printings by card name
+  const nameCounts = new Map<string, number>();
+  for (const item of deck.mainboard) {
+    if (!basicLands.has(item.card.name)) {
+      nameCounts.set(item.card.name, (nameCounts.get(item.card.name) || 0) + item.quantity);
+    }
+  }
+
+  for (const [name, qty] of nameCounts.entries()) {
+    if (qty > 1) {
+      duplicateCards.push({ name, quantity: qty });
+      messages.push(`Singleton violation: ${qty} copies of "${name}" (Max 1 allowed in Brawl).`);
+    }
+  }
+
   // Check mainboard cards
   for (const item of deck.mainboard) {
-    const { card, quantity } = item;
+    const { card } = item;
 
-    // 1. Singleton Check
-    if (!basicLands.has(card.name) && quantity > 1) {
-      duplicateCards.push({ name: card.name, quantity });
-      messages.push(`Singleton violation: ${quantity} copies of "${card.name}" (Max 1 allowed in Brawl).`);
-    }
-
-    // 2. Color Identity Check
+    // Color Identity Check
     if (commander && !isColorIdentityLegal(card, commander)) {
       const illegalColors = card.colorIdentity.filter(c => !commander.colorIdentity.includes(c));
       colorViolations.push({ card, illegalColors });

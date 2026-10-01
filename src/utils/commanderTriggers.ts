@@ -3,7 +3,7 @@ import { Card } from '../types/card';
 export interface CommanderTriggerConfig {
   hasTriggers: boolean;
   tabLabel: string;
-  triggerType: 'sacrifice' | 'haste_untap' | 'cantrip' | 'lifegain' | 'exile_cast' | 'blink' | null;
+  triggerType: 'sacrifice' | 'haste_untap' | 'cantrip' | 'lifegain' | 'exile_cast' | 'blink' | 'ring' | null;
   scryfallQuery?: string;
   isTriggerCard: (card: Card) => boolean;
   getCardReason: (commander: Card, card: Card) => string;
@@ -213,6 +213,26 @@ export function getCommanderTriggerConfig(commander?: Card): CommanderTriggerCon
         return `Blink Enabler: Re-triggers ${cmd.name}'s enters-the-battlefield ability repeatedly`;
       },
       getCardBadge: () => `🌀 Blink Enabler`
+    };
+  }
+
+  // 7. The Ring Tempts You / Ring-bearer Trigger
+  // e.g. Sauron, the Necromancer, Frodo, Sauron's Bane, Samwise the Stouthearted
+  const isRingCommander = o.includes('ring-bearer') || o.includes('the ring tempts you');
+  if (isRingCommander) {
+    return {
+      hasTriggers: true,
+      tabLabel: 'Commander Triggers',
+      triggerType: 'ring',
+      scryfallQuery: 'o:"the ring tempts you"',
+      isTriggerCard: (card: Card) => {
+        const co = (card.oracleText || '').toLowerCase();
+        return co.includes('the ring tempts you');
+      },
+      getCardReason: (cmd: Card) => {
+        return `Ring-bearer Catalyst: Designates Ring-bearer to make ${cmd.name}'s Wraith copies permanent`;
+      },
+      getCardBadge: () => `💍 Ring Enabler`
     };
   }
 

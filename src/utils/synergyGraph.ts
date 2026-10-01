@@ -13,7 +13,8 @@ export type TriggerDemand =
   | 'graveyard' 
   | 'energy' 
   | 'tokens'
-  | 'flicker';
+  | 'flicker'
+  | 'ring_bearer';
 
 export type OutputSupply = 
   | 'gains_life' 
@@ -27,7 +28,8 @@ export type OutputSupply =
   | 'reanimates' 
   | 'flicker'
   | 'cheap_cantrip'
-  | 'spellbook';
+  | 'spellbook'
+  | 'ring_temptation';
 
 export interface CardSynergyProfile {
   card: Card;
@@ -94,10 +96,17 @@ export function extractCardSynergies(card: Card): CardSynergyProfile {
     demands.push('tokens');
     archetypes.push('Tokens');
   }
+  if (text.includes('ring-bearer') || text.includes('whenever the ring tempts you')) {
+    demands.push('ring_bearer');
+    archetypes.push('The Ring Tempts You');
+  }
 
   // --- EXTRACT SUPPLIES (PAYOFFS & ENABLERS) ---
   if (/\blifelink\b/i.test(text) || /\bgain(s)?\s+(\d+|x)?\s*life\b/i.test(text)) {
     supplies.push('gains_life');
+  }
+  if (text.includes('the ring tempts you')) {
+    supplies.push('ring_temptation');
   }
   if (/\bdraw(s)?\s+(a|two|three|\d+|x)?\s*card/i.test(text) || /\binvestigate\b/i.test(text)) {
     supplies.push('draws_cards');
@@ -222,6 +231,10 @@ export function calculateSynergy(
     if (dem === 'counters' && p2.supplies.includes('produces_counters')) {
       score += 35;
       matchReasons.push(`Adds counters to trigger ${commanderCard.name}'s counter abilities`);
+    }
+    if (dem === 'ring_bearer' && p2.supplies.includes('ring_temptation')) {
+      score += 55;
+      matchReasons.push(`The Ring Tempts You: Designates Ring-bearer so ${commanderCard.name}'s token copies remain permanently`);
     }
   }
 

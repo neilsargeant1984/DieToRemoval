@@ -114,6 +114,10 @@ export const App: React.FC = () => {
     return calculateDeckStats(activeDeck.mainboard);
   }, [activeDeck.mainboard]);
 
+  const deckCardNames = useMemo(() => {
+    return new Set(activeDeck.mainboard.map(c => c.card.name));
+  }, [activeDeck.mainboard]);
+
   const deckCardIds = useMemo(() => {
     return new Set(activeDeck.mainboard.map(c => c.card.id));
   }, [activeDeck.mainboard]);
@@ -122,7 +126,8 @@ export const App: React.FC = () => {
   const handleAddCard = (card: Card, toSideboard: boolean = false) => {
     const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'].includes(card.name);
     const list = toSideboard ? [...activeDeck.sideboard] : [...activeDeck.mainboard];
-    const index = list.findIndex(c => c.card.id === card.id);
+    // In Magic formats, card uniqueness and singleton constraints are strictly governed by English card name, not printing/art ID
+    const index = list.findIndex(c => c.card.name === card.name);
 
     if (activeDeck.format === 'brawl') {
       // Strict Brawl Singleton Enforcement: Max 1 copy for non-basic lands!
@@ -245,6 +250,7 @@ export const App: React.FC = () => {
                 onSelectCardDetail={setSelectedCardDetail}
                 userCollection={userCollection}
                 deckCardIds={deckCardIds}
+                deckCardNames={deckCardNames}
                 activeTab={synergyTab}
                 onSelectTab={setSynergyTab}
               />

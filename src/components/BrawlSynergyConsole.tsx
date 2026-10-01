@@ -45,6 +45,7 @@ interface BrawlSynergyConsoleProps {
   onSelectCardDetail: (card: Card) => void;
   userCollection: UserCollection;
   deckCardIds: Set<string>;
+  deckCardNames?: Set<string>;
   activeTab?: SynergyCategoryTab;
   onSelectTab?: (tab: SynergyCategoryTab) => void;
 }
@@ -55,6 +56,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   onSelectCardDetail,
   userCollection,
   deckCardIds,
+  deckCardNames,
   activeTab: controlledTab,
   onSelectTab
 }) => {
@@ -430,11 +432,13 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         const roles = classifyCardRoles(c);
         if (activeTab === 'ramp') {
           if (!roles.roles.includes('ramp')) return false;
-          // Filter out 3+ CMC multi-color fixing rocks for mono-color commanders
+          // Filter out generic 3+ CMC multi-color fixing rocks for mono-color commanders
+          // BUT preserve rocks that provide direct causal synergy / trigger enablers for the commander (e.g. Inherited Envelope for Ring commanders)
           if (commander.colorIdentity.length <= 1) {
             if (multiColorFixingRocks.has(c.name)) return false;
             const co = (c.oracleText || '').toLowerCase();
-            if (c.types.includes('Artifact') && c.cmc >= 3 && co.includes('any color') && !co.includes('draw') && !co.includes('sacrifice')) {
+            const isSynergyEnabler = item.score >= 70 || (triggerConfig.hasTriggers && triggerConfig.isTriggerCard(c));
+            if (!isSynergyEnabler && c.types.includes('Artifact') && c.cmc >= 3 && co.includes('any color') && !co.includes('draw') && !co.includes('sacrifice')) {
               return false;
             }
           }
@@ -612,7 +616,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3.5">
             {displayedList.map(item => {
               const { card, score, badge, reason, roleChips } = item;
-              const isInDeck = deckCardIds.has(card.id);
+              const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'].includes(card.name);
+              const isInDeck = isBasic ? false : ((deckCardNames && deckCardNames.has(card.name)) || deckCardIds.has(card.id));
               const isOwned = (userCollection[card.arenaId] || 0) > 0;
 
               return (
