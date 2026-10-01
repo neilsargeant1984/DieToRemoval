@@ -287,7 +287,7 @@ export function generateOptimalManaBase(options: ManaBaseOptimizerOptions): Mana
 
     // 3 On-Color Fetches (All fetches whose 2 targets exist in this 3-color identity)
     const fetches = ARENA_LANDS_DATABASE.filter(
-      l => l.cycle === 'fetch' && l.colorsProduced.every(c => colorIdentity.includes(c))
+      l => l.cycle === 'fetch' && l.colorsProduced.every(c => (colorIdentity as ManaColor[]).includes(c))
     );
     fetches.forEach(addLandIfLegal);
 
@@ -329,7 +329,7 @@ export function generateOptimalManaBase(options: ManaBaseOptimizerOptions): Mana
 
     // All 6 On-Color Fetches
     ARENA_LANDS_DATABASE.filter(
-      l => l.cycle === 'fetch' && l.colorsProduced.every(c => colorIdentity.includes(c))
+      l => l.cycle === 'fetch' && l.colorsProduced.every(c => (colorIdentity as ManaColor[]).includes(c))
     ).forEach(addLandIfLegal);
 
     // All 6 On-Color Shocks
