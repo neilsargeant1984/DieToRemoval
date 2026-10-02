@@ -2,7 +2,7 @@ import { Card, FormatType } from '../types/card';
 import { Deck, DeckCard } from '../types/deck';
 import { UserCollection, WildcardInventory } from '../types/collection';
 import { ARENA_CARDS } from '../data/arenaCards';
-import { fetchCardsBatch, fetchCardByArenaId, fetchCardByNameOrSet } from '../services/scryfallService';
+import { fetchCardsBatch, fetchCardByArenaId, fetchCardByNameOrSet, getCachedCardByArenaId } from '../services/scryfallService';
 
 /**
  * Formats a deck into strict MTG Arena text format for 1-click clipboard export.
@@ -637,11 +637,11 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
   // Batch resolve Arena card IDs (prioritize commanders and deck tiles for instant UI rendering)
   const resolvedCards = new Map<number, Card>();
 
-  // 1. Check local bundled cards first (0ms)
+  // 1. Check local bundled cards and persistent localStorage cache first (0ms)
   for (const cid of allCardIds) {
-    const local = ARENA_CARDS.find(c => c.arenaId === cid);
-    if (local) {
-      resolvedCards.set(cid, local);
+    const cached = getCachedCardByArenaId(cid);
+    if (cached) {
+      resolvedCards.set(cid, cached);
     }
   }
 
@@ -652,9 +652,9 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
     if (rawDeck.deckTileId) priorityCids.add(rawDeck.deckTileId);
   }
 
-  // Immediately resolve priority commanders and tile art
+  // Immediately resolve priority commanders and tile art (paced to avoid 429)
   const missingPriority = Array.from(priorityCids).filter(cid => !resolvedCards.has(cid));
-  const priorityBatchSize = 10;
+  const priorityBatchSize = 4;
   for (let i = 0; i < missingPriority.length; i += priorityBatchSize) {
     const batch = missingPriority.slice(i, i + priorityBatchSize);
     await Promise.all(
@@ -667,9 +667,12 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
         }
       })
     );
+    if (i + priorityBatchSize < missingPriority.length) {
+      await new Promise(r => setTimeout(r, 100));
+    }
   }
 
-  // 3. For deck cards, resolve up to 150 critical cards synchronously to avoid freezing the sync modal, and fill remainder with fallback cards
+  // 3. For deck cards, resolve up to 150 critical cards synchronously and fill remainder with fallback cards
   const remainingMissing = Array.from(allCardIds).filter(cid => !resolvedCards.has(cid));
   const syncFetchLimit = 150;
   const toFetch = remainingMissing.slice(0, syncFetchLimit);
@@ -680,8 +683,8 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
     resolvedCards.set(cid, createFallbackCard(cid));
   }
 
-  // Fetch top 150 deck cards in chunks of 15
-  const deckBatchSize = 15;
+  // Fetch top 150 deck cards in chunks of 4 with rate-limit pacing
+  const deckBatchSize = 4;
   for (let i = 0; i < toFetch.length; i += deckBatchSize) {
     const batch = toFetch.slice(i, i + deckBatchSize);
     await Promise.all(
@@ -694,6 +697,9 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
         }
       })
     );
+    if (i + deckBatchSize < toFetch.length) {
+      await new Promise(r => setTimeout(r, 100));
+    }
   }
 
   // Construct final Deck objects from RPC calls (if not already added via export section)
@@ -701,6 +707,11 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
     // If we already parsed this deck via the full export text, skip duplicate degraded list
     if (processedDeckNames.has(rawDeck.name.toLowerCase()) || 
         finalDecks.some(d => d.name.toLowerCase().includes(rawDeck.name.toLowerCase()) || rawDeck.name.toLowerCase().includes(d.name.toLowerCase()))) {
+      continue;
+    }
+
+    // Skip decks that have NO cards in their mainboard
+    if (rawDeck.mainMap.size === 0) {
       continue;
     }
 

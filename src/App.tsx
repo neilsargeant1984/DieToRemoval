@@ -27,6 +27,8 @@ import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
 import { getMaxCardCopies } from './utils/cardRules';
 import { ARENA_CARDS } from './data/arenaCards';
+import { parsePlayerLogDecks } from './utils/arenaParser';
+import { fetchCardByArenaId } from './services/scryfallService';
 import { Layers } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { deckCloudService } from './services/deckCloudService';
@@ -204,6 +206,77 @@ export const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('arenaforge_user_collection', JSON.stringify(userCollection));
   }, [userCollection]);
+
+  // Auto-heal empty imported decks on startup if local Arena log is accessible
+  useEffect(() => {
+    const hasEmptyImported = savedDecks.some(d => d.isImported && d.mainboard.length === 0);
+    const activeEmptyImported = activeDeck.isImported && activeDeck.mainboard.length === 0;
+
+    if (hasEmptyImported || activeEmptyImported) {
+      fetch('/api/arena-log')
+        .then(res => {
+          if (!res.ok) return null;
+          return res.text();
+        })
+        .then(async (logText) => {
+          if (!logText) return;
+          const { decks, newCollectionCards } = await parsePlayerLogDecks(logText);
+          if (decks && decks.length > 0) {
+            handleSyncDecks(decks);
+            if (Object.keys(newCollectionCards).length > 0) {
+              setUserCollection(prev => {
+                const merged = { ...prev };
+                for (const [cidStr, qty] of Object.entries(newCollectionCards)) {
+                  const cid = parseInt(cidStr, 10);
+                  merged[cid] = Math.max(merged[cid] || 0, qty);
+                }
+                return merged;
+              });
+            }
+          }
+        })
+        .catch(() => {
+          // Dev server endpoint not running or not accessible; silent fallback
+        });
+    }
+  }, []);
+
+  // Asynchronously resolve any fallback cards in activeDeck
+  useEffect(() => {
+    if (!activeDeck || activeDeck.mainboard.length === 0) return;
+    const hasFallbacks = activeDeck.mainboard.some(c => c.card.name.startsWith('Arena Card') && c.card.arenaId);
+    if (!hasFallbacks) return;
+
+    let isMounted = true;
+    (async () => {
+      let hasUpdates = false;
+      const updatedMainboard = [...activeDeck.mainboard];
+
+      for (let i = 0; i < updatedMainboard.length; i++) {
+        const item = updatedMainboard[i];
+        if (item.card.name.startsWith('Arena Card') && item.card.arenaId) {
+          const resolved = await fetchCardByArenaId(item.card.arenaId);
+          if (resolved && isMounted) {
+            updatedMainboard[i] = { ...item, card: resolved };
+            hasUpdates = true;
+          }
+          await new Promise(r => setTimeout(r, 120));
+        }
+      }
+
+      if (hasUpdates && isMounted) {
+        setActiveDeck(prev => ({
+          ...prev,
+          mainboard: updatedMainboard
+        }));
+        setSavedDecks(prev => prev.map(d => d.id === activeDeck.id ? { ...d, mainboard: updatedMainboard } : d));
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [activeDeck.id]);
 
   // Supabase Auth and Cloud Sync Lifecycle
   useEffect(() => {
@@ -439,7 +512,23 @@ export const App: React.FC = () => {
 
   // Multiple Deck Management Handlers (Load, Create, Duplicate, Rename, Delete)
   const handleLoadDeck = (deck: Deck) => {
-    setActiveDeck(deck);
+    let deckToLoad = deck;
+    if (deck.mainboard.length === 0) {
+      // Check if a populated version of this deck exists in savedDecks
+      const normName = deck.name.toLowerCase().trim();
+      const cleanName = normName.replace(/^\([a-z0-9]+\)\s*/, '');
+      const populated = savedDecks.find(d => 
+        d.id !== deck.id && 
+        d.mainboard.length > 0 &&
+        (d.name.toLowerCase().trim() === normName ||
+         d.name.toLowerCase().replace(/^\([a-z0-9]+\)\s*/, '') === cleanName ||
+         (d.commander?.card?.name && deck.commander?.card?.name && d.commander.card.name.toLowerCase().trim() === deck.commander.card.name.toLowerCase().trim()))
+      );
+      if (populated) {
+        deckToLoad = populated;
+      }
+    }
+    setActiveDeck(deckToLoad);
     setNavTab('deck_builder');
   };
 
@@ -625,20 +714,70 @@ export const App: React.FC = () => {
     setSavedDecks(prev => {
       let updated = [...prev];
       for (const newDeck of newDecks) {
-        // If an existing deck has a broken commander or matches name, update it with the clean version
-        const existingIdx = updated.findIndex(d => 
-          d.name.toLowerCase() === newDeck.name.toLowerCase() ||
-          (d.commander?.card.name.startsWith('Arena Card') && newDeck.commander && !newDeck.commander.card.name.startsWith('Arena Card')) ||
-          (d.name.toLowerCase().includes('jace') && newDeck.name.toLowerCase().includes('jace') && d.commander?.card.name.startsWith('Arena Card'))
-        );
+        const normNew = newDeck.name.toLowerCase().trim();
+        const cleanNew = normNew.replace(/^\([a-z0-9]+\)\s*/, '');
+        const existingIdx = updated.findIndex(d => {
+          if (d.id === newDeck.id) return true;
+          const normD = d.name.toLowerCase().trim();
+          if (normD === normNew) return true;
+          const cleanD = normD.replace(/^\([a-z0-9]+\)\s*/, '');
+          if (cleanD === cleanNew && cleanD.length >= 3) return true;
+          if (
+            d.mainboard.length === 0 && 
+            d.commander?.card?.name && 
+            newDeck.commander?.card?.name && 
+            d.commander.card.name.toLowerCase().trim() === newDeck.commander.card.name.toLowerCase().trim()
+          ) {
+            return true;
+          }
+          return false;
+        });
+
         if (existingIdx >= 0) {
-          updated[existingIdx] = newDeck;
+          updated[existingIdx] = {
+            ...newDeck,
+            id: updated[existingIdx].id || newDeck.id,
+            name: updated[existingIdx].name || newDeck.name
+          };
         } else {
           updated.unshift(newDeck);
         }
       }
       return updated;
     });
+
+    // Also update activeDeck if activeDeck matches any synced deck
+    setActiveDeck(prevActive => {
+      if (!prevActive) return prevActive;
+      const normActive = prevActive.name.toLowerCase().trim();
+      const cleanActive = normActive.replace(/^\([a-z0-9]+\)\s*/, '');
+      const matchedNew = newDecks.find(d => {
+        if (d.id === prevActive.id) return true;
+        const normD = d.name.toLowerCase().trim();
+        if (normD === normActive) return true;
+        const cleanD = normD.replace(/^\([a-z0-9]+\)\s*/, '');
+        if (cleanD === cleanActive && cleanD.length >= 3) return true;
+        if (
+          prevActive.mainboard.length === 0 && 
+          prevActive.commander?.card?.name && 
+          d.commander?.card?.name && 
+          prevActive.commander.card.name.toLowerCase().trim() === d.commander.card.name.toLowerCase().trim()
+        ) {
+          return true;
+        }
+        return false;
+      });
+
+      if (matchedNew && (prevActive.mainboard.length === 0 || matchedNew.mainboard.length >= prevActive.mainboard.length)) {
+        return {
+          ...matchedNew,
+          id: prevActive.id || matchedNew.id,
+          name: prevActive.name || matchedNew.name
+        };
+      }
+      return prevActive;
+    });
+
     setSaveNotification(`Synced ${newDecks.length} deck(s) from MTG Arena!`);
     setTimeout(() => setSaveNotification(null), 3500);
   };

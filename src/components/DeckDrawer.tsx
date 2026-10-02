@@ -13,7 +13,9 @@ import {
   Crown, 
   Plus, 
   Minus,
-  PanelRightClose
+  PanelRightClose,
+  Clipboard,
+  RefreshCw
 } from 'lucide-react';
 
 interface DeckDrawerProps {
@@ -23,6 +25,8 @@ interface DeckDrawerProps {
   onUpdateDeck: (updated: Deck) => void;
   onSelectCardDetail: (card: Card) => void;
   onOpenExport: () => void;
+  onOpenImport?: () => void;
+  onOpenSync?: () => void;
   wildcardCost: DeckWildcardCost;
   userCollection: UserCollection;
   variant?: 'inline' | 'drawer';
@@ -36,6 +40,8 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
   onUpdateDeck,
   onSelectCardDetail,
   onOpenExport,
+  onOpenImport,
+  onOpenSync,
   wildcardCost,
   userCollection,
   variant = 'drawer',
@@ -284,14 +290,51 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
 
         {/* Empty State */}
         {deck.mainboard.length === 0 && (
-          <div className="py-12 px-4 flex flex-col items-center justify-center text-center text-stone-500">
-            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center mb-3 border border-white/10">
-              <Layers className="w-6 h-6 text-stone-400" />
+          <div className="py-8 px-4 flex flex-col items-center justify-center text-center text-stone-500 space-y-3">
+            <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border ${
+              deck.isImported ? 'bg-amber-500/10 border-amber-500/30' : 'bg-white/5 border-white/10'
+            }`}>
+              <Layers className={`w-6 h-6 ${deck.isImported ? 'text-amber-400' : 'text-stone-400'}`} />
             </div>
-            <p className="font-fantasy font-bold text-stone-300 text-sm">Decklist is empty</p>
-            <p className="text-xs text-stone-500 mt-1 max-w-[240px]">
-              Drag &amp; drop cards here or click &quot;+ Add to Deck&quot; from synergies to populate your Brawl deck!
-            </p>
+            <div>
+              <p className="font-fantasy font-bold text-stone-300 text-sm">
+                {deck.isImported ? 'Decklist Not Yet Loaded' : 'Decklist is empty'}
+              </p>
+              {deck.isImported ? (
+                <p className="text-xs text-stone-400 mt-1 max-w-[260px] leading-relaxed">
+                  This deck was imported from MTG Arena with only the commander. Populate all 100 cards from your clipboard or sync from Player.log:
+                </p>
+              ) : (
+                <p className="text-xs text-stone-500 mt-1 max-w-[240px]">
+                  Drag &amp; drop cards here or click &quot;+ Add to Deck&quot; from synergies to populate your Brawl deck!
+                </p>
+              )}
+            </div>
+
+            {deck.isImported && (
+              <div className="w-full max-w-[260px] space-y-2 pt-1">
+                {onOpenImport && (
+                  <button
+                    type="button"
+                    onClick={onOpenImport}
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 text-slate-950 font-black text-xs transition shadow-md hover:brightness-110 flex items-center justify-center gap-1.5 cursor-pointer"
+                  >
+                    <Clipboard className="w-3.5 h-3.5" />
+                    <span>Paste Arena Export</span>
+                  </button>
+                )}
+                {onOpenSync && (
+                  <button
+                    type="button"
+                    onClick={onOpenSync}
+                    className="w-full py-2 px-3 rounded-xl bg-white/5 hover:bg-white/10 text-stone-300 border border-white/10 font-bold text-xs transition flex items-center justify-center gap-1.5 cursor-pointer hover:border-amber-400/40"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Sync Account / Player.log</span>
+                  </button>
+                )}
+              </div>
+            )}
           </div>
         )}
 

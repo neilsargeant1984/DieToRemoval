@@ -6,6 +6,7 @@ import { explainSynergy } from '../utils/synergyExplainer';
 import { getCardRoleChips, classifyCardRoles } from '../utils/roleClassifier';
 import { CardImage } from './CardImage';
 import { FormattedOracleText } from './FormattedOracleText';
+import { getCardFaceData, hasMultipleFaces } from '../utils/cardFaceUtils';
 
 interface CardDetailModalProps {
   card: Card | null;
@@ -28,26 +29,12 @@ export const CardDetailModal: React.FC<CardDetailModalProps> = ({
 
   if (!card) return null;
 
-  const hasMultipleFaces = Boolean(
-    (card.cardFaces && card.cardFaces.length > 1) || card.name.includes(' // ')
-  );
-
-  const activeFace = hasMultipleFaces && card.cardFaces
-    ? card.cardFaces[isFlipped ? 1 : 0]
-    : undefined;
-
-  const displayName = activeFace?.name || (
-    hasMultipleFaces 
-      ? (isFlipped ? card.name.split(' // ')[1] : card.name.split(' // ')[0])
-      : card.name
-  );
-
-  const displayTypeLine = activeFace?.typeLine || card.typeLine;
-  const displayOracleText = activeFace?.oracleText || card.oracleText;
-
-  const displayImageUrl = isFlipped
-    ? (activeFace?.imageUrl || `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(card.name)}&format=image&face=back`)
-    : (card.cardFaces?.[0]?.imageUrl || card.imageUrl);
+  const isMultiFace = hasMultipleFaces(card);
+  const faceData = getCardFaceData(card, isFlipped);
+  const displayName = faceData.name;
+  const displayTypeLine = faceData.typeLine;
+  const displayOracleText = faceData.oracleText;
+  const displayImageUrl = faceData.imageUrl;
 
   const isCommanderCard = Boolean(
     commander && (card.id === commander.id || card.name === commander.name)
@@ -78,42 +65,39 @@ export const CardDetailModal: React.FC<CardDetailModalProps> = ({
           <X className="w-5 h-5" />
         </button>
 
-        {/* Left: Card Image with 3D Flip */}
+        {/* Left: Card Image */}
         <div className="w-full md:w-64 flex-shrink-0 flex flex-col items-center">
-          <div className="relative w-full aspect-[5/7] group" style={{ perspective: '1000px' }}>
-            <div
-              className="w-full h-full transition-transform duration-500 [transform-style:preserve-3d]"
-              style={{ transform: isFlipped ? 'rotateY(180deg)' : 'none' }}
-            >
+          <div className="relative w-full aspect-[5/7] group">
+            <div className="w-full h-full">
               <CardImage
                 src={displayImageUrl}
                 cardName={displayName}
                 alt={displayName}
-                className="w-full h-full rounded-2xl shadow-xl border border-black/60 object-cover bg-black"
+                className="w-full h-full rounded-2xl shadow-xl border border-black/60 object-cover bg-black transition-opacity duration-200"
               />
             </div>
 
-            {hasMultipleFaces && (
+            {isMultiFace && (
               <button
                 type="button"
                 onClick={() => setIsFlipped(prev => !prev)}
                 className="absolute top-2.5 right-2.5 bg-slate-950/80 hover:bg-amber-500 hover:text-slate-950 text-amber-300 border border-amber-400/50 p-2 rounded-xl backdrop-blur-md shadow-lg transition flex items-center gap-1.5 text-[11px] font-bold z-10"
-                title={isFlipped ? 'Show Front Face' : 'Transform / Flip Card'}
+                title={isFlipped ? 'Show Front Face' : 'Show Reverse Face'}
               >
-                <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" />
-                <span>{isFlipped ? 'Front' : 'Flip'}</span>
+                <RefreshCw className="w-3.5 h-3.5" />
+                <span>{isFlipped ? 'Front' : 'Reverse'}</span>
               </button>
             )}
           </div>
 
-          {hasMultipleFaces && (
+          {isMultiFace && (
             <button
               type="button"
               onClick={() => setIsFlipped(prev => !prev)}
               className="mt-2.5 w-full py-1.5 px-3 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-bold transition flex items-center justify-center gap-1.5"
             >
               <RefreshCw className="w-3.5 h-3.5" />
-              <span>{isFlipped ? 'View Front Face' : 'Transform / View Back Face'}</span>
+              <span>{isFlipped ? 'View Front Face' : 'View Reverse Face'}</span>
             </button>
           )}
 
@@ -162,8 +146,8 @@ export const CardDetailModal: React.FC<CardDetailModalProps> = ({
             </div>
             <div className="text-xs text-slate-400 mt-0.5 font-medium">
               {displayTypeLine} • Mana Value: {card.cmc}
-              {activeFace?.loyalty && ` • Starting Loyalty: ${activeFace.loyalty}`}
-              {activeFace?.power !== undefined && activeFace?.toughness !== undefined && ` • ${activeFace.power}/${activeFace.toughness}`}
+              {faceData.loyalty && ` • Starting Loyalty: ${faceData.loyalty}`}
+              {faceData.power !== undefined && faceData.toughness !== undefined && ` • ${faceData.power}/${faceData.toughness}`}
             </div>
           </div>
 

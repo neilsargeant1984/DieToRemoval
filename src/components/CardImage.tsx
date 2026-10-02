@@ -8,6 +8,7 @@ export interface CardImageProps extends React.ImgHTMLAttributes<HTMLImageElement
 
 export const CardImage: React.FC<CardImageProps> = ({
   src,
+  fallbackSrc,
   cardName,
   alt,
   className = '',
@@ -33,15 +34,20 @@ export const CardImage: React.FC<CardImageProps> = ({
   }, [src, artCrop, cardName]);
 
   const handleError = () => {
+    if (fallbackSrc && imgSrc !== fallbackSrc) {
+      setImgSrc(fallbackSrc);
+      return;
+    }
+
     if (errorStage === 0 && cardName) {
       // Step 1: Fallback to Scryfall named card endpoint (with version=art_crop if requested)
-      const cleanName = cardName.replace(/^A-/, '').trim();
+      const cleanName = cardName.split(' // ')[0].replace(/^A-/, '').trim();
       setErrorStage(1);
       const cropQuery = artCrop ? '&version=art_crop' : '';
       setImgSrc(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cleanName)}&format=image${cropQuery}`);
     } else if (errorStage === 1 && artCrop && cardName) {
       // Step 1b: If art_crop specifically failed, try the full image before giving up
-      const cleanName = cardName.replace(/^A-/, '').trim();
+      const cleanName = cardName.split(' // ')[0].replace(/^A-/, '').trim();
       setErrorStage(2);
       setImgSrc(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cleanName)}&format=image`);
     } else if (errorStage <= 2) {
@@ -72,9 +78,11 @@ export const CardImage: React.FC<CardImageProps> = ({
     );
   }
 
+  const initialCleanName = cardName ? cardName.split(' // ')[0].replace(/^A-/, '').trim() : '';
+
   return (
     <img
-      src={imgSrc || (cardName ? `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}&format=image${artCrop ? '&version=art_crop' : ''}` : 'https://cards.scryfall.io/back.png')}
+      src={imgSrc || fallbackSrc || (initialCleanName ? `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(initialCleanName)}&format=image${artCrop ? '&version=art_crop' : ''}` : 'https://cards.scryfall.io/back.png')}
       alt={alt || cardName || 'Card image'}
       onError={handleError}
       className={className}

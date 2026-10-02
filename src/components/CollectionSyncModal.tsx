@@ -14,7 +14,8 @@ import {
   FolderHeart,
   ShieldCheck,
   Trash2,
-  Sparkles
+  Sparkles,
+  Zap
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 
@@ -71,6 +72,37 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
     });
     setIsWcSaved(true);
     setTimeout(() => setIsWcSaved(false), 2500);
+  };
+
+  const [hasLocalLog, setHasLocalLog] = useState<boolean>(false);
+
+  React.useEffect(() => {
+    if (isOpen) {
+      fetch('/api/arena-log', { method: 'HEAD' })
+        .then(res => {
+          if (res.ok) setHasLocalLog(true);
+          else setHasLocalLog(false);
+        })
+        .catch(() => setHasLocalLog(false));
+    }
+  }, [isOpen]);
+
+  const handleAutoSyncFromLocal = async () => {
+    setIsProcessing(true);
+    setStatusMessage(null);
+    try {
+      const res = await fetch('/api/arena-log');
+      if (!res.ok) throw new Error('Could not access Player.log');
+      const text = await res.text();
+      await handleProcessLog(text);
+    } catch {
+      setStatusMessage({
+        type: 'error',
+        text: 'Failed to read local Player.log. Please select or drag the file manually below.'
+      });
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -253,6 +285,34 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
             ⚡ <strong>Full 50,000+ Collection Export:</strong> For players using <em>MTGA Assistant</em>, <em>17Lands</em>, or <em>Untapped</em>, you can also drop your exported <code>collection.json</code> or inventory dump to sync every card in your vault beyond your decks!
           </p>
         </div>
+
+        {/* 1-Click Local Auto Sync when detected on local disk */}
+        {hasLocalLog && (
+          <div className="bg-gradient-to-r from-amber-950/40 via-amber-900/30 to-amber-950/40 border border-amber-500/40 rounded-2xl p-4 space-y-2.5 shadow-lg">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-black uppercase tracking-wider text-amber-300 flex items-center gap-1.5">
+                <Zap className="w-4 h-4 fill-amber-400 text-amber-400" />
+                <span>MTG Arena Local Log Detected</span>
+              </span>
+              <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-emerald-950 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>Ready to Sync</span>
+              </span>
+            </div>
+            <p className="text-xs text-stone-300 leading-relaxed">
+              Your local MTG Arena <code>Player.log</code> was detected. Click below to automatically load all 39+ decks with full 100-card decklists, cards, and wildcards in 1 click!
+            </p>
+            <button
+              type="button"
+              onClick={handleAutoSyncFromLocal}
+              disabled={isProcessing}
+              className="w-full py-2.5 px-4 rounded-xl btn-mythic-spark text-slate-950 font-black text-xs transition shadow-md flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+            >
+              <Zap className="w-3.5 h-3.5 fill-slate-950" />
+              <span>{isProcessing ? 'Syncing Full Arena Account...' : '1-Click Auto-Sync from Local MTG Arena'}</span>
+            </button>
+          </div>
+        )}
 
         {/* Upload Drop Zone */}
         <div

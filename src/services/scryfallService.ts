@@ -96,11 +96,19 @@ export function transformScryfallCard(raw: any): Card {
   let cardFaces: CardFace[] | undefined = undefined;
   if (raw.card_faces && raw.card_faces.length > 0) {
     cardFaces = raw.card_faces.map((f: any, idx: number) => {
-      const faceImg = f.image_uris?.normal || f.image_uris?.large || f.image_uris?.small || (
-        idx === 1 
-          ? (raw.id ? `https://api.scryfall.com/cards/${raw.id}?format=image&face=back` : `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(raw.name)}&format=image&face=back`)
-          : undefined
-      );
+      let faceImg = f.image_uris?.normal || f.image_uris?.large || f.image_uris?.small;
+      if (!faceImg && idx === 1) {
+        const frontImg = raw.card_faces[0]?.image_uris?.normal || raw.card_faces[0]?.image_uris?.large || raw.image_uris?.normal;
+        if (frontImg && frontImg.includes('/front/')) {
+          faceImg = frontImg.replace('/front/', '/back/');
+        } else if (raw.id) {
+          faceImg = `https://api.scryfall.com/cards/${raw.id}?format=image&face=back`;
+        } else if (raw.set && raw.collector_number) {
+          faceImg = `https://api.scryfall.com/cards/${raw.set.toLowerCase()}/${raw.collector_number}?format=image&face=back`;
+        } else if (raw.name) {
+          faceImg = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(raw.name.split(' // ')[0].replace(/^A-/, '').trim())}&format=image&face=back`;
+        }
+      }
       return {
         name: f.name || '',
         manaCost: f.mana_cost || '',
@@ -596,29 +604,82 @@ export async function fetchCardByNameOrSet(
   }
 }
 
-// In-memory cache for Arena ID card fetches
+const ARENA_CACHE_KEY = 'arenaforge_scryfall_arena_cache';
+// In-memory cache for Arena ID card fetches, backed by localStorage
 const arenaIdCardCache = new Map<number, Card>();
+
+// Initialize persistent cache
+try {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const saved = localStorage.getItem(ARENA_CACHE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (typeof parsed === 'object' && parsed !== null) {
+        for (const [k, v] of Object.entries(parsed)) {
+          const numId = parseInt(k, 10);
+          if (!isNaN(numId) && v) {
+            arenaIdCardCache.set(numId, v as Card);
+          }
+        }
+      }
+    }
+  }
+} catch {
+  // Ignore localStorage parsing error
+}
+
+let cacheSaveTimeout: any = null;
+function persistArenaCardCache() {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  if (cacheSaveTimeout) clearTimeout(cacheSaveTimeout);
+  cacheSaveTimeout = setTimeout(() => {
+    try {
+      const obj: Record<number, Card> = {};
+      let count = 0;
+      for (const [k, v] of arenaIdCardCache.entries()) {
+        obj[k] = v;
+        count++;
+        if (count >= 1500) break;
+      }
+      localStorage.setItem(ARENA_CACHE_KEY, JSON.stringify(obj));
+    } catch {
+      // Ignore quota exceeded
+    }
+  }, 1000);
+}
+
+export function getCachedCardByArenaId(arenaId: number): Card | null {
+  if (arenaIdCardCache.has(arenaId)) return arenaIdCardCache.get(arenaId)!;
+  const local = ARENA_CARDS.find(c => c.arenaId === arenaId);
+  if (local) {
+    arenaIdCardCache.set(arenaId, local);
+    return local;
+  }
+  return null;
+}
 
 /**
  * Fetches a card by its MTG Arena ID from Scryfall.
  */
 export async function fetchCardByArenaId(arenaId: number): Promise<Card | null> {
-  // Check memory cache first
-  if (arenaIdCardCache.has(arenaId)) {
-    return arenaIdCardCache.get(arenaId)!;
-  }
-
-  // Check local ARENA_CARDS pool
-  const localMatch = ARENA_CARDS.find(c => c.arenaId === arenaId);
-  if (localMatch) {
-    arenaIdCardCache.set(arenaId, localMatch);
-    return localMatch;
+  // Check memory / localStorage cache first
+  const cached = getCachedCardByArenaId(arenaId);
+  if (cached) {
+    return cached;
   }
 
   try {
-    const res = await fetch(`https://api.scryfall.com/cards/arena/${arenaId}`, {
+    let res = await fetch(`https://api.scryfall.com/cards/arena/${arenaId}`, {
       headers: getScryfallHeaders()
     });
+
+    if (res.status === 429) {
+      // Rate limited: back off 1.5 seconds and retry once
+      await new Promise(r => setTimeout(r, 1500));
+      res = await fetch(`https://api.scryfall.com/cards/arena/${arenaId}`, {
+        headers: getScryfallHeaders()
+      });
+    }
 
     if (!res.ok) {
       return null;
@@ -627,6 +688,7 @@ export async function fetchCardByArenaId(arenaId: number): Promise<Card | null> 
     const raw = await res.json();
     const card = transformScryfallCard(raw);
     arenaIdCardCache.set(arenaId, card);
+    persistArenaCardCache();
     return card;
   } catch (err) {
     console.warn(`Failed to fetch card by Arena ID ${arenaId}:`, err);

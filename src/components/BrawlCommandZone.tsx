@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { FormattedOracleText } from './FormattedOracleText';
 import { CardImage } from './CardImage';
+import { getCardFaceData, hasMultipleFaces } from '../utils/cardFaceUtils';
 
 export type BrawlSubMode = 'brawl_historic' | 'competitive_brawl' | 'standard_brawl';
 
@@ -140,33 +141,16 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
     setIsFlipped(false);
   }, [commander?.id]);
 
-  const hasMultipleFaces = Boolean(
-    (commander?.cardFaces && commander.cardFaces.length > 1) ||
-    commander?.name.includes(' // ')
-  );
-
-  const activeFace = hasMultipleFaces && commander?.cardFaces
-    ? commander.cardFaces[isFlipped ? 1 : 0]
-    : undefined;
-
-  const activeName = activeFace?.name || (
-    hasMultipleFaces && commander
-      ? (isFlipped ? commander.name.split(' // ')[1] : commander.name.split(' // ')[0])
-      : (commander?.name || '')
-  );
-
-  const activeTypeLine = activeFace?.typeLine || (commander?.typeLine || '');
-  const activeManaCost = activeFace?.manaCost || (commander?.manaCost || '');
-  const activeOracleText = activeFace?.oracleText || (commander?.oracleText || '');
-  const activePower = activeFace?.power !== undefined ? activeFace.power : commander?.power;
-  const activeToughness = activeFace?.toughness !== undefined ? activeFace.toughness : commander?.toughness;
-  const activeLoyalty = activeFace?.loyalty !== undefined ? activeFace.loyalty : commander?.loyalty;
-
-  const frontImg = commander?.cardFaces?.[0]?.imageUrl || commander?.imageUrl;
-  const backImg = commander?.cardFaces?.[1]?.imageUrl || (
-    commander ? `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(commander.name)}&format=image&face=back` : undefined
-  );
-  const currentActiveImg = isFlipped ? (backImg || frontImg) : frontImg;
+  const isMultiFace = hasMultipleFaces(commander);
+  const faceData = getCardFaceData(commander, isFlipped);
+  const activeName = faceData.name;
+  const activeTypeLine = faceData.typeLine;
+  const activeManaCost = faceData.manaCost;
+  const activeOracleText = faceData.oracleText;
+  const activePower = faceData.power;
+  const activeToughness = faceData.toughness;
+  const activeLoyalty = faceData.loyalty;
+  const currentActiveImg = faceData.imageUrl;
 
   return (
     <div className="relative arena-panel rounded-3xl p-6 md:p-8 transition-colors shadow-2xl">
@@ -184,20 +168,16 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
 
           {commander ? (
             <div className="flex flex-col items-center w-full">
-              {/* Hero Card Pedestal with 3D Flip */}
+              {/* Hero Card Pedestal */}
               <div
                 className="relative group z-20 w-64 sm:w-72 lg:w-80 aspect-[5/7] rounded-2xl overflow-hidden altar-pedestal bg-black p-1 transition-all duration-300 shadow-2xl ring-1 ring-amber-400/40 hover:ring-amber-400/80 hover:shadow-[0_20px_50px_rgba(245,158,11,0.25)] flex items-center justify-center"
-                style={{ perspective: '1000px' }}
               >
-                <div
-                  className="w-full h-full transition-transform duration-500 [transform-style:preserve-3d]"
-                  style={{ transform: isFlipped ? 'rotateY(180deg)' : 'none' }}
-                >
+                <div className="w-full h-full">
                   <CardImage
                     src={currentActiveImg}
                     cardName={activeName}
                     alt={activeName}
-                    className="w-full h-full object-cover rounded-[14px]"
+                    className="w-full h-full object-cover rounded-[14px] transition-opacity duration-200"
                   />
                 </div>
 
@@ -207,8 +187,8 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                   <span>Commander</span>
                 </div>
 
-                {/* Card Corner Flip Button Overlay */}
-                {hasMultipleFaces && (
+                {/* Card Corner Reverse Face Toggle Button */}
+                {isMultiFace && (
                   <button
                     type="button"
                     onClick={(e) => {
@@ -216,24 +196,24 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                       setIsFlipped(prev => !prev);
                     }}
                     className="absolute top-2.5 right-2.5 bg-slate-950/85 hover:bg-amber-500 hover:text-slate-950 text-amber-300 border border-amber-400/60 p-2 rounded-xl backdrop-blur-md shadow-xl transition flex items-center gap-1.5 text-[11px] font-bold z-30 group-hover:scale-105"
-                    title={isFlipped ? 'Show Front Face' : 'Transform / Flip Card'}
+                    title={isFlipped ? 'Show Front Face' : 'Show Reverse Face'}
                   >
-                    <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" />
-                    <span>{isFlipped ? 'Front' : 'Flip'}</span>
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>{isFlipped ? 'Front' : 'Reverse'}</span>
                   </button>
                 )}
               </div>
 
               {/* Dedicated Commander Actions Dock */}
               <div className="w-full max-w-[20rem] flex flex-col gap-2 mt-3.5">
-                {hasMultipleFaces && (
+                {isMultiFace && (
                   <button
                     type="button"
                     onClick={() => setIsFlipped(prev => !prev)}
                     className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/50 text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
-                    <span>{isFlipped ? 'Show Front Face' : 'Transform / Flip Card'}</span>
+                    <span>{isFlipped ? 'Show Front Face' : 'Show Reverse Face'}</span>
                   </button>
                 )}
                 <div className="flex gap-2">
@@ -409,7 +389,7 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                 </div>
 
                 {/* Face Toggle Tabs for Transforming / Multi-Face Cards */}
-                {hasMultipleFaces && (
+                {isMultiFace && (
                   <div className="flex items-center gap-1.5 mb-2.5 bg-[#0d1017]/90 p-1 rounded-lg border border-white/5 w-fit">
                     <button
                       type="button"
