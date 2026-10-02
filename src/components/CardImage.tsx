@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 export interface CardImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   cardName?: string;
   fallbackSrc?: string;
+  artCrop?: boolean;
 }
 
 export const CardImage: React.FC<CardImageProps> = ({
@@ -10,27 +11,42 @@ export const CardImage: React.FC<CardImageProps> = ({
   cardName,
   alt,
   className = '',
+  artCrop = false,
   ...props
 }) => {
-  const [imgSrc, setImgSrc] = useState<string>(src || '');
+  const getInitialSrc = (url?: string) => {
+    if (!url) return '';
+    if (artCrop && url.includes('cards.scryfall.io/')) {
+      return url.replace('/normal/', '/art_crop/').replace('/large/', '/art_crop/').replace('/small/', '/art_crop/');
+    }
+    return url;
+  };
+
+  const [imgSrc, setImgSrc] = useState<string>(getInitialSrc(src));
   const [errorStage, setErrorStage] = useState<number>(0);
   const [isBroken, setIsBroken] = useState<boolean>(false);
 
   useEffect(() => {
-    setImgSrc(src || '');
+    setImgSrc(getInitialSrc(src));
     setErrorStage(0);
-    setIsBroken(!src);
-  }, [src]);
+    setIsBroken(!src && !cardName);
+  }, [src, artCrop, cardName]);
 
   const handleError = () => {
     if (errorStage === 0 && cardName) {
-      // Step 1: Fallback to Scryfall named card endpoint
+      // Step 1: Fallback to Scryfall named card endpoint (with version=art_crop if requested)
       const cleanName = cardName.replace(/^A-/, '').trim();
       setErrorStage(1);
-      setImgSrc(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cleanName)}&format=image`);
-    } else if (errorStage <= 1) {
-      // Step 2: Fallback to official MTG Card Back
+      const cropQuery = artCrop ? '&version=art_crop' : '';
+      setImgSrc(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cleanName)}&format=image${cropQuery}`);
+    } else if (errorStage === 1 && artCrop && cardName) {
+      // Step 1b: If art_crop specifically failed, try the full image before giving up
+      const cleanName = cardName.replace(/^A-/, '').trim();
       setErrorStage(2);
+      setImgSrc(`https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cleanName)}&format=image`);
+    } else if (errorStage <= 2) {
+      // Step 2: Fallback to official MTG Card Back
+      setErrorStage(3);
       setImgSrc('https://cards.scryfall.io/back.png');
     } else {
       // Step 3: Complete fallback - card art placeholder
@@ -38,7 +54,7 @@ export const CardImage: React.FC<CardImageProps> = ({
     }
   };
 
-  if (isBroken && (!imgSrc || errorStage >= 2)) {
+  if (isBroken && (!imgSrc || errorStage >= 3)) {
     return (
       <div
         className={`flex flex-col items-center justify-center p-3 text-center bg-stone-900 border border-amber-900/40 rounded-xl aspect-[5/7] select-none ${className}`}
@@ -58,7 +74,7 @@ export const CardImage: React.FC<CardImageProps> = ({
 
   return (
     <img
-      src={imgSrc || (cardName ? `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}&format=image` : 'https://cards.scryfall.io/back.png')}
+      src={imgSrc || (cardName ? `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(cardName)}&format=image${artCrop ? '&version=art_crop' : ''}` : 'https://cards.scryfall.io/back.png')}
       alt={alt || cardName || 'Card image'}
       onError={handleError}
       className={className}
