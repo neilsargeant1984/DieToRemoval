@@ -249,6 +249,29 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     }
   }, [sortOrder]);
 
+  // Multi-group color section definitions for browsing mode
+  const COLOR_SECTION_CONFIGS = useMemo(() => [
+    { id: 'white', name: 'White Spells', shortLabel: 'White', pip: 'W', query: 'c=w -t:land' },
+    { id: 'blue', name: 'Blue Spells', shortLabel: 'Blue', pip: 'U', query: 'c=u -t:land' },
+    { id: 'black', name: 'Black Spells', shortLabel: 'Black', pip: 'B', query: 'c=b -t:land' },
+    { id: 'red', name: 'Red Spells', shortLabel: 'Red', pip: 'R', query: 'c=r -t:land' },
+    { id: 'green', name: 'Green Spells', shortLabel: 'Green', pip: 'G', query: 'c=g -t:land' },
+    { id: 'multicolor', name: 'Multicolor Spells', shortLabel: 'Multi', pip: '★', query: 'c:m -t:land' },
+    { id: 'colorless', name: 'Colorless Artifacts & Spells', shortLabel: 'Colorless', pip: '◇', query: 'c:c -t:land' },
+    { id: 'lands', name: 'Lands & Utility Mana', shortLabel: 'Lands', pip: '🏔️', query: 't:land' }
+  ], []);
+
+  interface ColorSectionData {
+    cards: Card[];
+    totalAvailable: number;
+    page: number;
+    hasMore: boolean;
+    isLoadingMore?: boolean;
+  }
+
+  const [sectionDataMap, setSectionDataMap] = useState<Record<string, ColorSectionData>>({});
+  const [isMultiGroupMode, setIsMultiGroupMode] = useState<boolean>(true);
+
   // Main search query execution (resets page to 1)
   useEffect(() => {
     setIsLoading(true);
@@ -258,29 +281,82 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     const delay = searchTerm.trim() ? 320 : 60;
 
     searchTimeoutRef.current = setTimeout(async () => {
-      try {
-        const result = await searchArenaCards({
-          query: buildSmartSearchQuery(searchTerm),
-          format: selectedFormat,
-          colors: selectedColors.length > 0 ? selectedColors : undefined,
-          cmcValues: selectedCmcs.length > 0 ? selectedCmcs : undefined,
-          types: selectedTypes.length > 0 ? selectedTypes : undefined,
-          rarities: selectedRarities.length > 0 ? selectedRarities : undefined,
-          sets: selectedSets.length > 0 ? selectedSets : undefined,
-          digitalOnly,
-          isLegendary,
-          order: scryfallOrder,
-          dir: scryfallDir,
-          page: 1
-        });
+      const isBrowsingAllColors = !searchTerm.trim() && selectedColors.length === 0;
+      setIsMultiGroupMode(isBrowsingAllColors);
 
-        setCards(result.cards);
-        setTotalCount(result.totalCards);
-        setHasMore(result.hasMore);
-      } catch (err) {
-        console.error('Error fetching cards in library:', err);
-      } finally {
-        setIsLoading(false);
+      if (isBrowsingAllColors) {
+        // High-density library browsing: Fetch 175 cards for each of the 8 color sections in parallel
+        try {
+          const results = await Promise.all(
+            COLOR_SECTION_CONFIGS.map(sec =>
+              searchArenaCards({
+                query: sec.query,
+                format: selectedFormat,
+                cmcValues: selectedCmcs.length > 0 ? selectedCmcs : undefined,
+                types: selectedTypes.length > 0 ? selectedTypes : undefined,
+                rarities: selectedRarities.length > 0 ? selectedRarities : undefined,
+                sets: selectedSets.length > 0 ? selectedSets : undefined,
+                digitalOnly,
+                isLegendary,
+                order: scryfallOrder,
+                dir: scryfallDir,
+                page: 1
+              })
+            )
+          );
+
+          const newMap: Record<string, ColorSectionData> = {};
+          const combinedCards: Card[] = [];
+          let grandTotal = 0;
+
+          COLOR_SECTION_CONFIGS.forEach((sec, idx) => {
+            const res = results[idx];
+            newMap[sec.id] = {
+              cards: res.cards,
+              totalAvailable: res.totalCards,
+              page: 1,
+              hasMore: res.hasMore,
+              isLoadingMore: false
+            };
+            combinedCards.push(...res.cards);
+            grandTotal += res.totalCards;
+          });
+
+          setSectionDataMap(newMap);
+          setCards(combinedCards);
+          setTotalCount(grandTotal);
+          setHasMore(false);
+        } catch (err) {
+          console.error('Error fetching cards in multi-group mode:', err);
+        } finally {
+          setIsLoading(false);
+        }
+      } else {
+        // Targeted filter / search mode: Fetch matching cards and group them
+        try {
+          const result = await searchArenaCards({
+            query: buildSmartSearchQuery(searchTerm),
+            format: selectedFormat,
+            colors: selectedColors.length > 0 ? selectedColors : undefined,
+            cmcValues: selectedCmcs.length > 0 ? selectedCmcs : undefined,
+            types: selectedTypes.length > 0 ? selectedTypes : undefined,
+            rarities: selectedRarities.length > 0 ? selectedRarities : undefined,
+            sets: selectedSets.length > 0 ? selectedSets : undefined,
+            digitalOnly,
+            isLegendary,
+            order: scryfallOrder,
+            dir: scryfallDir,
+            page: 1
+          });
+
+          setCards(result.cards);
+          setTotalCount(result.totalCards);
+          setHasMore(result.hasMore);
+        } catch (err) {
+          console.error('Error fetching cards in library:', err);
+        } finally {
+          setIsLoading(false);
+        }
       }
     }, delay);
 
@@ -298,10 +374,59 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     digitalOnly, 
     isLegendary, 
     scryfallOrder, 
-    scryfallDir
+    scryfallDir,
+    COLOR_SECTION_CONFIGS
   ]);
 
-  // Load more cards (pagination)
+  // Load more cards for a specific color section
+  const handleLoadMoreSection = async (sectionId: string) => {
+    const secConfig = COLOR_SECTION_CONFIGS.find(s => s.id === sectionId);
+    const current = sectionDataMap[sectionId];
+    if (!secConfig || !current || !current.hasMore || current.isLoadingMore) return;
+
+    setSectionDataMap(prev => ({
+      ...prev,
+      [sectionId]: { ...prev[sectionId], isLoadingMore: true }
+    }));
+
+    const nextPage = current.page + 1;
+    try {
+      const result = await searchArenaCards({
+        query: secConfig.query,
+        format: selectedFormat,
+        cmcValues: selectedCmcs.length > 0 ? selectedCmcs : undefined,
+        types: selectedTypes.length > 0 ? selectedTypes : undefined,
+        rarities: selectedRarities.length > 0 ? selectedRarities : undefined,
+        sets: selectedSets.length > 0 ? selectedSets : undefined,
+        digitalOnly,
+        isLegendary,
+        order: scryfallOrder,
+        dir: scryfallDir,
+        page: nextPage
+      });
+
+      setSectionDataMap(prev => ({
+        ...prev,
+        [sectionId]: {
+          ...prev[sectionId],
+          cards: [...prev[sectionId].cards, ...result.cards],
+          page: nextPage,
+          hasMore: result.hasMore,
+          isLoadingMore: false
+        }
+      }));
+
+      setCards(prev => [...prev, ...result.cards]);
+    } catch (err) {
+      console.error(`Error loading more ${sectionId} cards:`, err);
+      setSectionDataMap(prev => ({
+        ...prev,
+        [sectionId]: { ...prev[sectionId], isLoadingMore: false }
+      }));
+    }
+  };
+
+  // Load more cards globally (used in search mode or flat mode)
   const handleLoadMore = async () => {
     if (isLoadingMore || !hasMore) return;
     setIsLoadingMore(true);
@@ -385,6 +510,9 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         headerBorder: 'border-amber-400/30',
         headerBg: 'from-amber-950/40 via-[#14120e] to-transparent',
         accentText: 'text-amber-200',
+        totalAvailable: isMultiGroupMode && sectionDataMap['white'] ? sectionDataMap['white'].totalAvailable : undefined,
+        hasMore: isMultiGroupMode && sectionDataMap['white'] ? sectionDataMap['white'].hasMore : false,
+        isLoadingMore: isMultiGroupMode && sectionDataMap['white'] ? sectionDataMap['white'].isLoadingMore : false,
         cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'W'))
       },
       {
@@ -398,6 +526,9 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         headerBorder: 'border-blue-500/30',
         headerBg: 'from-blue-950/40 via-[#0e141a] to-transparent',
         accentText: 'text-blue-300',
+        totalAvailable: isMultiGroupMode && sectionDataMap['blue'] ? sectionDataMap['blue'].totalAvailable : undefined,
+        hasMore: isMultiGroupMode && sectionDataMap['blue'] ? sectionDataMap['blue'].hasMore : false,
+        isLoadingMore: isMultiGroupMode && sectionDataMap['blue'] ? sectionDataMap['blue'].isLoadingMore : false,
         cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'U'))
       },
       {
@@ -411,6 +542,9 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         headerBorder: 'border-purple-500/30',
         headerBg: 'from-purple-950/40 via-[#130f18] to-transparent',
         accentText: 'text-purple-300',
+        totalAvailable: isMultiGroupMode && sectionDataMap['black'] ? sectionDataMap['black'].totalAvailable : undefined,
+        hasMore: isMultiGroupMode && sectionDataMap['black'] ? sectionDataMap['black'].hasMore : false,
+        isLoadingMore: isMultiGroupMode && sectionDataMap['black'] ? sectionDataMap['black'].isLoadingMore : false,
         cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'B'))
       },
       {
@@ -424,6 +558,9 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         headerBorder: 'border-red-500/30',
         headerBg: 'from-red-950/40 via-[#190f0f] to-transparent',
         accentText: 'text-red-300',
+        totalAvailable: isMultiGroupMode && sectionDataMap['red'] ? sectionDataMap['red'].totalAvailable : undefined,
+        hasMore: isMultiGroupMode && sectionDataMap['red'] ? sectionDataMap['red'].hasMore : false,
+        isLoadingMore: isMultiGroupMode && sectionDataMap['red'] ? sectionDataMap['red'].isLoadingMore : false,
         cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'R'))
       },
       {
@@ -437,6 +574,9 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         headerBorder: 'border-emerald-500/30',
         headerBg: 'from-emerald-950/40 via-[#0c1611] to-transparent',
         accentText: 'text-emerald-300',
+        totalAvailable: isMultiGroupMode && sectionDataMap['green'] ? sectionDataMap['green'].totalAvailable : undefined,
+        hasMore: isMultiGroupMode && sectionDataMap['green'] ? sectionDataMap['green'].hasMore : false,
+        isLoadingMore: isMultiGroupMode && sectionDataMap['green'] ? sectionDataMap['green'].isLoadingMore : false,
         cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'G'))
       },
       {
@@ -449,6 +589,9 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         headerBorder: 'border-amber-500/30',
         headerBg: 'from-amber-950/30 via-rose-950/20 to-transparent',
         accentText: 'text-amber-300',
+        totalAvailable: isMultiGroupMode && sectionDataMap['multicolor'] ? sectionDataMap['multicolor'].totalAvailable : undefined,
+        hasMore: isMultiGroupMode && sectionDataMap['multicolor'] ? sectionDataMap['multicolor'].hasMore : false,
+        isLoadingMore: isMultiGroupMode && sectionDataMap['multicolor'] ? sectionDataMap['multicolor'].isLoadingMore : false,
         cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length > 1))
       },
       {
@@ -462,6 +605,9 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         headerBorder: 'border-slate-500/30',
         headerBg: 'from-slate-900/50 via-[#10141a] to-transparent',
         accentText: 'text-slate-300',
+        totalAvailable: isMultiGroupMode && sectionDataMap['colorless'] ? sectionDataMap['colorless'].totalAvailable : undefined,
+        hasMore: isMultiGroupMode && sectionDataMap['colorless'] ? sectionDataMap['colorless'].hasMore : false,
+        isLoadingMore: isMultiGroupMode && sectionDataMap['colorless'] ? sectionDataMap['colorless'].isLoadingMore : false,
         cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 0))
       },
       {
@@ -474,10 +620,13 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         headerBorder: 'border-stone-600/30',
         headerBg: 'from-stone-900/60 via-[#141414] to-transparent',
         accentText: 'text-stone-300',
+        totalAvailable: isMultiGroupMode && sectionDataMap['lands'] ? sectionDataMap['lands'].totalAvailable : undefined,
+        hasMore: isMultiGroupMode && sectionDataMap['lands'] ? sectionDataMap['lands'].hasMore : false,
+        isLoadingMore: isMultiGroupMode && sectionDataMap['lands'] ? sectionDataMap['lands'].isLoadingMore : false,
         cards: sortWithinGroup(displayedCards.filter(c => c.types.includes('Land')))
       }
     ];
-  }, [displayedCards, sortOrder]);
+  }, [displayedCards, sortOrder, isMultiGroupMode, sectionDataMap]);
 
   const activeColorGroups = useMemo(() => {
     return colorGroups.filter(g => g.cards.length > 0);
@@ -1291,7 +1440,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                               {group.name}
                             </h3>
                             <span className="text-xs font-mono font-bold text-stone-300 bg-black/40 px-2.5 py-0.5 rounded-full border border-white/10 shadow-inner">
-                              {group.cards.length} {group.cards.length === 1 ? 'card' : 'cards'}
+                              {group.totalAvailable ? `Showing ${group.cards.length} of ${group.totalAvailable.toLocaleString()} cards` : `${group.cards.length} ${group.cards.length === 1 ? 'card' : 'cards'}`}
                             </span>
                           </div>
                         </div>
@@ -1310,6 +1459,32 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                           <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
                             {group.cards.map(renderCardTile)}
                           </div>
+
+                          {/* Load More Button for this specific color section */}
+                          {isMultiGroupMode && group.hasMore && (
+                            <div className="flex justify-center pt-5 pb-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleLoadMoreSection(group.id);
+                                }}
+                                disabled={group.isLoadingMore}
+                                className="px-5 py-2 rounded-xl text-xs font-bold bg-[#141a29] hover:bg-[#1c2438] text-stone-200 hover:text-white border border-white/10 hover:border-amber-400/40 transition shadow-md flex items-center gap-2 disabled:opacity-50 hover:scale-105 active:scale-95 cursor-pointer"
+                              >
+                                {group.isLoadingMore ? (
+                                  <>
+                                    <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-400" />
+                                    <span>Loading next 175 {group.shortLabel} cards...</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Plus className="w-3.5 h-3.5 text-amber-400" />
+                                    <span>Load More {group.shortLabel} Spells (+175 cards)</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          )}
                         </div>
                       )}
                     </section>
