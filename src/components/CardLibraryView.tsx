@@ -449,6 +449,82 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     }, 50);
   };
 
+  // Card Tile Renderer
+  const renderCardTile = (card: Card) => {
+    const ownedCount = userCollection[card.arenaId] || 0;
+
+    return (
+      <div
+        key={`${card.id}-${card.collectorNumber}`}
+        draggable={true}
+        onDragStart={(e) => {
+          e.dataTransfer.setData('application/json', JSON.stringify(card));
+          e.dataTransfer.setData('text/plain', card.name);
+          e.dataTransfer.effectAllowed = 'copy';
+        }}
+        className="card-tile group rounded-2xl overflow-hidden flex flex-col justify-between cursor-grab active:cursor-grabbing p-2 transition duration-200"
+        onClick={() => onSelectCardDetail(card)}
+      >
+        <div className="relative overflow-hidden rounded-xl shadow border border-black/40 mb-2 bg-black">
+          <CardImage
+            src={card.imageUrl}
+            cardName={card.name}
+            alt={card.name}
+            draggable={false}
+            className="w-full h-auto object-cover group-hover:brightness-105 group-hover:scale-[1.02] transition duration-200 pointer-events-none"
+          />
+          
+          {/* Mana Value (CMC) Badge */}
+          <span className="absolute top-1.5 left-1.5 bg-black/85 backdrop-blur-md text-amber-300 text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md border border-white/20 shadow">
+            {card.cmc} MV
+          </span>
+
+          {/* Digital / Alchemy Badge */}
+          {card.isDigitalOnly && (
+            <span className="absolute top-1.5 right-1.5 bg-purple-950/90 text-purple-200 text-[9px] font-bold px-1.5 py-0.5 rounded border border-purple-700 shadow">
+              Digital
+            </span>
+          )}
+
+          {/* Collection Ownership Pip Badge */}
+          {ownedCount > 0 && (
+            <div className="absolute bottom-1.5 left-1.5 bg-black/85 backdrop-blur-md text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/40 shadow flex items-center gap-1">
+              <ShieldCheck className="w-3 h-3 text-emerald-400" />
+              <span>{ownedCount >= 4 ? '4x (Playset)' : `${ownedCount}x`}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Card Meta & Action Footer */}
+        <div className="p-1.5 flex items-center justify-between gap-2 border-t border-white/5">
+          <div className="min-w-0 flex-1">
+            <span className="font-bold text-xs text-stone-100 truncate block group-hover:text-amber-300 transition">
+              {card.name}
+            </span>
+            <div className="flex items-center gap-1.5 text-[10px] text-stone-400 font-mono">
+              <span className="truncate">{card.manaCost || (card.types.includes('Land') ? 'Land' : '')}</span>
+              <span className="text-stone-600">•</span>
+              <span className="uppercase text-[9px] text-stone-500">{card.set}</span>
+            </div>
+          </div>
+
+          <button
+            onClick={e => {
+              e.stopPropagation();
+              onAddCardToDeck(card);
+            }}
+            draggable={false}
+            onDragStart={(e) => e.stopPropagation()}
+            className="p-1.5 btn-mythic-spark rounded-lg transition shadow-sm hover:scale-110 active:scale-95 flex-shrink-0"
+            title="Add to active deck"
+          >
+            <Plus className="w-3.5 h-3.5 font-bold" />
+          </button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-5">
       {/* Search & Filter Hero Cockpit */}
@@ -998,13 +1074,67 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
 
       </div>
 
-      {/* --- Card Visual Grid (Strictly Organized by Mana Cost) --- */}
+      {/* --- Sticky Quick-Jump Navigation Ribbon --- */}
+      {displayedCards.length > 0 && (
+        <div className="sticky top-2 z-20 bg-[#090b10]/95 backdrop-blur-md p-2 md:p-2.5 rounded-2xl border border-white/10 shadow-2xl flex flex-wrap items-center justify-between gap-2">
+          {/* Quick Jump Buttons */}
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5 flex-1 min-w-0">
+            <span className="text-[10px] font-fantasy font-bold text-stone-400 uppercase mr-1 px-1 flex-shrink-0 hidden lg:inline">
+              Jump to:
+            </span>
+            {activeColorGroups.map(group => (
+              <button
+                key={group.id}
+                onClick={() => scrollToSection(group.id)}
+                className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition hover:scale-105 active:scale-95 shadow-sm whitespace-nowrap flex-shrink-0 ${group.pipBg}`}
+                title={`Jump to ${group.name} (${group.cards.length} cards)`}
+              >
+                <span className="font-mono">{group.pip}</span>
+                <span className="hidden sm:inline">{group.shortLabel}</span>
+                <span className="text-[10px] font-mono opacity-80 bg-black/40 px-1 rounded">
+                  {group.cards.length}
+                </span>
+              </button>
+            ))}
+          </div>
+
+          {/* View Mode Switcher: By Color vs Flat List */}
+          <div className="flex items-center gap-1 bg-[#121622] p-1 rounded-xl border border-white/5 flex-shrink-0">
+            <button
+              onClick={() => setIsGroupedByColor(true)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                isGroupedByColor
+                  ? 'bg-amber-500 text-stone-950 shadow-sm font-black'
+                  : 'text-stone-400 hover:text-white'
+              }`}
+              title="Organize cards by Color & Lands"
+            >
+              <Layers className="w-3.5 h-3.5" />
+              <span>By Color</span>
+            </button>
+            <button
+              onClick={() => setIsGroupedByColor(false)}
+              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                !isGroupedByColor
+                  ? 'bg-amber-500 text-stone-950 shadow-sm font-black'
+                  : 'text-stone-400 hover:text-white'
+              }`}
+              title="View single flat card grid"
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>Flat</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* --- Card Visual Area --- */}
       <div className="min-h-[460px]">
         {isLoading && cards.length === 0 ? (
           <div className="h-80 flex flex-col items-center justify-center text-center p-6 text-stone-500 space-y-2">
             <Loader2 className="w-8 h-8 animate-spin text-amber-400" />
             <p className="font-semibold text-stone-300">Searching MTG Arena Library...</p>
-            <p className="text-xs text-stone-500">Organizing cards by mana value and rarity</p>
+            <p className="text-xs text-stone-500">Organizing cards by color and mana value</p>
           </div>
         ) : displayedCards.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-stone-500 space-y-2">
@@ -1022,83 +1152,63 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
             )}
           </div>
         ) : (
-          <div className="space-y-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
-              {displayedCards.map(card => {
-                const ownedCount = userCollection[card.arenaId] || 0;
+          <div className="space-y-8">
+            {isGroupedByColor ? (
+              <div className="space-y-8">
+                {activeColorGroups.map(group => {
+                  const isCollapsed = collapsedSections[group.id];
 
-                return (
-                  <div
-                    key={`${card.id}-${card.collectorNumber}`}
-                    draggable={true}
-                    onDragStart={(e) => {
-                      e.dataTransfer.setData('application/json', JSON.stringify(card));
-                      e.dataTransfer.setData('text/plain', card.name);
-                      e.dataTransfer.effectAllowed = 'copy';
-                    }}
-                    className="card-tile group rounded-2xl overflow-hidden flex flex-col justify-between cursor-grab active:cursor-grabbing p-2 transition duration-200"
-                    onClick={() => onSelectCardDetail(card)}
-                  >
-                    <div className="relative overflow-hidden rounded-xl shadow border border-black/40 mb-2 bg-black">
-                      <CardImage
-                        src={card.imageUrl}
-                        cardName={card.name}
-                        alt={card.name}
-                        draggable={false}
-                        className="w-full h-auto object-cover group-hover:brightness-105 group-hover:scale-[1.02] transition duration-200 pointer-events-none"
-                      />
-                      
-                      {/* Mana Value (CMC) Badge */}
-                      <span className="absolute top-1.5 left-1.5 bg-black/85 backdrop-blur-md text-amber-300 text-[10px] font-mono font-black px-1.5 py-0.5 rounded-md border border-white/20 shadow">
-                        {card.cmc} MV
-                      </span>
-
-                      {/* Digital / Alchemy Badge */}
-                      {card.isDigitalOnly && (
-                        <span className="absolute top-1.5 right-1.5 bg-purple-950/90 text-purple-200 text-[9px] font-bold px-1.5 py-0.5 rounded border border-purple-700 shadow">
-                          Digital
-                        </span>
-                      )}
-
-                      {/* Collection Ownership Pip Badge */}
-                      {ownedCount > 0 && (
-                        <div className="absolute bottom-1.5 left-1.5 bg-black/85 backdrop-blur-md text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/40 shadow flex items-center gap-1">
-                          <ShieldCheck className="w-3 h-3 text-emerald-400" />
-                          <span>{ownedCount >= 4 ? '4x (Playset)' : `${ownedCount}x`}</span>
+                  return (
+                    <section
+                      key={group.id}
+                      id={`section-${group.id}`}
+                      className={`scroll-mt-20 rounded-3xl border transition-all duration-200 shadow-xl overflow-hidden bg-[#0a0d14]/80 backdrop-blur-sm ${group.headerBorder}`}
+                    >
+                      {/* Section Header */}
+                      <div
+                        onClick={() => toggleCollapse(group.id)}
+                        className={`p-4 md:px-5 md:py-3.5 flex items-center justify-between gap-3 cursor-pointer select-none bg-gradient-to-r ${group.headerBg} hover:brightness-110 transition border-b border-white/5`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shadow-inner border ${group.pipBg}`}>
+                            {group.pip}
+                          </div>
+                          <div className="flex items-center gap-2.5">
+                            <h3 className={`font-fantasy font-black text-base md:text-lg tracking-wide uppercase ${group.accentText}`}>
+                              {group.name}
+                            </h3>
+                            <span className="text-xs font-mono font-bold text-stone-300 bg-black/40 px-2.5 py-0.5 rounded-full border border-white/10 shadow-inner">
+                              {group.cards.length} {group.cards.length === 1 ? 'card' : 'cards'}
+                            </span>
+                          </div>
                         </div>
-                      )}
-                    </div>
 
-                    {/* Card Meta & Action Footer */}
-                    <div className="p-1.5 flex items-center justify-between gap-2 border-t border-white/5">
-                      <div className="min-w-0 flex-1">
-                        <span className="font-bold text-xs text-stone-100 truncate block group-hover:text-amber-300 transition">
-                          {card.name}
-                        </span>
-                        <div className="flex items-center gap-1.5 text-[10px] text-stone-400 font-mono">
-                          <span className="truncate">{card.manaCost || 'Land'}</span>
-                          <span className="text-stone-600">•</span>
-                          <span className="uppercase text-[9px] text-stone-500">{card.set}</span>
+                        <div className="flex items-center gap-2 text-xs font-semibold text-stone-400">
+                          <span className="hidden sm:inline">{isCollapsed ? 'Expand' : 'Collapse'}</span>
+                          <div className="w-6 h-6 rounded-lg bg-white/5 flex items-center justify-center border border-white/5">
+                            <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isCollapsed ? '-rotate-90' : ''}`} />
+                          </div>
                         </div>
                       </div>
 
-                      <button
-                        onClick={e => {
-                          e.stopPropagation();
-                          onAddCardToDeck(card);
-                        }}
-                        draggable={false}
-                        onDragStart={(e) => e.stopPropagation()}
-                        className="p-1.5 btn-mythic-spark rounded-lg transition shadow-sm hover:scale-110 active:scale-95 flex-shrink-0"
-                        title="Add to active deck"
-                      >
-                        <Plus className="w-3.5 h-3.5 font-bold" />
-                      </button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                      {/* Section Cards Grid */}
+                      {!isCollapsed && (
+                        <div className="p-4 md:p-5">
+                          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            {group.cards.map(renderCardTile)}
+                          </div>
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            ) : (
+              /* Flat View Fallback */
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {displayedCards.map(renderCardTile)}
+              </div>
+            )}
 
             {/* Pagination / Load More Button */}
             {hasMore && (
