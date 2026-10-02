@@ -21,6 +21,7 @@ import { SaveDeckConflictModal } from './components/SaveDeckConflictModal';
 import { SaveBeforeCommanderChangeModal } from './components/SaveBeforeCommanderChangeModal';
 import { ImportDeckModal } from './components/ImportDeckModal';
 import { MyCollectionView } from './components/MyCollectionView';
+import { HomeView } from './components/HomeView';
 import { ManaBaseModal } from './components/ManaBaseModal';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
@@ -672,7 +673,14 @@ export const App: React.FC = () => {
 
       {/* Main App Content */}
       <main className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto w-full px-4 sm:px-6 py-6 flex-1 flex flex-col space-y-6">
-        {navTab === 'my_decks' ? (
+        {navTab === 'home' ? (
+          /* Home Page with Latest Set Release Console & News */
+          <HomeView
+            onSelectCardDetail={setSelectedCardDetail}
+            onAddCardToDeck={card => handleAddCard(card, false)}
+            userCollection={userCollection}
+          />
+        ) : navTab === 'my_decks' ? (
           /* Multi-Deck Library View */
           <MyDecksView
             savedDecks={savedDecks}

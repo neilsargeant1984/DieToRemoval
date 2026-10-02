@@ -32,7 +32,7 @@ export interface SearchArenaParams {
   isCommander?: boolean;
   commanderColorIdentity?: string[];
   roleFilter?: FunctionalRole | 'lands' | null;
-  order?: 'edhrec' | 'name' | 'cmc' | 'rarity' | 'rank';
+  order?: 'edhrec' | 'name' | 'cmc' | 'rarity' | 'rank' | 'color';
   dir?: 'asc' | 'desc';
   page?: number;
 }
@@ -453,6 +453,25 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
         } else {
           if (a.cmc !== b.cmc) return b.cmc - a.cmc;
         }
+        return a.name.localeCompare(b.name);
+      });
+    } else if (order === 'color') {
+      const getColorWeight = (c: Card) => {
+        if (c.types.includes('Land')) return 7;
+        if (c.colors.length > 1) return 5;
+        if (c.colors.length === 0) return 6;
+        if (c.colors.includes('W')) return 0;
+        if (c.colors.includes('U')) return 1;
+        if (c.colors.includes('B')) return 2;
+        if (c.colors.includes('R')) return 3;
+        if (c.colors.includes('G')) return 4;
+        return 6;
+      };
+      fallbackFiltered.sort((a, b) => {
+        const weightA = getColorWeight(a);
+        const weightB = getColorWeight(b);
+        if (weightA !== weightB) return weightA - weightB;
+        if (a.cmc !== b.cmc) return a.cmc - b.cmc;
         return a.name.localeCompare(b.name);
       });
     }

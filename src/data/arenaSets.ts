@@ -10,6 +10,9 @@ export interface ArenaSet {
  * MTG Arena Sets arranged in reverse chronological order (most recent first).
  */
 export const ARENA_SETS: ArenaSet[] = [
+  // 2026
+  { code: 'FRA', name: 'Reality Fracture', category: 'standard', releaseYear: 2026, releaseDate: '2026-10-02' },
+
   // 2024
   { code: 'PIO', name: 'Pioneer Masters', category: 'remastered', releaseYear: 2024, releaseDate: '2024-12-10' },
   { code: 'FDN', name: 'Foundations', category: 'standard', releaseYear: 2024, releaseDate: '2024-11-15' },

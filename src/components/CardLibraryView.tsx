@@ -19,7 +19,8 @@ import {
   ShieldCheck, 
   Crown,
   Layers,
-  ChevronRight
+  ChevronRight,
+  LayoutGrid
 } from 'lucide-react';
 
 interface CardLibraryViewProps {
@@ -29,7 +30,7 @@ interface CardLibraryViewProps {
   initialFormat?: FormatType;
 }
 
-type SortOrder = 'cmc_asc' | 'cmc_desc' | 'edhrec' | 'name' | 'rarity';
+type SortOrder = 'edhrec' | 'color' | 'cmc_asc' | 'cmc_desc' | 'name' | 'rarity';
 type OwnershipStatus = 'all' | 'owned' | 'playsets' | 'incomplete' | 'unowned';
 
 const MANA_COLORS: { id: string; label: string; bg: string; activeBg: string }[] = [
@@ -79,9 +80,11 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
   const [digitalOnly, setDigitalOnly] = useState(false);
   const [isLegendary, setIsLegendary] = useState(false);
   const [ownershipFilter, setOwnershipFilter] = useState<OwnershipStatus>('all');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('cmc_asc');
+  const [sortOrder, setSortOrder] = useState<SortOrder>('edhrec');
 
   // --- UI Controls ---
+  const [isGroupedByColor, setIsGroupedByColor] = useState<boolean>(true);
+  const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false);
   const [setSearchQuery, setSetSearchQuery] = useState('');
   const [setSelectedCategory, setSetSelectedCategory] = useState<'all' | 'standard' | 'eternal' | 'remastered' | 'anthology' | 'alchemy'>('all');
@@ -121,7 +124,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     setDigitalOnly(false);
     setIsLegendary(false);
     setOwnershipFilter('all');
-    setSortOrder('cmc_asc');
+    setSortOrder('edhrec');
   };
 
   // Toggle helpers
@@ -189,6 +192,8 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         return { scryfallOrder: 'cmc' as const, scryfallDir: 'asc' as const };
       case 'cmc_desc':
         return { scryfallOrder: 'cmc' as const, scryfallDir: 'desc' as const };
+      case 'color':
+        return { scryfallOrder: 'color' as const, scryfallDir: 'asc' as const };
       case 'edhrec':
         return { scryfallOrder: 'edhrec' as const, scryfallDir: 'asc' as const };
       case 'name':
@@ -196,7 +201,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
       case 'rarity':
         return { scryfallOrder: 'rarity' as const, scryfallDir: 'desc' as const };
       default:
-        return { scryfallOrder: 'cmc' as const, scryfallDir: 'asc' as const };
+        return { scryfallOrder: 'edhrec' as const, scryfallDir: 'asc' as const };
     }
   }, [sortOrder]);
 
@@ -298,6 +303,152 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     });
   }, [cards, ownershipFilter, userCollection]);
 
+  // Group displayed cards by Color & Lands in WUBRG order
+  const colorGroups = useMemo(() => {
+    const sortWithinGroup = (groupCards: Card[]) => {
+      const list = [...groupCards];
+      switch (sortOrder) {
+        case 'cmc_asc':
+          return list.sort((a, b) => (a.cmc !== b.cmc ? a.cmc - b.cmc : a.name.localeCompare(b.name)));
+        case 'cmc_desc':
+          return list.sort((a, b) => (a.cmc !== b.cmc ? b.cmc - a.cmc : a.name.localeCompare(b.name)));
+        case 'name':
+          return list.sort((a, b) => a.name.localeCompare(b.name));
+        case 'rarity': {
+          const rarityWeight: Record<CardRarity, number> = { mythic: 4, rare: 3, uncommon: 2, common: 1 };
+          return list.sort((a, b) => {
+            const diff = (rarityWeight[b.rarity] || 0) - (rarityWeight[a.rarity] || 0);
+            return diff !== 0 ? diff : a.name.localeCompare(b.name);
+          });
+        }
+        case 'color':
+          return list.sort((a, b) => (a.cmc !== b.cmc ? a.cmc - b.cmc : a.name.localeCompare(b.name)));
+        case 'edhrec':
+        default:
+          return list;
+      }
+    };
+
+    return [
+      {
+        id: 'white',
+        name: 'White Spells',
+        shortLabel: 'White',
+        pip: 'W',
+        pipBg: 'bg-amber-100/15 text-amber-200 border-amber-300/40 hover:bg-amber-100/25',
+        activePill: 'bg-amber-200 text-stone-950 font-black border-amber-300',
+        headerBorder: 'border-amber-400/30',
+        headerBg: 'from-amber-950/40 via-[#14120e] to-transparent',
+        accentText: 'text-amber-200',
+        cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'W'))
+      },
+      {
+        id: 'blue',
+        name: 'Blue Spells',
+        shortLabel: 'Blue',
+        pip: 'U',
+        pipBg: 'bg-blue-900/30 text-blue-200 border-blue-400/40 hover:bg-blue-900/45',
+        activePill: 'bg-blue-600 text-white font-black border-blue-300',
+        headerBorder: 'border-blue-500/30',
+        headerBg: 'from-blue-950/40 via-[#0e141a] to-transparent',
+        accentText: 'text-blue-300',
+        cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'U'))
+      },
+      {
+        id: 'black',
+        name: 'Black Spells',
+        shortLabel: 'Black',
+        pip: 'B',
+        pipBg: 'bg-stone-900/70 text-purple-200 border-purple-500/30 hover:bg-stone-900',
+        activePill: 'bg-purple-900 text-stone-100 font-black border-purple-400',
+        headerBorder: 'border-purple-500/30',
+        headerBg: 'from-purple-950/40 via-[#130f18] to-transparent',
+        accentText: 'text-purple-300',
+        cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'B'))
+      },
+      {
+        id: 'red',
+        name: 'Red Spells',
+        shortLabel: 'Red',
+        pip: 'R',
+        pipBg: 'bg-red-950/40 text-red-200 border-red-500/40 hover:bg-red-950/60',
+        activePill: 'bg-red-600 text-white font-black border-red-300',
+        headerBorder: 'border-red-500/30',
+        headerBg: 'from-red-950/40 via-[#190f0f] to-transparent',
+        accentText: 'text-red-300',
+        cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'R'))
+      },
+      {
+        id: 'green',
+        name: 'Green Spells',
+        shortLabel: 'Green',
+        pip: 'G',
+        pipBg: 'bg-emerald-950/40 text-emerald-200 border-emerald-500/40 hover:bg-emerald-950/60',
+        activePill: 'bg-emerald-600 text-white font-black border-emerald-300',
+        headerBorder: 'border-emerald-500/30',
+        headerBg: 'from-emerald-950/40 via-[#0c1611] to-transparent',
+        accentText: 'text-emerald-300',
+        cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 1 && c.colors[0] === 'G'))
+      },
+      {
+        id: 'multicolor',
+        name: 'Multicolor Spells',
+        shortLabel: 'Multi',
+        pip: '★',
+        pipBg: 'bg-gradient-to-r from-amber-500/20 via-rose-500/20 to-indigo-500/20 text-amber-200 border-amber-400/30 hover:opacity-90',
+        activePill: 'bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500 text-white font-black border-amber-300',
+        headerBorder: 'border-amber-500/30',
+        headerBg: 'from-amber-950/30 via-rose-950/20 to-transparent',
+        accentText: 'text-amber-300',
+        cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length > 1))
+      },
+      {
+        id: 'colorless',
+        name: 'Colorless Artifacts & Spells',
+        shortLabel: 'Colorless',
+        pip: '◇',
+        pipBg: 'bg-slate-800/50 text-slate-200 border-slate-500/40 hover:bg-slate-800/70',
+        activePill: 'bg-slate-700 text-white font-black border-slate-400',
+        headerBorder: 'border-slate-500/30',
+        headerBg: 'from-slate-900/50 via-[#10141a] to-transparent',
+        accentText: 'text-slate-300',
+        cards: sortWithinGroup(displayedCards.filter(c => !c.types.includes('Land') && c.colors.length === 0))
+      },
+      {
+        id: 'lands',
+        name: 'Lands & Utility Mana',
+        shortLabel: 'Lands',
+        pip: '🏔️',
+        pipBg: 'bg-stone-800/70 text-stone-200 border-stone-600/40 hover:bg-stone-800/90',
+        activePill: 'bg-stone-700 text-stone-100 font-black border-stone-400',
+        headerBorder: 'border-stone-600/30',
+        headerBg: 'from-stone-900/60 via-[#141414] to-transparent',
+        accentText: 'text-stone-300',
+        cards: sortWithinGroup(displayedCards.filter(c => c.types.includes('Land')))
+      }
+    ];
+  }, [displayedCards, sortOrder]);
+
+  const activeColorGroups = useMemo(() => {
+    return colorGroups.filter(g => g.cards.length > 0);
+  }, [colorGroups]);
+
+  const toggleCollapse = (id: string) => {
+    setCollapsedSections(prev => ({ ...prev, [id]: !prev[id] }));
+  };
+
+  const scrollToSection = (id: string) => {
+    if (collapsedSections[id]) {
+      setCollapsedSections(prev => ({ ...prev, [id]: false }));
+    }
+    setTimeout(() => {
+      const el = document.getElementById(`section-${id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 50);
+  };
+
   return (
     <div className="space-y-5">
       {/* Search & Filter Hero Cockpit */}
@@ -373,7 +524,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
             )}
           </div>
 
-          {/* Sort Selector (Organized by Lowest Mana Cost to Highest Mana Cost by Default!) */}
+          {/* Sort Selector */}
           <div className="flex items-center gap-2 w-full sm:w-auto bg-[#090b10] border border-white/10 rounded-xl px-3 py-2 text-xs">
             <ArrowUpDown className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
             <span className="text-stone-400 font-bold whitespace-nowrap">Sort:</span>
@@ -382,9 +533,10 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
               onChange={e => setSortOrder(e.target.value as SortOrder)}
               className="bg-transparent text-stone-200 font-bold focus:outline-none cursor-pointer pr-1"
             >
+              <option value="edhrec" className="bg-[#121622] text-stone-200">Popularity / EDHREC</option>
+              <option value="color" className="bg-[#121622] text-stone-200">Color (WUBRG)</option>
               <option value="cmc_asc" className="bg-[#121622] text-stone-200">Mana Cost: Low → High</option>
               <option value="cmc_desc" className="bg-[#121622] text-stone-200">Mana Cost: High → Low</option>
-              <option value="edhrec" className="bg-[#121622] text-stone-200">Popularity / EDHREC</option>
               <option value="name" className="bg-[#121622] text-stone-200">Card Name (A-Z)</option>
               <option value="rarity" className="bg-[#121622] text-stone-200">Rarity: Mythic → Common</option>
             </select>

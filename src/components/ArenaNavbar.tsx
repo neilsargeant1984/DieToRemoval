@@ -12,10 +12,11 @@ import {
   ShieldCheck,
   User,
   LogOut,
-  Cloud
+  Cloud,
+  Home
 } from 'lucide-react';
 
-export type MainNavTab = 'deck_builder' | 'card_library' | 'my_collection' | 'my_decks';
+export type MainNavTab = 'home' | 'deck_builder' | 'card_library' | 'my_collection' | 'my_decks';
 
 interface ArenaNavbarProps {
   currentTab: MainNavTab;
@@ -53,23 +54,39 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
       <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
         {/* Brand & Top-level Navigation Pills */}
         <div className="flex items-center gap-6">
-          {/* DieToRemoval Brand */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 via-amber-600 to-rose-700 flex items-center justify-center shadow-lg shadow-rose-500/25 border border-rose-300/40">
+          {/* DieToRemoval Brand (Clickable to Home) */}
+          <button
+            type="button"
+            onClick={() => onSelectTab('home')}
+            title="Go to Home"
+            className="flex items-center gap-2.5 group cursor-pointer text-left transition hover:opacity-95 focus:outline-none"
+          >
+            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 via-amber-600 to-rose-700 flex items-center justify-center shadow-lg shadow-rose-500/25 border border-rose-300/40 group-hover:scale-105 transition-transform">
               <Crown className="w-4 h-4 text-slate-950 font-bold" />
             </div>
             <div>
-              <span className="font-fantasy font-black text-sm tracking-wider text-white uppercase">
+              <span className="font-fantasy font-black text-sm tracking-wider text-white uppercase group-hover:text-amber-200 transition-colors">
                 DIE<span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 via-amber-300 to-orange-400">TO</span>REMOVAL
               </span>
               <span className="ml-1.5 px-1.5 py-0.2 rounded text-[9px] font-extrabold uppercase bg-rose-950/80 text-rose-300 border border-rose-500/40">
                 .GG
               </span>
             </div>
-          </div>
+          </button>
 
-          {/* Primary View Pills: Deck Builder vs Card Library vs My Collection vs My Decks */}
+          {/* Primary View Pills: Home vs Deck Builder vs Card Library vs My Collection vs My Decks */}
           <div className="flex items-center bg-[#0d1017]/90 p-1 rounded-xl border border-white/5 gap-1">
+            <button
+              onClick={() => onSelectTab('home')}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                currentTab === 'home'
+                  ? 'bg-gradient-to-r from-rose-500/20 via-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                  : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
+              }`}
+            >
+              <Home className="w-3.5 h-3.5 text-rose-400" />
+              <span>Home</span>
+            </button>
             <button
               onClick={() => onSelectTab('deck_builder')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
