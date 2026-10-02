@@ -5,6 +5,8 @@ import { searchArenaCards, buildSmartSearchQuery } from '../services/scryfallSer
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
+import { OwnershipPips } from './OwnershipPips';
+import { getCardOwnedCount } from '../services/ownershipService';
 import { 
   Search, 
   Loader2, 
@@ -28,6 +30,7 @@ interface CardLibraryViewProps {
   onSelectCardDetail: (card: Card) => void;
   onAddCardToDeck: (card: Card) => void;
   userCollection?: UserCollection;
+  onUpdateCollection?: (col: UserCollection) => void;
   initialFormat?: FormatType;
 }
 
@@ -111,6 +114,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
   onSelectCardDetail,
   onAddCardToDeck,
   userCollection = {},
+  onUpdateCollection,
   initialFormat = 'brawl'
 }) => {
   // --- Filter State ---
@@ -463,7 +467,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     if (ownershipFilter === 'all') return cards;
 
     return cards.filter(card => {
-      const count = userCollection[card.arenaId] || 0;
+      const count = getCardOwnedCount(card, userCollection);
       if (ownershipFilter === 'owned') return count > 0;
       if (ownershipFilter === 'playsets') return count >= 4;
       if (ownershipFilter === 'incomplete') return count > 0 && count < 4;
@@ -685,13 +689,17 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
             </span>
           )}
 
-          {/* Collection Ownership Pip Badge */}
-          {ownedCount > 0 && (
-            <div className="absolute bottom-1.5 left-1.5 bg-black/85 backdrop-blur-md text-emerald-300 text-[10px] font-bold px-1.5 py-0.5 rounded border border-emerald-500/40 shadow flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3 text-emerald-400" />
-              <span>{ownedCount >= 4 ? '4x (Playset)' : `${ownedCount}x`}</span>
-            </div>
-          )}
+          {/* Interactive Ownership Pips Overlay */}
+          <div className="absolute bottom-1.5 inset-x-1.5 flex justify-center z-10">
+            <OwnershipPips
+              card={card}
+              userCollection={userCollection}
+              interactive={true}
+              size="sm"
+              showBadge={true}
+              onCountChange={(_, updated) => onUpdateCollection?.(updated)}
+            />
+          </div>
         </div>
 
         {/* Card Meta & Action Footer */}

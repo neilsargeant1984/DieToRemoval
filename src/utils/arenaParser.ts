@@ -3,6 +3,7 @@ import { Deck, DeckCard } from '../types/deck';
 import { UserCollection, WildcardInventory } from '../types/collection';
 import { ARENA_CARDS } from '../data/arenaCards';
 import { fetchCardsBatch, fetchCardByArenaId, fetchCardByNameOrSet, getCachedCardByArenaId } from '../services/scryfallService';
+import { lookupArenaId } from '../services/ownershipService';
 
 /**
  * Formats a deck into strict MTG Arena text format for 1-click clipboard export.
@@ -290,10 +291,37 @@ export async function parseArenaFormatAsync(
   };
 }
 
+function createCardFromMtgaMeta(arenaId: number, name: string, set: string, collectorNumber: string): Card {
+  const cleanSet = (set || 'MTGA').toLowerCase();
+  const cleanNum = collectorNumber || '1';
+  return {
+    id: `${cleanSet}-${cleanNum}-${arenaId}`,
+    arenaId,
+    name,
+    manaCost: '',
+    cmc: 0,
+    colors: [],
+    colorIdentity: [],
+    typeLine: 'Card',
+    types: ['Creature'],
+    rarity: 'rare',
+    set: set.toUpperCase(),
+    setName: set.toUpperCase(),
+    collectorNumber: cleanNum,
+    imageUrl: `https://api.scryfall.com/cards/${cleanSet}/${cleanNum}?format=image`,
+    oracleText: '',
+    legalities: { standard: true, timeless: true, historic: true, explorer: true, brawl: true, alchemy: true }
+  };
+}
+
 /**
  * Creates a basic fallback Card for cards not returned by API (e.g. custom Arena art IDs)
  */
 function createFallbackCard(arenaId: number, name: string = `Arena Card #${arenaId}`): Card {
+  const meta = lookupArenaId(arenaId);
+  if (meta) {
+    return createCardFromMtgaMeta(arenaId, meta.name, meta.set, meta.collectorNumber);
+  }
   return {
     id: `arena-card-${arenaId}`,
     arenaId,
@@ -637,11 +665,16 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
   // Batch resolve Arena card IDs (prioritize commanders and deck tiles for instant UI rendering)
   const resolvedCards = new Map<number, Card>();
 
-  // 1. Check local bundled cards and persistent localStorage cache first (0ms)
+  // 1. Check local bundled cards, persistent cache, and official MTGA database (0ms)
   for (const cid of allCardIds) {
     const cached = getCachedCardByArenaId(cid);
     if (cached) {
       resolvedCards.set(cid, cached);
+    } else {
+      const meta = lookupArenaId(cid);
+      if (meta) {
+        resolvedCards.set(cid, createCardFromMtgaMeta(cid, meta.name, meta.set, meta.collectorNumber));
+      }
     }
   }
 

@@ -1,15 +1,21 @@
 import React, { useState } from 'react';
 import { Deck, DeckCard } from '../types/deck';
 import { Card, CardRarity } from '../types/card';
-import { UserCollection } from '../types/collection';
+import { UserCollection, WildcardInventory } from '../types/collection';
 import { Plus, Minus, Trash2, ArrowRightLeft, Sparkles, BookOpen, AlertTriangle } from 'lucide-react';
 import { getMaxCardCopies } from '../utils/cardRules';
 import { ManaCost } from './ManaCost';
 import { CardImage } from './CardImage';
+import { OwnershipPips } from './OwnershipPips';
+import { DeckCraftingCostWidget } from './DeckCraftingCostWidget';
+import { getCardOwnedCount } from '../services/ownershipService';
 
 interface DeckListWorkspaceProps {
   deck: Deck;
   userCollection: UserCollection;
+  wildcardInventory?: WildcardInventory;
+  onOpenWildcardModal?: () => void;
+  onUpdateCollection?: (col: UserCollection) => void;
   onUpdateDeck: (updated: Deck) => void;
   onSelectCardDetail: (card: Card) => void;
 }
@@ -17,6 +23,9 @@ interface DeckListWorkspaceProps {
 export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
   deck,
   userCollection,
+  wildcardInventory,
+  onOpenWildcardModal,
+  onUpdateCollection,
   onUpdateDeck,
   onSelectCardDetail
 }) => {
@@ -117,8 +126,8 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
 
   const renderCardRow = (item: DeckCard, isSideboard: boolean) => {
     const { card, quantity } = item;
-    const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest'].includes(card.name);
-    const owned = isBasic ? 4 : (userCollection[card.arenaId] || 0);
+    const isBasic = ['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes'].includes(card.name);
+    const owned = isBasic ? 4 : getCardOwnedCount(card, userCollection);
     const needsWildcards = !isBasic && owned < quantity;
 
     return (
@@ -176,11 +185,18 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
         </div>
 
         {/* Owned Status & Mana Cost & Actions */}
-        <div className="flex items-center gap-3 flex-shrink-0">
+        <div className="flex items-center gap-2.5 flex-shrink-0">
+          <OwnershipPips
+            card={card}
+            userCollection={userCollection}
+            size="sm"
+            onCountChange={(_, updated) => onUpdateCollection?.(updated)}
+          />
+
           {/* Wildcard deficiency badge */}
           {!isBasic && (
             <span
-              className={`text-[11px] px-1.5 py-0.5 rounded-lg font-mono ${
+              className={`text-[10px] px-1.5 py-0.5 rounded-lg font-mono ${
                 owned >= quantity
                   ? 'bg-emerald-950/60 text-emerald-300 border border-emerald-500/40 font-medium'
                   : 'bg-amber-950/60 text-amber-300 border border-amber-500/50 font-bold'
@@ -243,6 +259,18 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
           </span>
         </div>
       </div>
+
+      {/* Live Deck Crafting Cost Breakdown */}
+      {wildcardInventory && (
+        <div className="mt-3">
+          <DeckCraftingCostWidget
+            deck={deck}
+            userCollection={userCollection}
+            wildcardInventory={wildcardInventory}
+            onOpenWildcardModal={onOpenWildcardModal || (() => {})}
+          />
+        </div>
+      )}
 
       {mainCount < 60 && (
         <div className="mt-2 bg-amber-950/40 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 shadow-sm font-medium">

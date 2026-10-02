@@ -5,6 +5,7 @@ import { Card } from '../types/card';
 import { UserCollection, DeckWildcardCost } from '../types/collection';
 import { ManaCost } from './ManaCost';
 import { CardImage } from './CardImage';
+import { OwnershipPips } from './OwnershipPips';
 import { 
   X, 
   Trash2, 
@@ -396,6 +397,13 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
                       </div>
 
                       <div className="flex items-center gap-2 flex-shrink-0">
+                        {!isBasic && (
+                          <OwnershipPips
+                            card={card}
+                            userCollection={userCollection}
+                            size="sm"
+                          />
+                        )}
                         {card.manaCost && (
                           <ManaCost manaCost={card.manaCost} size="sm" />
                         )}

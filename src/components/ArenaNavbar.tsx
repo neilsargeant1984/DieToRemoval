@@ -110,17 +110,6 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
               <span>Card Library</span>
             </button>
             <button
-              onClick={() => onSelectTab('my_collection')}
-              className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                currentTab === 'my_collection'
-                  ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                  : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
-              }`}
-            >
-              <ShieldCheck className="w-3.5 h-3.5 text-amber-400" />
-              <span>My Collection</span>
-            </button>
-            <button
               onClick={() => onSelectTab('my_decks')}
               className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
                 currentTab === 'my_decks'
@@ -168,13 +157,14 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
             </div>
           </button>
 
-          {/* Sync Collection */}
+          {/* Wildcard Vault Manager CTA */}
           <button
-            onClick={onOpenSync}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#141926] hover:bg-[#1c2335] text-stone-300 hover:text-white text-xs font-bold rounded-xl border border-white/10 shadow-sm transition"
+            onClick={onOpenWildcards}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-[#1c2335] text-amber-300 hover:text-amber-200 text-xs font-bold rounded-xl border border-amber-500/30 shadow-sm transition"
+            title="Set your in-game wildcards for deck crafting calculations"
           >
-            <UploadCloud className="w-3.5 h-3.5 text-sky-400" />
-            <span className="hidden sm:inline">Sync Collection</span>
+            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+            <span>Wildcard Vault</span>
           </button>
 
           {/* Export to Arena */}

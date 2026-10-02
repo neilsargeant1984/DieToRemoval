@@ -43,7 +43,7 @@ export const ARENA_CARDS: Card[] = [
   },
   {
     id: "liliana-the-repentant",
-    arenaId: 106452,
+    arenaId: 106476,
     name: "Liliana the Repentant",
     manaCost: "{1}{B}{B}",
     cmc: 3,

@@ -3,6 +3,8 @@ import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { searchArenaCards, buildSmartSearchQuery } from '../services/scryfallService';
 import { Search, Plus, Sparkles, BookOpen, X, ShieldAlert, Loader2, Globe } from 'lucide-react';
 import { ManaCost } from './ManaCost';
+import { OwnershipPips } from './OwnershipPips';
+import { UserCollection } from '../types/collection';
 
 import { FunctionalRole } from '../utils/roleClassifier';
 
@@ -13,6 +15,8 @@ interface CardSearchPanelProps {
   onClearRoleFilter?: () => void;
   onAddCard: (card: Card, toSideboard?: boolean) => void;
   onSelectCardDetail: (card: Card) => void;
+  userCollection?: UserCollection;
+  onUpdateCollection?: (col: UserCollection) => void;
 }
 
 export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
@@ -21,7 +25,9 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
   activeRoleFilter,
   onClearRoleFilter,
   onAddCard,
-  onSelectCardDetail
+  onSelectCardDetail,
+  userCollection = {},
+  onUpdateCollection
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFormat, setSelectedFormat] = useState<FormatType>(currentFormat);
@@ -387,8 +393,15 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
                   </div>
                 </div>
 
-                {/* Right: Mana Cost & Quick Add Buttons */}
+                {/* Right: Ownership Pips, Mana Cost & Quick Add Buttons */}
                 <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                  <OwnershipPips
+                    card={card}
+                    userCollection={userCollection}
+                    size="sm"
+                    showBadge={true}
+                    onCountChange={(_, updated) => onUpdateCollection?.(updated)}
+                  />
                   {card.manaCost && (
                     <span className="text-xs font-mono bg-[#0e121a] px-2 py-0.5 rounded-lg text-amber-400 font-bold border border-[#c5a059]/30 shadow-inner">
                       {card.manaCost}

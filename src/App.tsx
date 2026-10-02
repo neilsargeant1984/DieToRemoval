@@ -12,7 +12,6 @@ import { DeckListWorkspace } from './components/DeckListWorkspace';
 import { CardDetailModal } from './components/CardDetailModal';
 import { AnalyticsModal } from './components/AnalyticsModal';
 import { GoldfishModal } from './components/GoldfishModal';
-import { CollectionSyncModal } from './components/CollectionSyncModal';
 import { MetaDecksModal } from './components/MetaDecksModal';
 import { ExportImportModal } from './components/ExportImportModal';
 import { CommanderPickerModal } from './components/CommanderPickerModal';
@@ -20,7 +19,6 @@ import { MyDecksView } from './components/MyDecksView';
 import { SaveDeckConflictModal } from './components/SaveDeckConflictModal';
 import { SaveBeforeCommanderChangeModal } from './components/SaveBeforeCommanderChangeModal';
 import { ImportDeckModal } from './components/ImportDeckModal';
-import { MyCollectionView } from './components/MyCollectionView';
 import { HomeView } from './components/HomeView';
 import { ManaBaseModal } from './components/ManaBaseModal';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
@@ -149,7 +147,6 @@ export const App: React.FC = () => {
   // Modals
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [isGoldfishOpen, setIsGoldfishOpen] = useState(false);
-  const [isSyncOpen, setIsSyncOpen] = useState(false);
   const [isMetaOpen, setIsMetaOpen] = useState(false);
   const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
   const [isImportDeckModalOpen, setIsImportDeckModalOpen] = useState(false);
@@ -800,7 +797,7 @@ export const App: React.FC = () => {
         currentFormat={activeDeck.format}
         onSelectFormat={handleChangeFormat}
         inventory={wildcardInventory}
-        onOpenSync={() => setIsSyncOpen(true)}
+        onOpenSync={() => setIsWildcardModalOpen(true)}
         onOpenExport={() => setExportImportMode('export')}
         hasCommander={!!activeDeck.commander}
         deckCount={savedDecks.length}
@@ -830,17 +827,8 @@ export const App: React.FC = () => {
             onDuplicateDeck={handleDuplicateDeck}
             onRenameDeck={handleRenameDeck}
             onOpenImportModal={() => setIsImportDeckModalOpen(true)}
-            onOpenSync={() => setIsSyncOpen(true)}
+            onOpenSync={() => setIsWildcardModalOpen(true)}
             userCollection={userCollection}
-          />
-        ) : navTab === 'my_collection' ? (
-          /* Full Screen My Collection View */
-          <MyCollectionView
-            userCollection={userCollection}
-            wildcardInventory={wildcardInventory}
-            onSelectCardDetail={setSelectedCardDetail}
-            onAddCardToDeck={card => handleAddCard(card, false)}
-            onOpenSync={() => setIsSyncOpen(true)}
           />
         ) : navTab === 'card_library' ? (
           /* Full Screen Card Library View */
@@ -848,6 +836,7 @@ export const App: React.FC = () => {
             onSelectCardDetail={setSelectedCardDetail}
             onAddCardToDeck={card => handleAddCard(card, false)}
             userCollection={userCollection}
+            onUpdateCollection={setUserCollection}
             initialFormat={activeDeck.format}
           />
         ) : activeDeck.format === 'brawl' ? (
@@ -913,7 +902,7 @@ export const App: React.FC = () => {
                     onSelectCardDetail={setSelectedCardDetail}
                     onOpenExport={() => setExportImportMode('export')}
                     onOpenImport={() => setIsImportDeckModalOpen(true)}
-                    onOpenSync={() => setIsSyncOpen(true)}
+                    onOpenSync={() => setIsWildcardModalOpen(true)}
                     wildcardCost={wildcardCost}
                     userCollection={userCollection}
                     onAddCard={card => handleAddCard(card, false)}
@@ -930,12 +919,17 @@ export const App: React.FC = () => {
                 currentFormat={activeDeck.format}
                 onAddCard={handleAddCard}
                 onSelectCardDetail={setSelectedCardDetail}
+                userCollection={userCollection}
+                onUpdateCollection={setUserCollection}
               />
             </div>
             <div className="lg:col-span-7 h-[calc(100vh-180px)] sticky top-20">
               <DeckListWorkspace
                 deck={activeDeck}
                 userCollection={userCollection}
+                wildcardInventory={wildcardInventory}
+                onOpenWildcardModal={() => setIsWildcardModalOpen(true)}
+                onUpdateCollection={setUserCollection}
                 onUpdateDeck={handleUpdateDeck}
                 onSelectCardDetail={setSelectedCardDetail}
               />
@@ -955,7 +949,7 @@ export const App: React.FC = () => {
           onSelectCardDetail={setSelectedCardDetail}
           onOpenExport={() => setExportImportMode('export')}
           onOpenImport={() => setIsImportDeckModalOpen(true)}
-          onOpenSync={() => setIsSyncOpen(true)}
+          onOpenSync={() => setIsWildcardModalOpen(true)}
           wildcardCost={wildcardCost}
           userCollection={userCollection}
           onAddCard={card => handleAddCard(card, false)}
@@ -1007,6 +1001,8 @@ export const App: React.FC = () => {
         onClose={() => setSelectedCardDetail(null)}
         onAddCard={handleAddCard}
         commander={activeDeck.commander?.card}
+        userCollection={userCollection}
+        onUpdateCollection={setUserCollection}
       />
 
       <AnalyticsModal
@@ -1020,16 +1016,6 @@ export const App: React.FC = () => {
         isOpen={isGoldfishOpen}
         onClose={() => setIsGoldfishOpen(false)}
         onSelectCardDetail={setSelectedCardDetail}
-      />
-
-      <CollectionSyncModal
-        isOpen={isSyncOpen}
-        onClose={() => setIsSyncOpen(false)}
-        onSyncCollection={setUserCollection}
-        onSyncDecks={handleSyncDecks}
-        onSyncWildcards={handleSyncWildcards}
-        currentWildcards={wildcardInventory}
-        currentCollectionCount={Object.keys(userCollection).length}
       />
 
       {/* Wildcard Stash Manager Modal */}
