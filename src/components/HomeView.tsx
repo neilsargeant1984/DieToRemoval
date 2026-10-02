@@ -777,79 +777,86 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 return (
                   <div
                     key={set.code}
-                    className="group/set relative rounded-2xl overflow-hidden border border-white/10 hover:border-amber-500/50 transition-all duration-300 shadow-lg hover:shadow-amber-500/10 backdrop-blur-md"
+                    className="group/set relative rounded-3xl overflow-hidden border border-white/10 hover:border-amber-400/60 transition-all duration-500 shadow-xl hover:shadow-2xl hover:shadow-amber-500/15 backdrop-blur-xl bg-[#0d1018]"
                   >
-                    {/* Panoramic Banner Header */}
+                    {/* Big Panoramic Banner Header (Collapsible) */}
                     <div
                       onClick={() => handleTogglePreviousSet(set.code)}
-                      className="relative min-h-[82px] sm:min-h-[92px] px-5 py-4 flex items-center justify-between gap-4 cursor-pointer select-none overflow-hidden"
+                      className="relative min-h-[140px] md:min-h-[160px] px-6 py-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-5 cursor-pointer select-none overflow-hidden transition-all duration-300"
                     >
-                      {/* Background Official MTG Art Crop */}
+                      {/* Background Official MTG Art Crop with Smooth Zoom & Vibrant Exposure */}
                       <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                         <img
                           src={bannerArt}
                           alt={set.name}
-                          className="w-full h-full object-cover object-center brightness-45 contrast-110 group-hover/set:scale-105 group-hover/set:brightness-60 transition-all duration-500 ease-out"
+                          className="w-full h-full object-cover object-right md:object-center brightness-75 contrast-110 group-hover/set:scale-105 group-hover/set:brightness-90 transition-all duration-700 ease-out"
                         />
-                        {/* Deep Vignette & Gradient */}
-                        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0d14]/95 via-[#0a0d14]/80 to-[#0a0d14]/30" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d14] via-transparent to-transparent opacity-60" />
+                        {/* Directional Vignette: Deep fade on the left for text contrast, transparent on the right to showcase art */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#090c13] via-[#090c13]/85 to-[#090c13]/25 md:to-transparent" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#090c13] via-transparent to-transparent opacity-80" />
+                        <div className="absolute inset-0 ring-1 ring-inset ring-white/10 group-hover/set:ring-amber-400/30 transition" />
                       </div>
 
-                      {/* Content Row */}
-                      <div className="relative z-10 flex items-center gap-4 min-w-0">
-                        {/* Vector Set Symbol Box */}
-                        <div className="w-12 h-12 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 flex flex-col items-center justify-center flex-shrink-0 group-hover/set:border-amber-400/60 transition shadow">
+                      {/* Left: Set Symbol & Details on top of artwork */}
+                      <div className="relative z-10 flex items-center gap-5 min-w-0">
+                        {/* Large Vector Set Symbol Badge */}
+                        <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-black/75 backdrop-blur-md border border-amber-400/40 shadow-2xl flex flex-col items-center justify-center flex-shrink-0 group-hover/set:scale-105 group-hover/set:border-amber-300 transition-all duration-300">
                           <img
                             src={getSetIconSvgUri(set.code)}
                             alt={set.code}
                             onError={(e) => {
                               (e.currentTarget as HTMLElement).style.display = 'none';
                             }}
-                            className="w-6 h-6 object-contain invert opacity-90 drop-shadow group-hover/set:scale-110 transition-transform"
+                            className="w-9 h-9 md:w-11 md:h-11 object-contain invert drop-shadow-[0_0_10px_rgba(251,191,36,0.6)] group-hover/set:scale-110 transition-transform"
                           />
-                          <span className="text-[9px] font-mono font-black text-amber-300 uppercase leading-none mt-0.5">
+                          <span className="text-[10px] font-mono font-black text-amber-300 uppercase tracking-widest mt-0.5">
                             {set.code}
                           </span>
                         </div>
 
-                        <div className="min-w-0">
+                        {/* Title & Metadata */}
+                        <div className="min-w-0 space-y-1.5">
                           <div className="flex items-center gap-2.5 flex-wrap">
-                            <h4 className="text-base sm:text-lg font-fantasy font-black text-stone-100 group-hover/set:text-amber-300 transition-colors m-0 truncate">
-                              {set.name}
-                            </h4>
-                            <span className="px-2 py-0.2 rounded text-[10px] font-bold uppercase bg-black/50 text-stone-300 border border-white/10 backdrop-blur-sm">
+                            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/60 text-amber-300 border border-amber-500/30 backdrop-blur-sm">
                               {set.category}
                             </span>
+                            <span className="text-xs text-stone-300 font-medium flex items-center gap-1 drop-shadow">
+                              <Calendar className="w-3.5 h-3.5 text-amber-400" />
+                              Released: {set.releaseDate || `${set.releaseYear}`}
+                            </span>
                           </div>
-                          <p className="text-xs text-stone-400 mt-0.5 flex items-center gap-3">
-                            <span>Released: {set.releaseDate || `${set.releaseYear}`}</span>
-                            {setRawCards.length > 0 && (
-                              <>
-                                <span>•</span>
-                                <span className="text-amber-300 font-semibold">
-                                  {activeFiltersCount > 0
-                                    ? `${matchingCards.length} matches (${setRawCards.length} total)`
-                                    : `${setRawCards.length} cards`}
-                                </span>
-                              </>
+
+                          <h3 className="text-xl md:text-2xl lg:text-3xl font-fantasy font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-100 to-amber-300 drop-shadow-md group-hover/set:from-amber-200 group-hover/set:to-yellow-300 transition-all m-0 truncate">
+                            {set.name}
+                          </h3>
+
+                          <p className="text-xs md:text-sm text-stone-300 font-medium drop-shadow flex items-center gap-2">
+                            {setRawCards.length > 0 ? (
+                              <span className="text-amber-300 font-bold">
+                                {activeFiltersCount > 0
+                                  ? `Showing ${matchingCards.length} matching cards (${setRawCards.length} total)`
+                                  : `${setRawCards.length} Total Cards in Set`}
+                              </span>
+                            ) : (
+                              <span className="text-stone-400">Click to expand & browse official Arena cards</span>
                             )}
                           </p>
                         </div>
                       </div>
 
-                      {/* Right Indicator / Expand Button */}
-                      <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
-                        <span className="text-xs text-amber-300 font-bold hidden sm:inline group-hover/set:underline">
-                          {isExpanded ? 'Hide Cards' : 'Browse Cards'}
-                        </span>
-                        <div className="w-9 h-9 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 flex items-center justify-center text-stone-300 group-hover/set:border-amber-400 group-hover/set:text-amber-300 transition shadow">
+                      {/* Right Action Button */}
+                      <div className="relative z-10 flex items-center gap-3 flex-shrink-0 self-end md:self-auto">
+                        <button
+                          type="button"
+                          className="px-4 py-2 rounded-xl bg-black/70 backdrop-blur-md border border-amber-400/40 text-amber-300 group-hover/set:border-amber-300 group-hover/set:bg-black/90 font-bold text-xs flex items-center gap-2 shadow-lg transition"
+                        >
+                          <span>{isExpanded ? 'Collapse Set' : 'Browse Set'}</span>
                           {isExpanded ? (
-                            <ChevronUp className="w-5 h-5" />
+                            <ChevronUp className="w-4 h-4 text-amber-400" />
                           ) : (
-                            <ChevronDown className="w-5 h-5" />
+                            <ChevronDown className="w-4 h-4" />
                           )}
-                        </div>
+                        </button>
                       </div>
                     </div>
 

@@ -18,9 +18,11 @@ import {
   Mountain, 
   ChevronRight, 
   Save,
-  Sparkles 
+  Sparkles,
+  RefreshCw
 } from 'lucide-react';
 import { FormattedOracleText } from './FormattedOracleText';
+import { CardImage } from './CardImage';
 
 export type BrawlSubMode = 'brawl_historic' | 'competitive_brawl' | 'standard_brawl';
 
@@ -132,24 +134,39 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
     }
   ];
 
-  const [imgSrc, setImgSrc] = React.useState<string | undefined>(commander?.imageUrl);
-  const [hasFailed, setHasFailed] = React.useState<boolean>(false);
+  const [isFlipped, setIsFlipped] = React.useState<boolean>(false);
 
   React.useEffect(() => {
-    setImgSrc(commander?.imageUrl);
-    setHasFailed(false);
-  }, [commander?.id, commander?.imageUrl]);
+    setIsFlipped(false);
+  }, [commander?.id]);
 
-  const handleImageError = () => {
-    if (commander) {
-      const fallbackUrl = `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(commander.name.replace(/^A-/, ''))}&format=image`;
-      if (imgSrc !== fallbackUrl) {
-        setImgSrc(fallbackUrl);
-        return;
-      }
-    }
-    setHasFailed(true);
-  };
+  const hasMultipleFaces = Boolean(
+    (commander?.cardFaces && commander.cardFaces.length > 1) ||
+    commander?.name.includes(' // ')
+  );
+
+  const activeFace = hasMultipleFaces && commander?.cardFaces
+    ? commander.cardFaces[isFlipped ? 1 : 0]
+    : undefined;
+
+  const activeName = activeFace?.name || (
+    hasMultipleFaces && commander
+      ? (isFlipped ? commander.name.split(' // ')[1] : commander.name.split(' // ')[0])
+      : (commander?.name || '')
+  );
+
+  const activeTypeLine = activeFace?.typeLine || (commander?.typeLine || '');
+  const activeManaCost = activeFace?.manaCost || (commander?.manaCost || '');
+  const activeOracleText = activeFace?.oracleText || (commander?.oracleText || '');
+  const activePower = activeFace?.power !== undefined ? activeFace.power : commander?.power;
+  const activeToughness = activeFace?.toughness !== undefined ? activeFace.toughness : commander?.toughness;
+  const activeLoyalty = activeFace?.loyalty !== undefined ? activeFace.loyalty : commander?.loyalty;
+
+  const frontImg = commander?.cardFaces?.[0]?.imageUrl || commander?.imageUrl;
+  const backImg = commander?.cardFaces?.[1]?.imageUrl || (
+    commander ? `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(commander.name)}&format=image&face=back` : undefined
+  );
+  const currentActiveImg = isFlipped ? (backImg || frontImg) : frontImg;
 
   return (
     <div className="relative arena-panel rounded-3xl p-6 md:p-8 transition-colors shadow-2xl">
@@ -158,83 +175,105 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
         <div className="absolute -top-20 -left-12 w-96 h-96 spark-aura rounded-full" />
       </div>
 
-      <div className="relative z-10 flex flex-col md:flex-row items-center md:items-start gap-8">
-        {/* Commander Presentation (Big, Proud, In-Game Card Art) */}
+      <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-8">
+        {/* Commander Presentation (Large, Celebratory, Hero Card Art) */}
         <div className="flex-shrink-0 flex flex-col items-center relative">
           {/* Subtle Decorative Aura Rings */}
           <div className="absolute -inset-3 rounded-3xl border border-amber-400/20 pointer-events-none" />
           <div className="absolute -inset-1.5 rounded-2xl border border-amber-300/30 pointer-events-none" />
 
           {commander ? (
-            <div
-              className="relative group cursor-pointer z-20 hover:z-50 transition-transform duration-300 ease-out transform hover:scale-[1.65] origin-top md:origin-top-left"
-              onClick={onOpenCommanderPicker}
-              title={`${commander.name} - Click to change commander`}
-            >
-              {/* Golden Legendary Crown Frame */}
-              <div className="w-48 sm:w-56 aspect-[5/7] rounded-2xl overflow-hidden altar-pedestal bg-black p-0.5 transition duration-300 shadow-2xl group-hover:shadow-[0_25px_60px_-15px_rgba(0,0,0,0.95),0_0_35px_rgba(245,158,11,0.5)] group-hover:ring-2 group-hover:ring-amber-400 flex items-center justify-center relative">
-                {!hasFailed && (imgSrc || commander.imageUrl) ? (
-                  <img
-                    src={imgSrc || commander.imageUrl}
-                    alt={commander.name}
-                    onError={handleImageError}
+            <div className="flex flex-col items-center w-full">
+              {/* Hero Card Pedestal with 3D Flip */}
+              <div
+                className="relative group z-20 w-64 sm:w-72 lg:w-80 aspect-[5/7] rounded-2xl overflow-hidden altar-pedestal bg-black p-1 transition-all duration-300 shadow-2xl ring-1 ring-amber-400/40 hover:ring-amber-400/80 hover:shadow-[0_20px_50px_rgba(245,158,11,0.25)] flex items-center justify-center"
+                style={{ perspective: '1000px' }}
+              >
+                <div
+                  className="w-full h-full transition-transform duration-500 [transform-style:preserve-3d]"
+                  style={{ transform: isFlipped ? 'rotateY(180deg)' : 'none' }}
+                >
+                  <CardImage
+                    src={currentActiveImg}
+                    cardName={activeName}
+                    alt={activeName}
                     className="w-full h-full object-cover rounded-[14px]"
                   />
-                ) : (
-                  <div className="w-full h-full rounded-[14px] bg-[#121620] border border-amber-500/30 p-4 flex flex-col justify-between text-center select-none">
-                    <div className="space-y-1 mt-2">
-                      <div className="w-10 h-10 mx-auto rounded-full bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
-                        <Crown className="w-5 h-5" />
-                      </div>
-                      <div className="font-fantasy font-bold text-amber-200 text-sm leading-tight pt-1">
-                        {commander.name}
-                      </div>
-                      <div className="text-[10px] text-stone-400">
-                        {commander.typeLine}
-                      </div>
-                    </div>
-                    {commander.oracleText && (
-                      <div className="text-[10px] text-stone-300 bg-black/40 p-2.5 rounded-lg border border-white/5 line-clamp-5 text-left leading-relaxed">
-                        {commander.oracleText}
-                      </div>
-                    )}
-                    <div className="flex items-center justify-between text-[11px] pt-1">
-                      <span className="text-stone-400 font-mono">{commander.manaCost}</span>
-                      {commander.power !== undefined && commander.toughness !== undefined && (
-                        <span className="bg-amber-950/80 border border-amber-600/40 text-amber-300 font-mono font-bold px-2 py-0.5 rounded">
-                          {commander.power}/{commander.toughness}
-                        </span>
-                      )}
-                    </div>
-                  </div>
+                </div>
+
+                {/* Floating Arcane Wax Ribbon Badge */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-400 text-slate-950 font-black text-[10px] tracking-wider px-3.5 py-0.5 rounded-full shadow-lg border border-yellow-200 uppercase flex items-center gap-1.5 whitespace-nowrap pointer-events-none z-30">
+                  <Crown className="w-3 h-3 text-slate-950" />
+                  <span>Commander</span>
+                </div>
+
+                {/* Card Corner Flip Button Overlay */}
+                {hasMultipleFaces && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setIsFlipped(prev => !prev);
+                    }}
+                    className="absolute top-2.5 right-2.5 bg-slate-950/85 hover:bg-amber-500 hover:text-slate-950 text-amber-300 border border-amber-400/60 p-2 rounded-xl backdrop-blur-md shadow-xl transition flex items-center gap-1.5 text-[11px] font-bold z-30 group-hover:scale-105"
+                    title={isFlipped ? 'Show Front Face' : 'Transform / Flip Card'}
+                  >
+                    <RefreshCw className="w-3.5 h-3.5 animate-spin-slow" />
+                    <span>{isFlipped ? 'Front' : 'Flip'}</span>
+                  </button>
                 )}
               </div>
 
-              {/* Floating Arcane Wax Ribbon Badge */}
-              <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-600 via-orange-500 to-amber-400 text-slate-950 font-black text-[10px] tracking-wider px-3.5 py-0.5 rounded-full shadow-lg border border-yellow-200 uppercase flex items-center gap-1.5 whitespace-nowrap pointer-events-none z-30">
-                <Crown className="w-3 h-3 text-slate-950" />
-                <span>Commander</span>
-              </div>
-
-              {/* Subtle hover action badge at bottom edge that does not cover the card artwork or text */}
-              <div className="absolute -bottom-3 left-1/2 -translate-x-1/2 bg-slate-950/95 backdrop-blur-md border border-amber-400/60 text-amber-300 text-[9px] font-extrabold px-2.5 py-0.5 rounded-full shadow-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-30">
-                Click to Change Commander
+              {/* Dedicated Commander Actions Dock */}
+              <div className="w-full max-w-[20rem] flex flex-col gap-2 mt-3.5">
+                {hasMultipleFaces && (
+                  <button
+                    type="button"
+                    onClick={() => setIsFlipped(prev => !prev)}
+                    className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/50 text-xs font-bold transition flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                    <span>{isFlipped ? 'Show Front Face' : 'Transform / Flip Card'}</span>
+                  </button>
+                )}
+                <div className="flex gap-2">
+                  {onSelectCardDetail && (
+                    <button
+                      type="button"
+                      onClick={() => onSelectCardDetail(commander)}
+                      className="flex-1 py-1.5 px-3 rounded-xl bg-[#141926] hover:bg-[#1c2335] text-stone-200 border border-white/10 hover:border-amber-400/40 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                      title="Inspect full card details & artwork in high resolution"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Inspect</span>
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={onOpenCommanderPicker}
+                    className="flex-1 py-1.5 px-3 rounded-xl bg-[#141926] hover:bg-[#1c2335] text-amber-300 border border-amber-500/30 hover:border-amber-400 text-xs font-bold transition flex items-center justify-center gap-1.5"
+                    title="Choose a different commander"
+                  >
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Change</span>
+                  </button>
+                </div>
               </div>
             </div>
           ) : (
             /* Empty Commander Altar / Pedestal */
             <div
               onClick={onOpenCommanderPicker}
-              className="w-48 sm:w-56 h-64 sm:h-76 rounded-2xl border-2 border-dashed border-[#c5a059]/40 hover:border-amber-400 bg-[#0d1017]/80 hover:bg-[#141926] transition flex flex-col items-center justify-center p-4 text-center cursor-pointer shadow-xl group"
+              className="w-64 sm:w-72 lg:w-80 h-80 sm:h-96 rounded-2xl border-2 border-dashed border-[#c5a059]/40 hover:border-amber-400 bg-[#0d1017]/80 hover:bg-[#141926] transition flex flex-col items-center justify-center p-6 text-center cursor-pointer shadow-xl group"
             >
-              <div className="w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 group-hover:bg-amber-500/20 transition mb-3 shadow-lg">
-                <Crown className="w-7 h-7" />
+              <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 group-hover:bg-amber-500/20 transition mb-3 shadow-lg">
+                <Crown className="w-8 h-8" />
               </div>
-              <h3 className="text-sm font-fantasy font-bold text-white group-hover:text-amber-300 transition">
+              <h3 className="text-base font-fantasy font-bold text-white group-hover:text-amber-300 transition">
                 Assign Your Commander
               </h3>
-              <p className="text-[11px] text-stone-400 mt-1">
-                Pick any legendary creature or planeswalker on MTG Arena
+              <p className="text-xs text-stone-400 mt-1 max-w-xs">
+                Pick any legendary creature or planeswalker on MTG Arena to lead your deck
               </p>
             </div>
           )}
@@ -293,20 +332,20 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <div className="min-w-0">
                   <h2 className="font-fantasy font-black text-2xl text-white flex items-center gap-2.5 flex-wrap">
-                    <span className="truncate">{commander.name}</span>
-                    <ManaCost manaCost={commander.manaCost} size="lg" />
+                    <span className="truncate">{activeName}</span>
+                    {activeManaCost && <ManaCost manaCost={activeManaCost} size="lg" />}
                   </h2>
                   <div className="flex flex-wrap items-center gap-2 mt-0.5 text-xs text-stone-400">
-                    <span>{commander.typeLine} • CMC: {commander.cmc}</span>
-                    {commander.loyalty && (
+                    <span>{activeTypeLine} • CMC: {commander.cmc}</span>
+                    {activeLoyalty && (
                       <span className="inline-flex items-center gap-1 bg-amber-950/80 text-amber-300 font-bold px-2 py-0.5 rounded border border-amber-600/40 text-[11px] shadow-sm">
                         <Shield className="w-3 h-3 text-amber-400" />
-                        Starting Loyalty: {commander.loyalty}
+                        Starting Loyalty: {activeLoyalty}
                       </span>
                     )}
-                    {commander.power !== undefined && commander.toughness !== undefined && (
+                    {activePower !== undefined && activeToughness !== undefined && (
                       <span className="inline-flex items-center gap-1 bg-amber-950/80 text-amber-300 font-mono font-bold px-2 py-0.5 rounded border border-amber-600/40 text-[11px] shadow-sm">
-                        {commander.power}/{commander.toughness}
+                        {activePower}/{activeToughness}
                       </span>
                     )}
                   </div>
@@ -369,9 +408,38 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                   )}
                 </div>
 
+                {/* Face Toggle Tabs for Transforming / Multi-Face Cards */}
+                {hasMultipleFaces && (
+                  <div className="flex items-center gap-1.5 mb-2.5 bg-[#0d1017]/90 p-1 rounded-lg border border-white/5 w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setIsFlipped(false)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1.5 ${
+                        !isFlipped
+                          ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
+                          : 'text-stone-400 hover:text-stone-200'
+                      }`}
+                    >
+                      <span>✦ {commander.cardFaces?.[0]?.name || commander.name.split(' // ')[0]}</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsFlipped(true)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1.5 ${
+                        isFlipped
+                          ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
+                          : 'text-stone-400 hover:text-stone-200'
+                      }`}
+                    >
+                      <RefreshCw className="w-3 h-3" />
+                      <span>✦ {commander.cardFaces?.[1]?.name || commander.name.split(' // ')[1]}</span>
+                    </button>
+                  </div>
+                )}
+
                 {/* Formatted Oracle text with mana symbol support & loyalty badges */}
-                <div className="text-xs sm:text-sm text-stone-200 leading-relaxed font-sans max-h-48 overflow-y-auto pr-1">
-                  <FormattedOracleText text={commander.oracleText} />
+                <div className="text-xs sm:text-sm text-stone-200 leading-relaxed font-sans max-h-56 overflow-y-auto pr-1">
+                  <FormattedOracleText text={activeOracleText} />
                 </div>
               </div>
 

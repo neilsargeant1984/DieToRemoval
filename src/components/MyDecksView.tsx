@@ -44,7 +44,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
   onOpenImportModal,
   userCollection
 }) => {
-  const [activeTab, setActiveTab] = useState<'custom' | 'imported'>('custom');
+  const [activeTab, setActiveTab] = useState<'all' | 'custom' | 'imported'>('all');
   const [editingDeckId, setEditingDeckId] = useState<string | null>(null);
   const [editName, setEditName] = useState<string>('');
   const [filterFormat, setFilterFormat] = useState<'all' | 'brawl' | 'standard' | 'historic' | 'timeless' | 'explorer'>('all');
@@ -52,7 +52,11 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
   const customDecks = savedDecks.filter(d => !d.isImported);
   const importedDecks = savedDecks.filter(d => d.isImported);
 
-  const baseDecks = activeTab === 'custom' ? customDecks : importedDecks;
+  const baseDecks = activeTab === 'all'
+    ? savedDecks
+    : activeTab === 'custom'
+      ? customDecks
+      : importedDecks;
 
   const filteredDecks = baseDecks.filter(d => {
     if (filterFormat === 'all') return true;
@@ -115,10 +119,27 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
         </div>
       </div>
 
-      {/* Sub-Navigation: Two Tabs (Custom Brews vs Imported Decks) + Format Filters */}
+      {/* Sub-Navigation: Tabs (All vs Custom Brews vs Imported Decks) + Format Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 pb-2 border-b border-white/10">
-        {/* Main Tab Toggle: Custom Brews vs Imported Decks */}
+        {/* Main Tab Toggle: All vs Custom Brews vs Imported Decks */}
         <div className="flex items-center bg-[#0d1017]/90 p-1 rounded-2xl border border-white/10 shadow-inner gap-1">
+          <button
+            onClick={() => setActiveTab('all')}
+            className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition ${
+              activeTab === 'all'
+                ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                : 'text-stone-400 hover:text-stone-200'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>All</span>
+            <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+              activeTab === 'all' ? 'bg-slate-950/20 text-slate-950' : 'bg-stone-800 text-stone-400'
+            }`}>
+              {savedDecks.length}
+            </span>
+          </button>
+
           <button
             onClick={() => setActiveTab('custom')}
             className={`flex items-center gap-2 px-4 py-1.5 rounded-xl text-xs font-bold transition ${
@@ -190,12 +211,18 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
             <Layers className="w-6 h-6" />
           </div>
           <h3 className="font-fantasy font-bold text-base text-white">
-            {activeTab === 'custom' ? 'No custom brews found' : 'No imported decks yet'}
+            {activeTab === 'all'
+              ? 'No decks found'
+              : activeTab === 'custom'
+                ? 'No custom brews found'
+                : 'No imported decks yet'}
           </h3>
           <p className="text-xs text-stone-400 max-w-md mx-auto">
-            {activeTab === 'custom'
-              ? 'Start building a new deck from scratch or duplicate an imported deck to make it your own.'
-              : 'Paste an MTG Arena export via "Import Deck" or use "Sync Arena Account" to pull decks from Player.log.'}
+            {activeTab === 'all'
+              ? 'Start building a new deck from scratch or import your decklists from MTG Arena.'
+              : activeTab === 'custom'
+                ? 'Start building a new deck from scratch or duplicate an imported deck to make it your own.'
+                : 'Paste an MTG Arena export via "Import Deck" or use "Sync Arena Account" to pull decks from Player.log.'}
           </p>
           <div className="flex items-center justify-center gap-3 pt-2">
             {activeTab === 'imported' ? (
@@ -252,12 +279,17 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                       <span className={`text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full border capitalize ${formatBadgeColors[deck.format] || 'bg-stone-800 text-stone-300 border-stone-700'}`}>
                         {deck.format}
                       </span>
-                      {deck.isImported && (
+                      {deck.isImported ? (
                         <span className="text-[10px] font-bold bg-purple-950 text-purple-300 border border-purple-700/60 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
                           <CloudDownload className="w-2.5 h-2.5" />
                           <span>Arena Synced</span>
                         </span>
-                      )}
+                      ) : activeTab === 'all' ? (
+                        <span className="text-[10px] font-bold bg-amber-950/80 text-amber-300 border border-amber-600/50 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm">
+                          <Sparkles className="w-2.5 h-2.5" />
+                          <span>Custom Brew</span>
+                        </span>
+                      ) : null}
                       {isActive && (
                         <span className="text-[10px] font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-sm font-sans">
                           <Sparkles className="w-2.5 h-2.5" />
