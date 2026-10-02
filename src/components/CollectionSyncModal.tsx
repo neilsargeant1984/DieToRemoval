@@ -249,8 +249,8 @@ export const CollectionSyncModal: React.FC<CollectionSyncModalProps> = ({
               %APPDATA%\..\LocalLow\Wizards Of The Coast\MTGA\Player-prev.log
             </code>
           </div>
-          <p className="text-[11px] text-amber-400/90 italic pt-0.5">
-            💡 Tip: If <code>Player.log</code> only has 1 or 2 decks, drop <code>Player-prev.log</code> to import your entire deck collection!
+          <p className="text-[11px] text-amber-300/90 pt-1 border-t border-white/5">
+            ⚡ <strong>Full 50,000+ Collection Export:</strong> For players using <em>MTGA Assistant</em>, <em>17Lands</em>, or <em>Untapped</em>, you can also drop your exported <code>collection.json</code> or inventory dump to sync every card in your vault beyond your decks!
           </p>
         </div>
 

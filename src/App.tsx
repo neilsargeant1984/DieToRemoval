@@ -127,7 +127,7 @@ export const App: React.FC = () => {
         // Fallback
       }
     }
-    return { common: 35, uncommon: 42, rare: 12, mythic: 5 };
+    return { common: 0, uncommon: 0, rare: 0, mythic: 0 };
   });
 
   // User Card Collection (arenaId -> count owned)

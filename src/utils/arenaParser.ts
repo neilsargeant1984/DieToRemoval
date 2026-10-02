@@ -425,8 +425,13 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
   for (let lineIdx = 0; lineIdx < lines.length; lineIdx++) {
     const line = lines[lineIdx];
 
-    // Handle DeckGetDeckSummariesV3 or StartHook responses (which list ALL user decks & cards in DecksInternal!)
-    if (line.includes('DeckGetDeckSummariesV3') || line.includes('StartHook') || (lineIdx > 0 && lines[lineIdx - 1].includes('DeckGetDeckSummariesV3'))) {
+    // Handle DeckGetDeckSummariesV3 or StartHook responses (which list ALL user decks & cards in DecksInternal / DeckSummaries!)
+    if (
+      line.includes('DecksInternal') ||
+      line.includes('DeckSummaries') ||
+      line.includes('DeckGetDeckSummaries') ||
+      (lineIdx > 0 && (lines[lineIdx - 1].includes('StartHook') || lines[lineIdx - 1].includes('DeckGetDeckSummaries')))
+    ) {
       const idx = line.indexOf('{');
       if (idx !== -1) {
         try {
@@ -439,15 +444,14 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
           const decksInternal = obj.DecksInternal && typeof obj.DecksInternal === 'object' ? obj.DecksInternal : null;
 
           for (const summary of summaries) {
-            if (!summary || !summary.DeckId) continue;
+            const deckId = summary?.DeckIdInternal || summary?.DeckId || summary?.id;
+            if (!summary || !deckId) continue;
             const name = summary.Name || 'MTG Arena Deck';
             
             // Filter out Arena system starter precons like ?=?Loc/Decks/Precon/PRECON_EPP2023_UB
             if (name.startsWith('?=?') || name.startsWith('?=?Loc') || name.startsWith('Loc/Decks/Precon')) {
               continue;
             }
-
-            const deckId = summary.DeckId;
             
             // Format detection
             const rawFormat = (summary.Attributes?.find((a: any) => a.name === 'Format')?.value || '').toLowerCase();
@@ -630,10 +634,10 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
     }
   }
 
-  // Batch resolve all needed Arena card IDs
+  // Batch resolve Arena card IDs (prioritize commanders and deck tiles for instant UI rendering)
   const resolvedCards = new Map<number, Card>();
 
-  // Check local cards first (0ms)
+  // 1. Check local bundled cards first (0ms)
   for (const cid of allCardIds) {
     const local = ARENA_CARDS.find(c => c.arenaId === cid);
     if (local) {
@@ -641,11 +645,18 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
     }
   }
 
-  // Concurrently fetch remaining unindexed card IDs via Scryfall
-  const missingCids = Array.from(allCardIds).filter(cid => !resolvedCards.has(cid));
-  const fetchBatchSize = 10;
-  for (let i = 0; i < missingCids.length; i += fetchBatchSize) {
-    const batch = missingCids.slice(i, i + fetchBatchSize);
+  // 2. Identify priority cards (Commanders & Deck Art Tiles) that require immediate Scryfall card imagery
+  const priorityCids = new Set<number>();
+  for (const rawDeck of extractedDeckMap.values()) {
+    if (rawDeck.commanderId) priorityCids.add(rawDeck.commanderId);
+    if (rawDeck.deckTileId) priorityCids.add(rawDeck.deckTileId);
+  }
+
+  // Immediately resolve priority commanders and tile art
+  const missingPriority = Array.from(priorityCids).filter(cid => !resolvedCards.has(cid));
+  const priorityBatchSize = 10;
+  for (let i = 0; i < missingPriority.length; i += priorityBatchSize) {
+    const batch = missingPriority.slice(i, i + priorityBatchSize);
     await Promise.all(
       batch.map(async cid => {
         const card = await fetchCardByArenaId(cid);
@@ -656,9 +667,33 @@ export async function parsePlayerLogDecks(logContent: string): Promise<{
         }
       })
     );
-    if (i + fetchBatchSize < missingCids.length) {
-      await new Promise(r => setTimeout(r, 100));
-    }
+  }
+
+  // 3. For deck cards, resolve up to 150 critical cards synchronously to avoid freezing the sync modal, and fill remainder with fallback cards
+  const remainingMissing = Array.from(allCardIds).filter(cid => !resolvedCards.has(cid));
+  const syncFetchLimit = 150;
+  const toFetch = remainingMissing.slice(0, syncFetchLimit);
+  const deferred = remainingMissing.slice(syncFetchLimit);
+
+  // Set fallbacks for deferred cards immediately
+  for (const cid of deferred) {
+    resolvedCards.set(cid, createFallbackCard(cid));
+  }
+
+  // Fetch top 150 deck cards in chunks of 15
+  const deckBatchSize = 15;
+  for (let i = 0; i < toFetch.length; i += deckBatchSize) {
+    const batch = toFetch.slice(i, i + deckBatchSize);
+    await Promise.all(
+      batch.map(async cid => {
+        const card = await fetchCardByArenaId(cid);
+        if (card) {
+          resolvedCards.set(cid, card);
+        } else {
+          resolvedCards.set(cid, createFallbackCard(cid));
+        }
+      })
+    );
   }
 
   // Construct final Deck objects from RPC calls (if not already added via export section)
@@ -842,47 +877,19 @@ export function parsePlayerLogWildcards(logContent: string): WildcardInventory |
   if (!logContent || typeof logContent !== 'string') return null;
 
   try {
-    // 1. MTG Arena exact Player.log format: "InventoryInfo": { ..., "WildCardCommons": 553, "WildCardUnCommons": 79, ... }
-    // MTG Arena omits Rares/Mythics when the user's count is 0!
-    // Scan through all InventoryInfo blocks to take the latest full inventory snapshot
-    const inventoryInfoRegex = /"InventoryInfo"\s*:\s*\{([^}]+)\}/gi;
-    let match;
-    let latestFullSnapshot: WildcardInventory | null = null;
+    // 1. Direct match on MTG Arena exact keys: "WildCardCommons": 553, "WildCardUnCommons": 79
+    // MTG Arena completely omits "WildCardRares" or "WildCardMythics" when the user has 0!
+    const cMatch = logContent.match(/"?WildCardCommons"?\s*:\s*(\d+)/i);
+    const uMatch = logContent.match(/"?WildCardUnCommons"?\s*:\s*(\d+)/i);
+    const rMatch = logContent.match(/"?WildCardRares"?\s*:\s*(\d+)/i);
+    const mMatch = logContent.match(/"?WildCardMythics"?\s*:\s*(\d+)/i);
 
-    while ((match = inventoryInfoRegex.exec(logContent)) !== null) {
-      const block = match[1];
-      // Only process snapshots that include full inventory (contain WildCardCommons or WcTrackPosition or Gems)
-      if (block.includes('WildCardCommons') || block.includes('WcTrackPosition') || block.includes('WildCardUnCommons')) {
-        const cMatch = block.match(/"?WildCardCommons"?\s*:\s*(\d+)/i);
-        const uMatch = block.match(/"?WildCardUnCommons"?\s*:\s*(\d+)/i);
-        const rMatch = block.match(/"?WildCardRares"?\s*:\s*(\d+)/i);
-        const mMatch = block.match(/"?WildCardMythics"?\s*:\s*(\d+)/i);
-
-        latestFullSnapshot = {
-          common: cMatch ? parseInt(cMatch[1], 10) : 0,
-          uncommon: uMatch ? parseInt(uMatch[1], 10) : 0,
-          rare: rMatch ? parseInt(rMatch[1], 10) : 0,
-          mythic: mMatch ? parseInt(mMatch[1], 10) : 0,
-        };
-      }
-    }
-
-    if (latestFullSnapshot) {
-      return latestFullSnapshot;
-    }
-
-    // 2. Fallback: Search globally for the last occurrence of each WildCard key
-    const allC = [...logContent.matchAll(/"?WildCardCommons"?\s*:\s*(\d+)/gi)];
-    const allU = [...logContent.matchAll(/"?WildCardUnCommons"?\s*:\s*(\d+)/gi)];
-    const allR = [...logContent.matchAll(/"?WildCardRares"?\s*:\s*(\d+)/gi)];
-    const allM = [...logContent.matchAll(/"?WildCardMythics"?\s*:\s*(\d+)/gi)];
-
-    if (allC.length > 0 || allU.length > 0 || allR.length > 0 || allM.length > 0) {
+    if (cMatch || uMatch || rMatch || mMatch) {
       return {
-        common: allC.length > 0 ? parseInt(allC[allC.length - 1][1], 10) : 0,
-        uncommon: allU.length > 0 ? parseInt(allU[allU.length - 1][1], 10) : 0,
-        rare: allR.length > 0 ? parseInt(allR[allR.length - 1][1], 10) : 0,
-        mythic: allM.length > 0 ? parseInt(allM[allM.length - 1][1], 10) : 0,
+        common: cMatch ? parseInt(cMatch[1], 10) : 0,
+        uncommon: uMatch ? parseInt(uMatch[1], 10) : 0,
+        rare: rMatch ? parseInt(rMatch[1], 10) : 0,
+        mythic: mMatch ? parseInt(mMatch[1], 10) : 0,
       };
     }
 

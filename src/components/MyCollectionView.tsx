@@ -37,15 +37,15 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
   const [selectedColor, setSelectedColor] = useState<string | null>(null);
   const [selectedRarity, setSelectedRarity] = useState<CardRarity | null>(null);
 
-  // Compute collection statistics
+  // Compute collection statistics directly from the user's full collection
   const stats = useMemo(() => {
     let totalUniqueOwned = 0;
     let totalCardsOwned = 0;
     let playsetCount = 0;
     let incompleteCount = 0;
 
-    for (const card of ARENA_CARDS) {
-      const count = userCollection[card.arenaId] || 0;
+    for (const [_, countVal] of Object.entries(userCollection)) {
+      const count = Number(countVal) || 0;
       if (count > 0) {
         totalUniqueOwned++;
         totalCardsOwned += count;
