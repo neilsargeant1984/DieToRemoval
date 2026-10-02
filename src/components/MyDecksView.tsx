@@ -22,7 +22,9 @@ import {
   CheckCircle2,
   X,
   Flame,
-  Zap
+  Zap,
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 
 interface MyDecksViewProps {
@@ -34,6 +36,7 @@ interface MyDecksViewProps {
   onDuplicateDeck: (deck: Deck) => void;
   onRenameDeck: (deckId: string, newName: string) => void;
   onOpenImportModal: () => void;
+  onOpenSync?: () => void;
   userCollection: UserCollection;
 }
 
