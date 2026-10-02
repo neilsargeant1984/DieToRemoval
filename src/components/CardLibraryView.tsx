@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { UserCollection } from '../types/collection';
-import { searchArenaCards } from '../services/scryfallService';
+import { searchArenaCards, buildSmartSearchQuery } from '../services/scryfallService';
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
@@ -260,7 +260,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const result = await searchArenaCards({
-          query: searchTerm,
+          query: buildSmartSearchQuery(searchTerm),
           format: selectedFormat,
           colors: selectedColors.length > 0 ? selectedColors : undefined,
           cmcValues: selectedCmcs.length > 0 ? selectedCmcs : undefined,
