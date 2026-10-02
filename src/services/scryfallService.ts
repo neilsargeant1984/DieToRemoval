@@ -1,4 +1,4 @@
-import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
+import { Card, CardFace, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { ARENA_CARDS } from '../data/arenaCards';
 import { FunctionalRole } from '../utils/roleClassifier';
 
@@ -59,6 +59,28 @@ export interface SearchResult {
 }
 
 /**
+ * Constructs a flexible Scryfall query token from user input.
+ * If the user inputs explicit Scryfall operators (e.g. `t:`, `c:`, `o:`, `(`),
+ * it preserves their syntax. Otherwise, it tokenizes the terms and searches both
+ * card name and card types/subtypes for each word (e.g. "sphinx", "goblin", "nicol bolas").
+ */
+export function buildSmartSearchQuery(raw: string): string | undefined {
+  const term = raw.trim();
+  if (!term) return undefined;
+
+  // Preserve explicit Scryfall syntax
+  if (term.includes(':') || term.includes('(') || term.includes(')')) {
+    return term;
+  }
+
+  // Tokenize by spaces, ignoring commas or apostrophes
+  const tokens = term.replace(/[,']/g, ' ').split(/\s+/).filter(Boolean);
+  if (tokens.length === 0) return undefined;
+
+  return tokens.map(t => `(name:"${t}" or t:"${t}")`).join(' ');
+}
+
+/**
  * Transforms Scryfall API JSON object to our standardized Card model
  */
 export function transformScryfallCard(raw: any): Card {
@@ -70,9 +92,33 @@ export function transformScryfallCard(raw: any): Card {
   let toughness = raw.toughness;
   let loyalty = raw.loyalty;
 
-  if (!imageUrl && raw.card_faces && raw.card_faces.length > 0) {
+  // Support double-faced and flip cards
+  let cardFaces: CardFace[] | undefined = undefined;
+  if (raw.card_faces && raw.card_faces.length > 0) {
+    cardFaces = raw.card_faces.map((f: any, idx: number) => {
+      const faceImg = f.image_uris?.normal || f.image_uris?.large || f.image_uris?.small || (
+        idx === 1 
+          ? (raw.id ? `https://api.scryfall.com/cards/${raw.id}?format=image&face=back` : `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(raw.name)}&format=image&face=back`)
+          : undefined
+      );
+      return {
+        name: f.name || '',
+        manaCost: f.mana_cost || '',
+        typeLine: f.type_line || '',
+        oracleText: f.oracle_text || '',
+        power: f.power,
+        toughness: f.toughness,
+        loyalty: f.loyalty,
+        imageUrl: faceImg,
+        colors: f.colors || [],
+        flavorText: f.flavor_text
+      };
+    });
+
     const face = raw.card_faces[0];
-    imageUrl = face.image_uris?.normal || face.image_uris?.large;
+    if (!imageUrl) {
+      imageUrl = face.image_uris?.normal || face.image_uris?.large;
+    }
     if (!manaCost && face.mana_cost) {
       manaCost = face.mana_cost;
     }
@@ -107,6 +153,32 @@ export function transformScryfallCard(raw: any): Card {
   }
   if (parsedTypes.length === 0) {
     parsedTypes.push('Artifact');
+  }
+
+  // Extract subtypes from type line (everything after '—' on each card face)
+  const subtypes: string[] = [];
+  const faces = typeLine.split('//');
+  for (const face of faces) {
+    if (face.includes('—')) {
+      const subPart = face.split('—')[1].trim();
+      for (const w of subPart.split(/\s+/).filter(Boolean)) {
+        if (!subtypes.includes(w)) {
+          subtypes.push(w);
+        }
+      }
+    }
+  }
+  if (subtypes.length === 0 && raw.card_faces && Array.isArray(raw.card_faces)) {
+    for (const face of raw.card_faces) {
+      if (face.type_line && face.type_line.includes('—')) {
+        const subPart = face.type_line.split('—')[1].trim();
+        for (const w of subPart.split(/\s+/).filter(Boolean)) {
+          if (!subtypes.includes(w)) {
+            subtypes.push(w);
+          }
+        }
+      }
+    }
   }
 
   // Generate fallback integer ID if arena_id is missing on promo/alchemy prints
@@ -161,6 +233,7 @@ export function transformScryfallCard(raw: any): Card {
     colorIdentity: raw.color_identity || [],
     typeLine,
     types: parsedTypes,
+    subtypes: subtypes.length > 0 ? subtypes : undefined,
     oracleText,
     power,
     toughness,
@@ -170,6 +243,7 @@ export function transformScryfallCard(raw: any): Card {
     setName: raw.set_name || 'MTG Arena',
     collectorNumber: raw.collector_number || '1',
     imageUrl: imageUrl || (raw.name ? `https://api.scryfall.com/cards/named?exact=${encodeURIComponent(raw.name)}&format=image` : 'https://cards.scryfall.io/back.png'),
+    cardFaces,
     isDigitalOnly,
     isAlchemyRebalanced,
     spellbook,

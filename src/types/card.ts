@@ -14,6 +14,19 @@ export type CardTypeCategory =
   | 'Battle'
   | 'Land';
 
+export interface CardFace {
+  name: string;
+  manaCost?: string;
+  typeLine: string;
+  oracleText?: string;
+  power?: string;
+  toughness?: string;
+  loyalty?: string;
+  imageUrl?: string;
+  colors?: ('W' | 'U' | 'B' | 'R' | 'G')[];
+  flavorText?: string;
+}
+
 export interface Card {
   id: string;
   arenaId: number;
@@ -34,6 +47,7 @@ export interface Card {
   setName: string;
   collectorNumber: string;
   imageUrl: string;
+  cardFaces?: CardFace[];
   // Arena digital-specific mechanics
   isDigitalOnly?: boolean;
   isAlchemyRebalanced?: boolean;
