@@ -658,6 +658,71 @@ export function getCachedCardByArenaId(arenaId: number): Card | null {
   return null;
 }
 
+export function getAllCachedCards(): Card[] {
+  return Array.from(arenaIdCardCache.values());
+}
+
+export function saveCardsToArenaCache(cards: Card[]) {
+  for (const c of cards) {
+    if (c.arenaId) {
+      arenaIdCardCache.set(c.arenaId, c);
+    }
+  }
+  persistArenaCardCache();
+}
+
+/**
+ * Resolves a list of Arena IDs in small paced batches, saving to persistent cache.
+ */
+export async function batchResolveArenaCards(
+  arenaIds: number[],
+  onBatchResolved?: (newCards: Card[]) => void
+): Promise<Card[]> {
+  const missing = arenaIds.filter(id => !arenaIdCardCache.has(id));
+  const resolved: Card[] = [];
+
+  for (const id of arenaIds) {
+    const cached = arenaIdCardCache.get(id);
+    if (cached) resolved.push(cached);
+  }
+
+  if (missing.length === 0) return resolved;
+
+  // Process missing cards in small batches of 4 with 80ms delay
+  const chunkSize = 4;
+  for (let i = 0; i < missing.length; i += chunkSize) {
+    const chunk = missing.slice(i, i + chunkSize);
+    const chunkResults = await Promise.all(
+      chunk.map(async id => {
+        try {
+          return await fetchCardByArenaId(id);
+        } catch {
+          return null;
+        }
+      })
+    );
+
+    const validNewCards: Card[] = [];
+    for (const card of chunkResults) {
+      if (card) {
+        resolved.push(card);
+        validNewCards.push(card);
+      }
+    }
+
+    if (validNewCards.length > 0 && onBatchResolved) {
+      onBatchResolved(validNewCards);
+    }
+
+    if (i + chunkSize < missing.length) {
+      await new Promise(r => setTimeout(r, 80));
+    }
+  }
+
+  return resolved;
+}
+
+
 /**
  * Fetches a card by its MTG Arena ID from Scryfall.
  */
