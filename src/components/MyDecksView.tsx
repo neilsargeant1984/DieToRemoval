@@ -175,6 +175,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
 
   const customDecks = savedDecks.filter(d => !d.isImported);
   const importedDecks = savedDecks.filter(d => d.isImported);
+  const hasEmptyImportedDecks = savedDecks.some(d => d.isImported && d.mainboard.length === 0);
 
   const baseDecks = activeTab === 'all'
     ? savedDecks
@@ -230,8 +231,19 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
           </p>
         </div>
 
-        {/* Action Controls: Import Deck & New Brew */}
+        {/* Action Controls: Sync, Import Deck & New Brew */}
         <div className="flex flex-wrap items-center gap-2.5">
+          {onOpenSync && (
+            <button
+              onClick={onOpenSync}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#141a29] hover:bg-[#1c2438] text-amber-300 border border-amber-500/40 rounded-xl transition shadow-sm hover:border-amber-400"
+              title="Sync all decks and card collection from MTG Arena Player.log"
+            >
+              <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
+              <span>Sync Arena Account</span>
+            </button>
+          )}
+
           <button
             onClick={onOpenImportModal}
             className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#141a29] hover:bg-[#1c2438] text-amber-300 border border-amber-500/40 rounded-xl transition shadow-sm"
@@ -249,6 +261,30 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
           </button>
         </div>
       </div>
+
+      {/* Empty Imported Decks Warning & Quick Sync Banner */}
+      {hasEmptyImportedDecks && onOpenSync && (
+        <div className="bg-gradient-to-r from-amber-950/70 via-stone-900/80 to-amber-950/70 border border-amber-500/50 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
+          <div className="flex items-start sm:items-center gap-3">
+            <div className="p-2.5 rounded-xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex-shrink-0">
+              <AlertTriangle className="w-5 h-5 text-amber-400" />
+            </div>
+            <div>
+              <h4 className="text-sm font-bold text-amber-200">Imported Decks Need Card Synchronization</h4>
+              <p className="text-xs text-amber-300/80 mt-0.5 max-w-2xl leading-relaxed">
+                Some imported decks in your library currently only show the commander. Sync with MTG Arena to automatically populate all 100-card decklists and categorize them for the deck builder.
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={onOpenSync}
+            className="btn-mythic-spark flex items-center gap-2 px-4 py-2.5 text-xs font-black rounded-xl transition shadow-lg whitespace-nowrap flex-shrink-0 hover:scale-105"
+          >
+            <RefreshCw className="w-4 h-4" />
+            <span>Sync Arena Decks Now</span>
+          </button>
+        </div>
+      )}
 
       {/* Sub-Navigation: Tabs + Search + Format Filters */}
       <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3 pb-3 border-b border-white/10">

@@ -830,6 +830,7 @@ export const App: React.FC = () => {
             onDuplicateDeck={handleDuplicateDeck}
             onRenameDeck={handleRenameDeck}
             onOpenImportModal={() => setIsImportDeckModalOpen(true)}
+            onOpenSync={() => setIsSyncOpen(true)}
             userCollection={userCollection}
           />
         ) : navTab === 'my_collection' ? (
