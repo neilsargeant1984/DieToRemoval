@@ -165,6 +165,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
   onDuplicateDeck,
   onRenameDeck,
   onOpenImportModal,
+  onOpenSync,
   userCollection
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'custom' | 'imported'>('all');
