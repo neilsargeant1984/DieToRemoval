@@ -4,6 +4,7 @@ import { UserCollection } from '../types/collection';
 import { searchArenaCards } from '../services/scryfallService';
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { CardImage } from './CardImage';
+import { ManaCost } from './ManaCost';
 import { 
   Search, 
   Loader2, 
@@ -33,14 +34,57 @@ interface CardLibraryViewProps {
 type SortOrder = 'edhrec' | 'color' | 'cmc_asc' | 'cmc_desc' | 'name' | 'rarity';
 type OwnershipStatus = 'all' | 'owned' | 'playsets' | 'incomplete' | 'unowned';
 
-const MANA_COLORS: { id: string; label: string; bg: string; activeBg: string }[] = [
-  { id: 'W', label: 'W', bg: 'bg-amber-100/10 text-amber-200 border-amber-300/30', activeBg: 'bg-amber-100 text-amber-950 border-amber-400 font-black ring-2 ring-amber-400' },
-  { id: 'U', label: 'U', bg: 'bg-blue-900/20 text-blue-300 border-blue-500/30', activeBg: 'bg-blue-600 text-white border-blue-300 font-black ring-2 ring-blue-400' },
-  { id: 'B', label: 'B', bg: 'bg-stone-900/60 text-stone-300 border-stone-600/30', activeBg: 'bg-stone-800 text-stone-100 border-stone-400 font-black ring-2 ring-stone-400' },
-  { id: 'R', label: 'R', bg: 'bg-red-950/30 text-red-300 border-red-500/30', activeBg: 'bg-red-600 text-white border-red-300 font-black ring-2 ring-red-400' },
-  { id: 'G', label: 'G', bg: 'bg-emerald-950/30 text-emerald-300 border-emerald-500/30', activeBg: 'bg-emerald-600 text-white border-emerald-300 font-black ring-2 ring-emerald-400' },
-  { id: 'C', label: '◇ Colorless', bg: 'bg-slate-800/40 text-slate-300 border-slate-600/30', activeBg: 'bg-slate-700 text-white border-slate-400 font-black ring-2 ring-slate-400' },
-  { id: 'M', label: '★ Multi', bg: 'bg-amber-950/30 text-amber-300 border-amber-500/30', activeBg: 'bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500 text-white border-transparent font-black ring-2 ring-amber-400' }
+const MANA_COLORS = [
+  {
+    id: 'W',
+    name: 'White',
+    manaSymbol: '{W}',
+    activeRing: 'ring-2 ring-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.5)] border-amber-300/80 bg-amber-100/20',
+    hoverRing: 'hover:border-amber-300/50 hover:bg-amber-100/10'
+  },
+  {
+    id: 'U',
+    name: 'Blue',
+    manaSymbol: '{U}',
+    activeRing: 'ring-2 ring-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.6)] border-blue-400/80 bg-blue-900/30',
+    hoverRing: 'hover:border-blue-400/50 hover:bg-blue-900/20'
+  },
+  {
+    id: 'B',
+    name: 'Black',
+    manaSymbol: '{B}',
+    activeRing: 'ring-2 ring-stone-300 shadow-[0_0_10px_rgba(214,211,209,0.5)] border-stone-400/80 bg-stone-900/60',
+    hoverRing: 'hover:border-stone-400/50 hover:bg-stone-900/40'
+  },
+  {
+    id: 'R',
+    name: 'Red',
+    manaSymbol: '{R}',
+    activeRing: 'ring-2 ring-red-400 shadow-[0_0_10px_rgba(248,113,113,0.6)] border-red-400/80 bg-red-950/40',
+    hoverRing: 'hover:border-red-400/50 hover:bg-red-950/20'
+  },
+  {
+    id: 'G',
+    name: 'Green',
+    manaSymbol: '{G}',
+    activeRing: 'ring-2 ring-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.6)] border-emerald-400/80 bg-emerald-950/40',
+    hoverRing: 'hover:border-emerald-400/50 hover:bg-emerald-950/20'
+  },
+  {
+    id: 'C',
+    name: 'Colorless',
+    manaSymbol: '{C}',
+    label: 'Colorless',
+    activeRing: 'ring-2 ring-slate-300 shadow-[0_0_10px_rgba(203,213,225,0.5)] border-slate-400 bg-slate-800 text-slate-100',
+    hoverRing: 'hover:border-slate-400/50 bg-[#121622] text-slate-300'
+  },
+  {
+    id: 'M',
+    name: 'Multicolor',
+    label: 'Multi',
+    activeRing: 'ring-2 ring-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500 text-white font-black border-transparent',
+    hoverRing: 'hover:border-amber-400/50 bg-[#121622] text-amber-300'
+  }
 ];
 
 const CMC_PIPS: (number | '7+')[] = [0, 1, 2, 3, 4, 5, 6, '7+'];
@@ -335,6 +379,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         name: 'White Spells',
         shortLabel: 'White',
         pip: 'W',
+        manaSymbol: '{W}',
         pipBg: 'bg-amber-100/15 text-amber-200 border-amber-300/40 hover:bg-amber-100/25',
         activePill: 'bg-amber-200 text-stone-950 font-black border-amber-300',
         headerBorder: 'border-amber-400/30',
@@ -347,6 +392,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         name: 'Blue Spells',
         shortLabel: 'Blue',
         pip: 'U',
+        manaSymbol: '{U}',
         pipBg: 'bg-blue-900/30 text-blue-200 border-blue-400/40 hover:bg-blue-900/45',
         activePill: 'bg-blue-600 text-white font-black border-blue-300',
         headerBorder: 'border-blue-500/30',
@@ -359,6 +405,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         name: 'Black Spells',
         shortLabel: 'Black',
         pip: 'B',
+        manaSymbol: '{B}',
         pipBg: 'bg-stone-900/70 text-purple-200 border-purple-500/30 hover:bg-stone-900',
         activePill: 'bg-purple-900 text-stone-100 font-black border-purple-400',
         headerBorder: 'border-purple-500/30',
@@ -371,6 +418,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         name: 'Red Spells',
         shortLabel: 'Red',
         pip: 'R',
+        manaSymbol: '{R}',
         pipBg: 'bg-red-950/40 text-red-200 border-red-500/40 hover:bg-red-950/60',
         activePill: 'bg-red-600 text-white font-black border-red-300',
         headerBorder: 'border-red-500/30',
@@ -383,6 +431,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         name: 'Green Spells',
         shortLabel: 'Green',
         pip: 'G',
+        manaSymbol: '{G}',
         pipBg: 'bg-emerald-950/40 text-emerald-200 border-emerald-500/40 hover:bg-emerald-950/60',
         activePill: 'bg-emerald-600 text-white font-black border-emerald-300',
         headerBorder: 'border-emerald-500/30',
@@ -407,6 +456,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         name: 'Colorless Artifacts & Spells',
         shortLabel: 'Colorless',
         pip: '◇',
+        manaSymbol: '{C}',
         pipBg: 'bg-slate-800/50 text-slate-200 border-slate-500/40 hover:bg-slate-800/70',
         activePill: 'bg-slate-700 text-white font-black border-slate-400',
         headerBorder: 'border-slate-500/30',
@@ -643,29 +693,76 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
             </div>
 
             {/* Mana Colors (Multi-Selectable) */}
-            <div className="flex items-center gap-1 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] font-fantasy font-bold text-stone-400 uppercase mr-1">Colors:</span>
               {MANA_COLORS.map(c => {
                 const isSelected = selectedColors.includes(c.id);
+
+                if (c.manaSymbol && !c.label) {
+                  // Single color pips (White Sun, Blue Water Drop, Black Skull, Red Fireball, Green Tree)
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => toggleColor(c.id)}
+                      title={`Filter by ${c.name} (${c.id})`}
+                      aria-label={c.name}
+                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
+                        isSelected
+                          ? `${c.activeRing} scale-110 opacity-100 ring-offset-1 ring-offset-[#090b10]`
+                          : `border-white/10 ${c.hoverRing} opacity-60 hover:opacity-100 hover:scale-105 bg-[#121622]`
+                      }`}
+                    >
+                      <ManaCost manaCost={c.manaSymbol} size="md" />
+                    </button>
+                  );
+                }
+
+                if (c.id === 'C') {
+                  // Colorless with {C} Eldrazi mana pip
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onClick={() => toggleColor(c.id)}
+                      title="Filter by Colorless"
+                      aria-label="Colorless"
+                      className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
+                        isSelected
+                          ? `${c.activeRing} scale-105 ring-offset-1 ring-offset-[#090b10]`
+                          : `border-white/10 ${c.hoverRing} hover:scale-105 text-stone-300`
+                      }`}
+                    >
+                      <ManaCost manaCost="{C}" size="sm" />
+                      <span>{c.label}</span>
+                    </button>
+                  );
+                }
+
+                // Multicolor
                 return (
                   <button
                     key={c.id}
+                    type="button"
                     onClick={() => toggleColor(c.id)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-bold border transition ${
+                    title="Filter by Multicolor"
+                    aria-label="Multicolor"
+                    className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
                       isSelected
-                        ? c.activeBg
-                        : `${c.bg} hover:border-amber-400/50 text-stone-300`
+                        ? `${c.activeRing} scale-105 ring-offset-1 ring-offset-[#090b10]`
+                        : `border-white/10 ${c.hoverRing} hover:scale-105 text-stone-300`
                     }`}
-                    title={c.label}
                   >
-                    {c.label}
+                    <span className="text-amber-400 font-bold text-xs">★</span>
+                    <span>{c.label}</span>
                   </button>
                 );
               })}
               {selectedColors.length > 0 && (
                 <button
+                  type="button"
                   onClick={() => setSelectedColors([])}
-                  className="p-1 text-stone-400 hover:text-stone-200 ml-0.5"
+                  className="p-1 text-stone-400 hover:text-stone-200 ml-0.5 rounded-lg hover:bg-white/5 transition"
                   title="Clear color filter"
                 >
                   <X className="w-3.5 h-3.5" />
@@ -969,17 +1066,25 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
             <span className="text-[11px] font-bold text-stone-400 uppercase mr-1">Active:</span>
 
             {/* Colors */}
-            {selectedColors.map(c => (
-              <span
-                key={c}
-                className="bg-stone-800/80 border border-white/10 text-amber-300 px-2 py-0.5 rounded-lg text-[11px] font-bold flex items-center gap-1"
-              >
-                <span>Color: {c}</span>
-                <button onClick={() => toggleColor(c)} className="hover:text-white">
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
+            {selectedColors.map(c => {
+              const colorDef = MANA_COLORS.find(col => col.id === c);
+              return (
+                <span
+                  key={c}
+                  className="bg-stone-800/80 border border-white/10 text-amber-300 px-2 py-0.5 rounded-lg text-[11px] font-bold flex items-center gap-1.5"
+                >
+                  {colorDef?.manaSymbol ? (
+                    <ManaCost manaCost={colorDef.manaSymbol} size="sm" />
+                  ) : c === 'M' ? (
+                    <span className="text-amber-400">★</span>
+                  ) : null}
+                  <span>{colorDef?.name || c}</span>
+                  <button onClick={() => toggleColor(c)} className="hover:text-white ml-0.5" title={`Remove ${colorDef?.name || c} filter`}>
+                    <X className="w-3 h-3" />
+                  </button>
+                </span>
+              );
+            })}
 
             {/* CMCs */}
             {selectedCmcs.map(cmc => (
@@ -1089,7 +1194,11 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                 className={`flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-bold border transition hover:scale-105 active:scale-95 shadow-sm whitespace-nowrap flex-shrink-0 ${group.pipBg}`}
                 title={`Jump to ${group.name} (${group.cards.length} cards)`}
               >
-                <span className="font-mono">{group.pip}</span>
+                {group.manaSymbol ? (
+                  <ManaCost manaCost={group.manaSymbol} size="sm" />
+                ) : (
+                  <span className="font-mono">{group.pip}</span>
+                )}
                 <span className="hidden sm:inline">{group.shortLabel}</span>
                 <span className="text-[10px] font-mono opacity-80 bg-black/40 px-1 rounded">
                   {group.cards.length}
@@ -1171,7 +1280,11 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-black text-sm shadow-inner border ${group.pipBg}`}>
-                            {group.pip}
+                            {group.manaSymbol ? (
+                              <ManaCost manaCost={group.manaSymbol} size="md" />
+                            ) : (
+                              group.pip
+                            )}
                           </div>
                           <div className="flex items-center gap-2.5">
                             <h3 className={`font-fantasy font-black text-base md:text-lg tracking-wide uppercase ${group.accentText}`}>

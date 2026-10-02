@@ -3,6 +3,7 @@ import { Card, CardRarity, CardTypeCategory } from '../types/card';
 import { UserCollection } from '../types/collection';
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { ARENA_CARDS } from '../data/arenaCards';
+import { getSetBannerArt, getSetIconSvgUri } from '../data/arenaSetArt';
 import { searchArenaCards } from '../services/scryfallService';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
@@ -20,8 +21,7 @@ import {
   Layers,
   Check,
   Loader2,
-  Clock,
-  Archive
+  Clock
 } from 'lucide-react';
 
 interface HomeViewProps {
@@ -610,64 +610,88 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* ====================================================
-              FEATURED LATEST SET: REALITY FRACTURE (FRA)
+              FEATURED LATEST SET HERO BANNER: REALITY FRACTURE
+              Massive panoramic key artwork banner with official set symbol
               ==================================================== */}
-          <div className="bg-[#0f131d]/90 border border-amber-500/30 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl">
-            {/* Collapsible Heading */}
+          <div className="bg-[#0f131d]/95 border border-amber-500/40 rounded-3xl overflow-hidden shadow-2xl backdrop-blur-xl group/hero">
+            {/* Massive Hero Panoramic Header (Collapsible) */}
             <div
               onClick={() => setIsLatestExpanded(!isLatestExpanded)}
-              className="w-full bg-gradient-to-r from-stone-950 via-[#181d2a] to-stone-950 px-6 py-5 border-b border-amber-500/20 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 cursor-pointer hover:bg-white/[0.02] transition select-none group"
+              className="relative w-full min-h-[170px] md:min-h-[210px] px-6 py-6 border-b border-amber-500/30 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 cursor-pointer select-none overflow-hidden transition-all duration-300"
             >
-              <div className="flex items-center gap-4">
-                {/* Set Code Badge */}
-                <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500 via-rose-600 to-purple-700 flex flex-col items-center justify-center font-black shadow-lg shadow-amber-500/20 border border-amber-300/50 flex-shrink-0 group-hover:scale-105 transition-transform">
-                  <span className="text-white text-lg font-mono font-black tracking-tight leading-none">
+              {/* Background Panoramic MTG Official Art Crop with Subtle Zoom */}
+              <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                <img
+                  src={getSetBannerArt(latestSet.code)}
+                  alt={latestSet.name}
+                  className="w-full h-full object-cover object-center brightness-60 contrast-110 group-hover/hero:scale-105 group-hover/hero:brightness-75 transition-all duration-700 ease-out"
+                />
+                {/* Deep Dramatic Vignette & Gradient Overlays */}
+                <div className="absolute inset-0 bg-gradient-to-r from-[#0a0d14]/95 via-[#0a0d14]/80 to-[#0a0d14]/30 backdrop-blur-[0.5px]" />
+                <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d14] via-transparent to-transparent opacity-80" />
+                <div className="absolute inset-0 ring-1 ring-inset ring-amber-500/20" />
+              </div>
+
+              {/* Content on top of artwork */}
+              <div className="relative z-10 flex items-center gap-5">
+                {/* Official Vector Set Symbol Card */}
+                <div className="w-16 h-16 md:w-20 md:h-20 rounded-2xl bg-black/70 backdrop-blur-md border border-amber-400/50 flex flex-col items-center justify-center shadow-2xl shadow-amber-500/20 flex-shrink-0 group-hover/hero:scale-105 group-hover/hero:border-amber-300 transition-all duration-300">
+                  <img
+                    src={getSetIconSvgUri(latestSet.code)}
+                    alt={latestSet.code}
+                    onError={(e) => {
+                      (e.currentTarget as HTMLElement).style.display = 'none';
+                    }}
+                    className="w-10 h-10 md:w-12 md:h-12 object-contain invert drop-shadow-[0_0_12px_rgba(251,191,36,0.7)]"
+                  />
+                  <span className="text-[10px] font-mono font-black tracking-widest text-amber-300 uppercase mt-0.5">
                     {latestSet.code}
-                  </span>
-                  <span className="text-[9px] uppercase tracking-wider text-amber-200 mt-0.5">
-                    SET
                   </span>
                 </div>
 
-                <div>
+                <div className="space-y-1.5">
                   <div className="flex items-center gap-2.5 flex-wrap">
-                    <h2 className="text-xl md:text-2xl font-fantasy font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-rose-400 m-0">
-                      {latestSet.name}
-                    </h2>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-rose-500/20 text-rose-300 border border-rose-500/40">
-                      Most Recent MTG Arena Set
+                    <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-gradient-to-r from-rose-500 to-amber-500 text-stone-950 shadow-md">
+                      Latest Set Release
                     </span>
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
+                    <span className="px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40 backdrop-blur-sm">
                       {latestSet.category}
                     </span>
-                  </div>
-                  <p className="text-xs text-stone-400 mt-1 flex items-center gap-3">
-                    <span className="flex items-center gap-1 text-stone-300">
+                    <span className="text-xs text-stone-300 font-medium flex items-center gap-1">
                       <Calendar className="w-3.5 h-3.5 text-amber-400" />
-                      Released: {latestSet.releaseDate || `${latestSet.releaseYear}`}
+                      {latestSet.releaseDate || `${latestSet.releaseYear}`}
                     </span>
-                    <span>•</span>
-                    <span className="text-amber-300 font-semibold">
+                  </div>
+
+                  <h2 className="text-2xl md:text-3xl lg:text-4xl font-fantasy font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400 drop-shadow-md m-0">
+                    {latestSet.name}
+                  </h2>
+
+                  <p className="text-xs md:text-sm text-stone-300 font-medium drop-shadow flex items-center gap-2">
+                    <span className="text-amber-300 font-bold">
                       {activeFiltersCount > 0
                         ? `Showing ${filteredLatestCards.length} matching cards (${latestCards.length} total)`
-                        : `${latestCards.length} Total Cards`}
+                        : `${latestCards.length} Total Cards in Set`}
                     </span>
+                    <span className="text-stone-500">•</span>
+                    <span className="text-stone-400">Click to {isLatestExpanded ? 'collapse' : 'explore'} set cardlist</span>
                   </p>
                 </div>
               </div>
 
-              {/* Expand / Collapse Indicator */}
-              <div className="flex items-center gap-3 self-end md:self-auto">
-                <span className="text-xs font-bold text-amber-400 group-hover:underline">
-                  {isLatestExpanded ? 'Collapse Set' : 'Expand Set'}
-                </span>
-                <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-amber-400 group-hover:border-amber-400 transition">
+              {/* Action Toggle Button */}
+              <div className="relative z-10 flex items-center gap-3 self-end md:self-auto">
+                <button
+                  type="button"
+                  className="px-4 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-amber-400/40 text-amber-300 group-hover/hero:border-amber-300 font-bold text-xs flex items-center gap-2 shadow-lg transition"
+                >
+                  <span>{isLatestExpanded ? 'Collapse Showcase' : 'Expand Showcase'}</span>
                   {isLatestExpanded ? (
-                    <ChevronUp className="w-5 h-5" />
+                    <ChevronUp className="w-4 h-4 text-amber-400" />
                   ) : (
-                    <ChevronDown className="w-5 h-5" />
+                    <ChevronDown className="w-4 h-4" />
                   )}
-                </div>
+                </button>
               </div>
             </div>
 
@@ -719,8 +743,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
 
           {/* ====================================================
-              PREVIOUS SETS ACCORDION: GOING BACK IN TIME
-              Strictly arranged in reverse chronological order
+              PREVIOUS SETS: OFFICIAL MTG ART PANORAMIC BANNERS
+              Strictly arranged in reverse chronological order (going back in time)
               ==================================================== */}
           <div className="space-y-4 pt-2">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-white/10 pb-3">
@@ -728,11 +752,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
                 <div className="flex items-center gap-2">
                   <Clock className="w-4 h-4 text-amber-400" />
                   <h3 className="text-lg font-fantasy font-black tracking-wide text-stone-200 m-0">
-                    Previous Sets (Release Timeline)
+                    Previous Set Releases (Timeline Archive)
                   </h3>
                 </div>
                 <p className="text-xs text-stone-400 mt-0.5">
-                  Chronological archive going back in time. Click any set to expand and inspect cards.
+                  Chronological archive of MTG Arena releases going back in time. Click any banner to inspect cards.
                 </p>
               </div>
 
@@ -741,61 +765,89 @@ export const HomeView: React.FC<HomeViewProps> = ({
               </span>
             </div>
 
-            {/* Previous Sets Collapsible List (Reverse Chronological: Going Back in Time) */}
-            <div className="space-y-2.5">
+            {/* Previous Sets Panoramic Banners List */}
+            <div className="space-y-3">
               {previousSets.map(set => {
                 const isExpanded = !!expandedPreviousSets[set.code];
                 const setRawCards = previousSetCards[set.code] || [];
                 const matchingCards = applyFilters(setRawCards);
                 const isLoadingSet = !!loadingSetCodes[set.code];
+                const bannerArt = getSetBannerArt(set.code);
 
                 return (
                   <div
                     key={set.code}
-                    className="bg-[#10141e]/85 border border-white/5 hover:border-amber-500/25 rounded-2xl overflow-hidden transition backdrop-blur-md"
+                    className="group/set relative rounded-2xl overflow-hidden border border-white/10 hover:border-amber-500/50 transition-all duration-300 shadow-lg hover:shadow-amber-500/10 backdrop-blur-md"
                   >
-                    {/* Collapsible Heading */}
+                    {/* Panoramic Banner Header */}
                     <div
                       onClick={() => handleTogglePreviousSet(set.code)}
-                      className="px-5 py-3.5 flex items-center justify-between gap-4 cursor-pointer hover:bg-white/[0.02] transition select-none"
+                      className="relative min-h-[82px] sm:min-h-[92px] px-5 py-4 flex items-center justify-between gap-4 cursor-pointer select-none overflow-hidden"
                     >
-                      <div className="flex items-center gap-3.5 min-w-0">
-                        {/* Set Code Tag */}
-                        <span className="px-2.5 py-1 rounded-lg bg-white/5 border border-white/10 font-mono font-black text-xs text-amber-300">
-                          {set.code}
-                        </span>
+                      {/* Background Official MTG Art Crop */}
+                      <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+                        <img
+                          src={bannerArt}
+                          alt={set.name}
+                          className="w-full h-full object-cover object-center brightness-45 contrast-110 group-hover/set:scale-105 group-hover/set:brightness-60 transition-all duration-500 ease-out"
+                        />
+                        {/* Deep Vignette & Gradient */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-[#0a0d14]/95 via-[#0a0d14]/80 to-[#0a0d14]/30" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#0a0d14] via-transparent to-transparent opacity-60" />
+                      </div>
+
+                      {/* Content Row */}
+                      <div className="relative z-10 flex items-center gap-4 min-w-0">
+                        {/* Vector Set Symbol Box */}
+                        <div className="w-12 h-12 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 flex flex-col items-center justify-center flex-shrink-0 group-hover/set:border-amber-400/60 transition shadow">
+                          <img
+                            src={getSetIconSvgUri(set.code)}
+                            alt={set.code}
+                            onError={(e) => {
+                              (e.currentTarget as HTMLElement).style.display = 'none';
+                            }}
+                            className="w-6 h-6 object-contain invert opacity-90 drop-shadow group-hover/set:scale-110 transition-transform"
+                          />
+                          <span className="text-[9px] font-mono font-black text-amber-300 uppercase leading-none mt-0.5">
+                            {set.code}
+                          </span>
+                        </div>
 
                         <div className="min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <h4 className="text-sm font-bold text-stone-200 m-0 truncate">
+                          <div className="flex items-center gap-2.5 flex-wrap">
+                            <h4 className="text-base sm:text-lg font-fantasy font-black text-stone-100 group-hover/set:text-amber-300 transition-colors m-0 truncate">
                               {set.name}
                             </h4>
-                            <span className="px-1.5 py-0.2 rounded text-[10px] font-semibold uppercase bg-white/5 text-stone-400 border border-white/5">
+                            <span className="px-2 py-0.2 rounded text-[10px] font-bold uppercase bg-black/50 text-stone-300 border border-white/10 backdrop-blur-sm">
                               {set.category}
                             </span>
                           </div>
-                          <span className="text-[11px] text-stone-500 block mt-0.5">
-                            Released: {set.releaseDate || `${set.releaseYear}`}
-                          </span>
+                          <p className="text-xs text-stone-400 mt-0.5 flex items-center gap-3">
+                            <span>Released: {set.releaseDate || `${set.releaseYear}`}</span>
+                            {setRawCards.length > 0 && (
+                              <>
+                                <span>•</span>
+                                <span className="text-amber-300 font-semibold">
+                                  {activeFiltersCount > 0
+                                    ? `${matchingCards.length} matches (${setRawCards.length} total)`
+                                    : `${setRawCards.length} cards`}
+                                </span>
+                              </>
+                            )}
+                          </p>
                         </div>
                       </div>
 
-                      <div className="flex items-center gap-3 flex-shrink-0">
-                        {setRawCards.length > 0 && (
-                          <span className="text-xs text-stone-400 hidden md:inline">
-                            {activeFiltersCount > 0
-                              ? `${matchingCards.length} matches / ${setRawCards.length} total`
-                              : `${setRawCards.length} cards`}
-                          </span>
-                        )}
-                        <span className="text-xs text-amber-400/80 font-medium hidden sm:inline">
-                          {isExpanded ? 'Hide cards' : 'Browse cards'}
+                      {/* Right Indicator / Expand Button */}
+                      <div className="relative z-10 flex items-center gap-3 flex-shrink-0">
+                        <span className="text-xs text-amber-300 font-bold hidden sm:inline group-hover/set:underline">
+                          {isExpanded ? 'Hide Cards' : 'Browse Cards'}
                         </span>
-                        <div className="w-7 h-7 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center text-stone-400">
+                        <div className="w-9 h-9 rounded-xl bg-black/60 backdrop-blur-md border border-white/15 flex items-center justify-center text-stone-300 group-hover/set:border-amber-400 group-hover/set:text-amber-300 transition shadow">
                           {isExpanded ? (
-                            <ChevronUp className="w-4 h-4 text-amber-400" />
+                            <ChevronUp className="w-5 h-5" />
                           ) : (
-                            <ChevronDown className="w-4 h-4" />
+                            <ChevronDown className="w-5 h-5" />
                           )}
                         </div>
                       </div>
@@ -803,7 +855,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
                     {/* Expanded Content: Cards for this previous set with filters applied */}
                     {isExpanded && (
-                      <div className="p-5 border-t border-white/5 bg-[#0b0e16]/80 space-y-4">
+                      <div className="p-5 border-t border-white/10 bg-[#0b0e16]/90 space-y-4">
                         {isLoadingSet ? (
                           <div className="py-8 flex flex-col items-center justify-center text-center space-y-2">
                             <Loader2 className="w-6 h-6 animate-spin text-amber-400" />

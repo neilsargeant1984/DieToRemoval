@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { searchArenaCards } from '../services/scryfallService';
 import { Search, Plus, Sparkles, BookOpen, X, ShieldAlert, Loader2, Globe } from 'lucide-react';
+import { ManaCost } from './ManaCost';
 
 import { FunctionalRole } from '../utils/roleClassifier';
 
@@ -164,29 +165,126 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
         <div className="flex items-center gap-1.5 flex-wrap">
           <span className="text-[11px] font-bold text-slate-400 uppercase mr-1">Colors:</span>
           {[
-            { id: 'W', label: 'W', bg: 'bg-amber-100 text-amber-950 border-amber-300' },
-            { id: 'U', label: 'U', bg: 'bg-blue-600 text-white border-blue-400' },
-            { id: 'B', label: 'B', bg: 'bg-stone-800 text-neutral-200 border-neutral-600' },
-            { id: 'R', label: 'R', bg: 'bg-red-600 text-white border-red-400' },
-            { id: 'G', label: 'G', bg: 'bg-emerald-600 text-white border-emerald-400' },
-            { id: 'C', label: 'Colorless', bg: 'bg-stone-700 text-slate-200 border-stone-600' },
-            { id: 'M', label: 'Multi', bg: 'bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500 text-white border-transparent' }
+            {
+              id: 'W',
+              name: 'White',
+              manaSymbol: '{W}',
+              activeRing: 'ring-2 ring-amber-300 shadow-[0_0_10px_rgba(252,211,77,0.5)] border-amber-300/80 bg-amber-100/20',
+              hoverRing: 'hover:border-amber-300/50 hover:bg-amber-100/10'
+            },
+            {
+              id: 'U',
+              name: 'Blue',
+              manaSymbol: '{U}',
+              activeRing: 'ring-2 ring-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.6)] border-blue-400/80 bg-blue-900/30',
+              hoverRing: 'hover:border-blue-400/50 hover:bg-blue-900/20'
+            },
+            {
+              id: 'B',
+              name: 'Black',
+              manaSymbol: '{B}',
+              activeRing: 'ring-2 ring-stone-300 shadow-[0_0_10px_rgba(214,211,209,0.5)] border-stone-400/80 bg-stone-900/60',
+              hoverRing: 'hover:border-stone-400/50 hover:bg-stone-900/40'
+            },
+            {
+              id: 'R',
+              name: 'Red',
+              manaSymbol: '{R}',
+              activeRing: 'ring-2 ring-red-400 shadow-[0_0_10px_rgba(248,113,113,0.6)] border-red-400/80 bg-red-950/40',
+              hoverRing: 'hover:border-red-400/50 hover:bg-red-950/20'
+            },
+            {
+              id: 'G',
+              name: 'Green',
+              manaSymbol: '{G}',
+              activeRing: 'ring-2 ring-emerald-400 shadow-[0_0_10px_rgba(74,222,128,0.6)] border-emerald-400/80 bg-emerald-950/40',
+              hoverRing: 'hover:border-emerald-400/50 hover:bg-emerald-950/20'
+            },
+            {
+              id: 'C',
+              name: 'Colorless',
+              manaSymbol: '{C}',
+              label: 'Colorless',
+              activeRing: 'ring-2 ring-slate-300 shadow-[0_0_10px_rgba(203,213,225,0.5)] border-slate-400 bg-slate-800 text-slate-100',
+              hoverRing: 'hover:border-slate-400/50 bg-[#161b26] text-slate-300'
+            },
+            {
+              id: 'M',
+              name: 'Multicolor',
+              label: 'Multi',
+              activeRing: 'ring-2 ring-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500 text-white font-black border-transparent',
+              hoverRing: 'hover:border-amber-400/50 bg-[#161b26] text-amber-300'
+            }
           ].map(c => {
             const isSelected = selectedColor === c.id;
+
+            if (c.manaSymbol && !c.label) {
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedColor(isSelected ? null : c.id)}
+                  title={`Filter by ${c.name} (${c.id})`}
+                  aria-label={c.name}
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
+                    isSelected
+                      ? `${c.activeRing} scale-110 opacity-100 ring-offset-1 ring-offset-[#0b0e14]`
+                      : `border-[#c5a059]/20 ${c.hoverRing} opacity-60 hover:opacity-100 hover:scale-105 bg-[#161b26]`
+                  }`}
+                >
+                  <ManaCost manaCost={c.manaSymbol} size="md" />
+                </button>
+              );
+            }
+
+            if (c.id === 'C') {
+              return (
+                <button
+                  key={c.id}
+                  type="button"
+                  onClick={() => setSelectedColor(isSelected ? null : c.id)}
+                  title="Filter by Colorless"
+                  aria-label="Colorless"
+                  className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
+                    isSelected
+                      ? `${c.activeRing} scale-105 ring-offset-1 ring-offset-[#0b0e14]`
+                      : `border-[#c5a059]/20 ${c.hoverRing} hover:scale-105 text-slate-300`
+                  }`}
+                >
+                  <ManaCost manaCost="{C}" size="sm" />
+                  <span>{c.label}</span>
+                </button>
+              );
+            }
+
             return (
               <button
                 key={c.id}
+                type="button"
                 onClick={() => setSelectedColor(isSelected ? null : c.id)}
-                className={`px-2 py-0.5 rounded-lg text-xs font-bold border transition ${
+                title="Filter by Multicolor"
+                aria-label="Multicolor"
+                className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
                   isSelected
-                    ? `${c.bg} ring-2 ring-amber-500 ring-offset-1 ring-offset-[#0b0e14] scale-105 shadow-sm`
-                    : 'bg-[#161b26] text-slate-400 border-[#c5a059]/20 hover:border-[#c5a059]/60 hover:text-slate-200'
+                    ? `${c.activeRing} scale-105 ring-offset-1 ring-offset-[#0b0e14]`
+                    : `border-[#c5a059]/20 ${c.hoverRing} hover:scale-105 text-slate-300`
                 }`}
               >
-                {c.label}
+                <span className="text-amber-400 font-bold text-xs">★</span>
+                <span>{c.label}</span>
               </button>
             );
           })}
+          {selectedColor && (
+            <button
+              type="button"
+              onClick={() => setSelectedColor(null)}
+              className="p-1 text-slate-400 hover:text-slate-200 ml-0.5 rounded-lg hover:bg-white/5 transition"
+              title="Clear color filter"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
 
         {/* Types, Rarities & Digital Toggles */}
