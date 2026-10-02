@@ -635,76 +635,151 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     }
 
     if (activeTab === 'commander_triggers' && triggerConfig.hasTriggers) {
-      const triggerCards: { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[] }[] = [];
+      const edhrecTriggers: { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[] }[] = [];
+      const extendedTriggers: { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[] }[] = [];
       const seen = new Set<string>();
 
-      for (const item of scoredSynergies) {
-        const c = item.card;
-        const key = c.name.toLowerCase().trim();
-        if (triggerConfig.isTriggerCard(c)) {
-          seen.add(key);
-          const roleChips = getCardRoleChips(c, commander);
-          const score = Math.max(item.score, 75);
-          const reason = triggerConfig.getCardReason(commander, c);
-
-          triggerCards.push({
-            card: c,
-            score,
-            badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Trigger` : triggerConfig.getCardBadge(c),
-            reason,
-            roleChips
-          });
-        }
-      }
-
+      // 1. Prioritize community meta / EDHREC triggers first
       for (const item of communityMeta) {
         const c = item.card;
         const key = c.name.toLowerCase().trim();
         if (!seen.has(key) && triggerConfig.isTriggerCard(c)) {
           seen.add(key);
           const roleChips = getCardRoleChips(c, commander);
-          const score = Math.max(item.inclusion, 75);
-          const reason = triggerConfig.getCardReason(commander, c);
+          const hasHighSynergy = item.category === 'highsynergy' || (item.synergy !== undefined && item.synergy >= 15);
+          const badge = hasHighSynergy && item.synergy > 0
+            ? `⚡ +${item.synergy}% Synergy`
+            : (item.inclusion >= 30 ? `🔥 ${item.inclusion}% of Decks` : (roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Trigger` : triggerConfig.getCardBadge(c)));
+          const reason = `${triggerConfig.getCardReason(commander, c)} (Played in ${item.inclusion}% of community decks)`;
 
-          triggerCards.push({
+          edhrecTriggers.push({
             card: c,
-            score,
-            badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Trigger` : triggerConfig.getCardBadge(c),
+            score: Math.max(item.inclusion, 75),
+            badge,
             reason,
             roleChips
           });
         }
       }
 
-      triggerCards.sort((a, b) => {
+      edhrecTriggers.sort((a, b) => {
         if (b.score !== a.score) return b.score - a.score;
         return a.card.cmc - b.card.cmc;
       });
-      return triggerCards;
+
+      // 2. Extended algorithmic engine trigger discoveries
+      for (const item of scoredSynergies) {
+        const c = item.card;
+        const key = c.name.toLowerCase().trim();
+        if (!seen.has(key) && triggerConfig.isTriggerCard(c)) {
+          seen.add(key);
+          const roleChips = getCardRoleChips(c, commander);
+          const reason = triggerConfig.getCardReason(commander, c);
+
+          extendedTriggers.push({
+            card: c,
+            score: item.score,
+            badge: roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Engine` : `✦ Extended Trigger`,
+            reason,
+            roleChips
+          });
+        }
+      }
+
+      extendedTriggers.sort((a, b) => {
+        if (b.score !== a.score) return b.score - a.score;
+        return a.card.cmc - b.card.cmc;
+      });
+
+      return [...edhrecTriggers, ...extendedTriggers];
     }
 
     const isArtifactCommander = commander.types.includes('Artifact') || 
       (commander.oracleText || '').toLowerCase().includes('artifact');
-
-    const communityInclusionMap = new Map<string, number>();
-    for (const item of communityMeta) {
-      communityInclusionMap.set(item.card.name.toLowerCase().trim(), item.inclusion);
-    }
 
     const multiColorFixingRocks = new Set([
       'Chromatic Lantern', 'Commander\'s Sphere', 'Manalith', 'Celestial Prism',
       'Letter of Acceptance', 'Network Terminal', 'Spinning Wheel', 'Altar of the Pantheon'
     ]);
 
-    return scoredSynergies
+    // TIER 1: EDHREC Community Consensus cards matching this category tab (STRICTLY FIRST)
+    const edhrecCardsForTab: { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[]; isHighSynergy: boolean; inclusion: number }[] = [];
+    const seenCardsInTab = new Set<string>();
+
+    for (const item of communityMeta) {
+      const c = item.card;
+      // Strict Commander Color Identity Check
+      if (!c.colorIdentity.every(col => commander.colorIdentity.includes(col))) continue;
+
+      // Filter by category using matchesMetaSubCategory
+      if (!matchesMetaSubCategory(c, activeTab as MetaSubCategory, commander, item)) continue;
+
+      // Filter out generic 3+ CMC multi-color fixing rocks for mono-color commanders in ramp
+      if (activeTab === 'ramp' && commander.colorIdentity.length <= 1) {
+        if (multiColorFixingRocks.has(c.name)) continue;
+      }
+
+      const key = c.name.toLowerCase().trim();
+      seenCardsInTab.add(key);
+
+      const causalMatch = calculateSynergy(commander, c);
+      const roleChips = getCardRoleChips(c, commander);
+      const hasHighSynergy = item.category === 'highsynergy' || (item.synergy !== undefined && item.synergy >= 15);
+
+      let badge: string;
+      if (hasHighSynergy && item.synergy > 0) {
+        badge = `⚡ +${item.synergy}% Synergy`;
+      } else if (item.inclusion >= 35) {
+        badge = `🔥 ${item.inclusion}% of Decks`;
+      } else {
+        badge = roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Engine` : `⭐ ${item.inclusion}% of Decks`;
+      }
+
+      const reason = causalMatch 
+        ? explainSynergy(commander, causalMatch)
+        : `Played in ${item.inclusion}% of community decks (${item.numDecks.toLocaleString()} decks)${item.synergy > 0 ? ` with +${item.synergy}% synergy lift` : ''}`;
+
+      const score = hasHighSynergy ? Math.max(item.inclusion, 80 + Math.min(item.synergy, 19)) : item.inclusion;
+
+      edhrecCardsForTab.push({
+        card: c,
+        score,
+        badge,
+        reason,
+        roleChips,
+        isHighSynergy: hasHighSynergy,
+        inclusion: item.inclusion
+      });
+    }
+
+    // Sort EDHREC cards: High Synergy first, then by Inclusion % descending, then mana value ascending
+    edhrecCardsForTab.sort((a, b) => {
+      const aHigh = a.isHighSynergy ? 1 : 0;
+      const bHigh = b.isHighSynergy ? 1 : 0;
+      if (bHigh !== aHigh) return bHigh - aHigh;
+
+      if (b.inclusion !== a.inclusion) {
+        return b.inclusion - a.inclusion;
+      }
+
+      return a.card.cmc - b.card.cmc;
+    });
+
+    // TIER 2: Extended Algorithmic Engine Candidates (STRICTLY APPENDED BELOW EDHREC)
+    const extendedCardsForTab = scoredSynergies
       .filter(item => {
         const c = item.card;
-        // Defense-in-depth: Strict Commander Color Identity Check
+        const key = c.name.toLowerCase().trim();
+        // Skip any cards already surfaced via EDHREC Tier 1
+        if (seenCardsInTab.has(key)) return false;
+
+        // Strict Commander Color Identity Check
         if (!c.colorIdentity.every(col => commander.colorIdentity.includes(col))) return false;
 
+        // Tab match check
+        if (!matchesMetaSubCategory(c, activeTab as MetaSubCategory, commander)) return false;
+
         if (activeTab === 'creatures') {
-          const isCreature = c.types.includes('Creature') || (c.typeLine || '').toLowerCase().includes('creature');
-          if (!isCreature) return false;
           // Filter out generic colorless artifact creatures unless commander cares about artifacts or card has high synergy
           const isColorlessArtifactCreature = c.types.includes('Artifact') && c.colors.length === 0;
           if (isColorlessArtifactCreature && !isArtifactCommander) {
@@ -712,17 +787,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           }
           return true;
         }
-        if (activeTab === 'instants') return c.types.includes('Instant');
-        if (activeTab === 'sorceries') return c.types.includes('Sorcery');
-        if (activeTab === 'artifacts') return c.types.includes('Artifact') && !c.types.includes('Creature');
-        if (activeTab === 'enchantments') return c.types.includes('Enchantment') && !c.types.includes('Creature');
-        if (activeTab === 'planeswalkers') return c.types.includes('Planeswalker') || (c.typeLine || '').toLowerCase().includes('planeswalker');
-        
-        const roles = classifyCardRoles(c, commander);
+
         if (activeTab === 'ramp') {
-          if (!roles.roles.includes('ramp')) return false;
-          // Filter out generic 3+ CMC multi-color fixing rocks for mono-color commanders
-          // BUT preserve rocks that provide direct causal synergy / trigger enablers for the commander (e.g. Inherited Envelope for Ring commanders)
           if (commander.colorIdentity.length <= 1) {
             if (multiColorFixingRocks.has(c.name)) return false;
             const co = (c.oracleText || '').toLowerCase();
@@ -733,47 +799,24 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           }
           return true;
         }
-        if (activeTab === 'protection') return roles.roles.includes('protection');
-        if (activeTab === 'removal') return roles.roles.includes('removal');
-        if (activeTab === 'board_wipe') return roles.roles.includes('board_wipe');
-        if (activeTab === 'card_draw') return roles.roles.includes('card_advantage');
-        
-        return false;
+
+        return true;
       })
       .map(item => {
         const c = item.card;
         const roleChips = getCardRoleChips(c, commander);
         let adjustedScore = item.score;
-        let badge = `${item.score}% Match`;
+        let badge = roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Engine` : `✦ Extended Pool`;
         let reason = explainSynergy(commander, item);
 
-        // Community consensus boost if this card is commonly played in this commander's decks
-        const inclusion = communityInclusionMap.get(c.name.toLowerCase().trim());
-        if (inclusion !== undefined && inclusion >= 20) {
-          adjustedScore = Math.max(adjustedScore, Math.min(99, Math.round(adjustedScore * 0.7 + inclusion * 0.4)));
-        }
-
-        // TAB-SPECIFIC SYNERGISTIC & ENGINE BOOSTS
+        // TAB-SPECIFIC SYNERGISTIC BOOSTS
         if (activeTab === 'card_draw') {
           const co = (c.oracleText || '').toLowerCase();
-          const cn = c.name.toLowerCase();
           const cmdText = (commander.oracleText || '').toLowerCase();
-
-          // 1. Commander-Direct Synergistic Draw Engines
           const isDeathCommander = cmdText.includes('dies') || cmdText.includes('sacrifice');
           const isSacDraw = (co.includes('sacrifice') || co.includes('dies')) && (co.includes('draw') || co.includes('investigate'));
           const isSpellCommander = cmdText.includes('instant') || cmdText.includes('sorcery') || cmdText.includes('magecraft');
           const isSpellDraw = (c.types.includes('Instant') || c.types.includes('Sorcery') || co.includes('cast an instant') || co.includes('cast a sorcery')) && co.includes('draw');
-
-          // Elite draw engine staples on MTG Arena
-          const eliteDrawStaples = new Set([
-            'rhystic study', 'esper sentinel', 'phyrexian arena', 'sylvan library', 
-            'the one ring', 'skullclamp', 'black market connections', 'trouble in pairs',
-            'up the beanstalk', 'bident of thassa', 'toski, bearer of secrets',
-            'great henge', 'morbid opportunist', 'deadly dispute', 'village rites',
-            'night\'s whisper', 'sign in blood', 'read the bones', 'archmage emeritus',
-            'ledger shredder', 'dark confidant', 'treasure cruise', 'dig through time'
-          ]);
 
           if (isDeathCommander && isSacDraw) {
             adjustedScore = Math.max(adjustedScore + 20, 92);
@@ -783,29 +826,13 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             adjustedScore = Math.max(adjustedScore + 20, 92);
             badge = `⚡ Spell Draw Engine`;
             reason = `Spellslinger Draw: Fuels hand and triggers ${commander.name}'s spellcasting engine`;
-          } else if (eliteDrawStaples.has(cn)) {
-            adjustedScore = Math.max(adjustedScore, 88);
-            badge = `⭐ Premier Draw`;
           } else if (c.cmc <= 3 && (co.includes('draw a card') || co.includes('draw two cards'))) {
-            // Efficient low-CMC draw spells get rewarded over expensive clunky ones
             adjustedScore = Math.min(99, adjustedScore + 6);
           }
         } else if (activeTab === 'ramp') {
-          const cn = c.name.toLowerCase();
-          const cmdCmc = commander.cmc;
-
-          // Elite Arena ramp staples
-          const eliteRampStaples = new Set([
-            'arcane signet', 'coldsteel heart', 'mind stone', 'fellwar stone',
-            'smothering tithe', 'dark ritual', 'strike it rich', 'llanowar elves',
-            'elvish mystic', 'birds of paradise', 'delighted halfling', 'cultivate',
-            'kodama\'s reach', 'farseek', 'nature\'s lore', 'three visits',
-            'phyrexian tower', 'nykthos, shrine to nyx', 'talismans', 'signets'
-          ]);
-
-          if (eliteRampStaples.has(cn) || (c.types.includes('Artifact') && c.cmc === 2 && (c.oracleText || '').toLowerCase().includes('add '))) {
+          if (c.types.includes('Artifact') && c.cmc === 2 && (c.oracleText || '').toLowerCase().includes('add ')) {
             adjustedScore = Math.max(adjustedScore, 90);
-            badge = cmdCmc === 4 ? `🎯 Turn-3 ${commander.name}` : `⚡ Fast Mana`;
+            badge = commander.cmc === 4 ? `🎯 Turn-3 ${commander.name}` : `⚡ Fast Mana`;
           } else if (c.cmc <= 2 && roleChips.some(r => r.id === 'ramp')) {
             adjustedScore = Math.min(99, adjustedScore + 8);
           }
@@ -816,13 +843,13 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         return {
           card: c,
           score: adjustedScore,
-          badge: badge.includes('% Match') ? `${adjustedScore}% Match` : badge,
+          badge,
           reason,
           roleChips
         };
       })
       .sort((a, b) => {
-        // 1. PRIMARY: Adjusted Synergy & Role Score descending
+        // 1. PRIMARY: Adjusted Synergy Score descending
         if (b.score !== a.score) {
           return b.score - a.score;
         }
@@ -847,6 +874,17 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         // 5. TIE BREAKER 4: Alphabetical
         return a.card.name.localeCompare(b.card.name);
       });
+
+    return [
+      ...edhrecCardsForTab.map(item => ({
+        card: item.card,
+        score: item.score,
+        badge: item.badge,
+        reason: item.reason,
+        roleChips: item.roleChips
+      })),
+      ...extendedCardsForTab
+    ];
   };
 
   const rawTabList = getTabResults();
