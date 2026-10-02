@@ -36,7 +36,7 @@ export const App: React.FC = () => {
   // Navigation State
   const [navTab, setNavTab] = useState<MainNavTab>('deck_builder');
   const [brawlSubMode, setBrawlSubMode] = useState<BrawlSubMode>('brawl_historic');
-  const [synergyTab, setSynergyTab] = useState<SynergyCategoryTab>('creatures');
+  const [synergyTab, setSynergyTab] = useState<SynergyCategoryTab>('meta_consensus');
   const [isDeckDrawerOpen, setIsDeckDrawerOpen] = useState<boolean>(() => {
     const saved = localStorage.getItem('arenaforge_deck_tray_open');
     return saved !== null ? saved === 'true' : true;
