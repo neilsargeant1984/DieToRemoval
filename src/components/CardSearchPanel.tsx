@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
-import { searchArenaCards } from '../services/scryfallService';
+import { searchArenaCards, buildSmartSearchQuery } from '../services/scryfallService';
 import { Search, Plus, Sparkles, BookOpen, X, ShieldAlert, Loader2, Globe } from 'lucide-react';
 import { ManaCost } from './ManaCost';
 
@@ -55,8 +55,9 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
 
     searchTimeoutRef.current = setTimeout(async () => {
       try {
+        const smartQuery = buildSmartSearchQuery(searchTerm);
         const result = await searchArenaCards({
-          query: searchTerm,
+          query: smartQuery,
           format: selectedFormat,
           color: selectedColor,
           type: selectedType,
