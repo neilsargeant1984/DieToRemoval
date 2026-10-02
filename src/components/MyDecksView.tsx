@@ -659,8 +659,26 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                       </div>
                     </div>
 
-                    {/* Progress Bar (if deck is incomplete) */}
-                    {!isComplete && (
+                    {/* Empty Imported Deck Notice or Progress Bar */}
+                    {deck.isImported && deck.mainboard.length === 0 ? (
+                      <div className="p-2.5 rounded-xl bg-amber-950/40 border border-amber-500/30 flex items-center justify-between gap-2 text-xs text-amber-300">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <AlertTriangle className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" />
+                          <span className="text-[11px] font-semibold truncate">Only Commander Loaded (0/99)</span>
+                        </div>
+                        {onOpenSync && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onOpenSync();
+                            }}
+                            className="text-[10px] text-amber-400 hover:text-amber-200 underline font-bold whitespace-nowrap"
+                          >
+                            Sync Deck
+                          </button>
+                        )}
+                      </div>
+                    ) : !isComplete ? (
                       <div className="space-y-1 pt-1">
                         <div className="flex items-center justify-between text-[10px]">
                           <span className="text-amber-400/90 font-medium">Work in Progress</span>
@@ -673,7 +691,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                           />
                         </div>
                       </div>
-                    )}
+                    ) : null}
                   </div>
 
                   {/* 3. CARD FOOTER: Actions & Load CTA */}
