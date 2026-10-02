@@ -309,7 +309,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
 
     try {
       const result = await searchArenaCards({
-        query: searchTerm,
+        query: buildSmartSearchQuery(searchTerm),
         format: selectedFormat,
         colors: selectedColors.length > 0 ? selectedColors : undefined,
         cmcValues: selectedCmcs.length > 0 ? selectedCmcs : undefined,
