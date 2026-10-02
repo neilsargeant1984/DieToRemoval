@@ -219,22 +219,59 @@ export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile
     explanations.push('Targeted Spot Removal / Interaction');
   }
 
-  // 4b. GRAVEYARD HATE (Exiling cards from graveyards)
-  const isGraveyardHate = (
-    text.includes('exile target card from a graveyard') ||
-    text.includes('exile target card from target opponent\'s graveyard') ||
-    text.includes('exile all cards from all graveyards') ||
-    text.includes('exile all cards from target player\'s graveyard') ||
-    text.includes('exile target player\'s graveyard') ||
-    (text.includes('graveyard') && text.includes('exile') && !isTargetedRemoval && !text.includes('exile that token'))
+  // 5. GRAVEYARD RECURSION / REANIMATION
+  const isRecursion = 
+    (text.includes('return target') && (text.includes('graveyard to the battlefield') || text.includes('graveyard onto the battlefield'))) ||
+    (text.includes('put target') && (text.includes('graveyard to the battlefield') || text.includes('graveyard onto the battlefield'))) ||
+    (text.includes('return target') && text.includes('graveyard to your hand') && !card.types.includes('Land')) ||
+    text.includes('reanimate') ||
+    card.name.toLowerCase() === 'victimize';
+
+  if (isRecursion) {
+    roles.push('recursion');
+    explanations.push('Graveyard Recursion / Reanimation');
+  }
+
+  // 6. GRAVEYARD HATE & INTERACTION (Disrupting opponents' graveyards)
+  // Clean out self-transform exiles (e.g. Liliana, Heretical Healer, Nicol Bolas, the Ravager)
+  const textWithoutSelfTransform = text
+    .replace(/exile\s+[a-z\s,']+\s*,\s*then\s+return\s+(him|her|it|them)\s+to\s+the\s+battlefield\s+transformed/gi, '')
+    .replace(/exile\s+[a-z\s,']+\s*transformed/gi, '');
+
+  const KNOWN_GY_HATE_CARDS = [
+    'rest in peace', 'leyline of the void', 'soul-guide lantern', 'bojuka bog',
+    'tormod\'s crypt', 'grafdigger\'s cage', 'unlicensed hearse', 'dauthi voidwalker',
+    'weathered runestone', 'relic of progenitus', 'lantern of the lost', 'lion sash',
+    'graveyard trespasser', 'cling to dust', 'kunoros, hound of athreos', 'stone of erech',
+    'ghost vacuum', 'ashiok, dream render', 'containment priest'
+  ];
+
+  const isGraveyardHate = !roles.includes('recursion') && (
+    KNOWN_GY_HATE_CARDS.includes(card.name.toLowerCase().trim()) ||
+    textWithoutSelfTransform.includes('exile target card from a graveyard') ||
+    textWithoutSelfTransform.includes('exile target card from target opponent\'s graveyard') ||
+    textWithoutSelfTransform.includes('exile target card from an opponent\'s graveyard') ||
+    textWithoutSelfTransform.includes('exile all cards from all graveyards') ||
+    textWithoutSelfTransform.includes('exile all cards from target player\'s graveyard') ||
+    textWithoutSelfTransform.includes('exile all cards from target opponent\'s graveyard') ||
+    textWithoutSelfTransform.includes('exile target player\'s graveyard') ||
+    textWithoutSelfTransform.includes('exile that player\'s graveyard') ||
+    textWithoutSelfTransform.includes('exile target opponent\'s graveyard') ||
+    (textWithoutSelfTransform.includes('exile up to') && textWithoutSelfTransform.includes('cards from a graveyard')) ||
+    textWithoutSelfTransform.includes('cards in graveyards can\'t') ||
+    textWithoutSelfTransform.includes('can\'t cast spells from graveyards') ||
+    textWithoutSelfTransform.includes('can\'t enter the battlefield from a graveyard') ||
+    textWithoutSelfTransform.includes('put into a graveyard from anywhere, exile it instead') ||
+    textWithoutSelfTransform.includes('would be put into an opponent\'s graveyard, exile') ||
+    textWithoutSelfTransform.includes('would be put into a graveyard, exile it instead')
   );
 
-  if (isGraveyardHate && !roles.includes('recursion')) {
+  if (isGraveyardHate) {
     roles.push('graveyard_hate');
     explanations.push('Graveyard Hate / Interaction');
   }
 
-  // 5. PROTECTION (Hexproof, Indestructible, Phase Out, Ward, Shield Counters)
+  // 7. PROTECTION (Hexproof, Indestructible, Phase Out, Ward, Shield Counters)
   const isProtection = 
     (text.includes('hexproof') || 
      text.includes('indestructible') || 
@@ -250,7 +287,7 @@ export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile
     explanations.push('Commander & Board Protection');
   }
 
-  // 6. CARD ADVANTAGE & DRAW ENGINES
+  // 8. CARD ADVANTAGE & DRAW ENGINES
   // Clean text of opponent-exclusive draw trigger phrases to prevent cards like Orcish Bowmasters, Smothering Tithe,
   // or Sheoldred, the Apocalypse from being mistakenly tagged as card draw for the player.
   const textWithoutOpponentDraw = text
@@ -274,20 +311,7 @@ export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile
     explanations.push('Card Advantage / Draw Engine');
   }
 
-  // 7. GRAVEYARD RECURSION / REANIMATION
-  const isRecursion = 
-    (text.includes('return target') && (text.includes('graveyard to the battlefield') || text.includes('graveyard onto the battlefield'))) ||
-    (text.includes('put target') && (text.includes('graveyard to the battlefield') || text.includes('graveyard onto the battlefield'))) ||
-    (text.includes('return target') && text.includes('graveyard to your hand') && !card.types.includes('Land')) ||
-    text.includes('reanimate') ||
-    card.name.toLowerCase() === 'victimize';
-
-  if (isRecursion) {
-    roles.push('recursion');
-    explanations.push('Graveyard Recursion / Reanimation');
-  }
-
-  // 8. LIFE DRAIN / PING
+  // 9. LIFE DRAIN / PING
   const isDrain = 
     ((text.includes('each opponent loses') || text.includes('target opponent loses') || text.includes('each player loses')) && text.includes('you gain')) ||
     (text.includes('whenever a creature') && text.includes('dies') && (text.includes('loses 1 life') || text.includes('loses life') || text.includes('deals 1 damage to each opponent')));
@@ -297,7 +321,7 @@ export function classifyCardRoles(card: Card, commander?: Card): CardRoleProfile
     explanations.push('Life Drain / Aristocrat Ping');
   }
 
-  // 9. TUTORS (Non-land specific library tutors)
+  // 10. TUTORS (Non-land specific library tutors)
   const isLandSearch = 
     text.includes('basic land') || 
     text.includes('plains, island') ||

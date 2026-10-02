@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Card } from '../types/card';
-import { searchArenaCards } from '../services/scryfallService';
+import { searchArenaCards, buildSmartSearchQuery } from '../services/scryfallService';
 import { X, Crown, Search, Loader2 } from 'lucide-react';
 import { CardImage } from './CardImage';
 
@@ -30,10 +30,8 @@ export const CommanderPickerModal: React.FC<CommanderPickerModalProps> = ({
 
     const timer = setTimeout(async () => {
       try {
-        // When user types a name in the commander picker, prefix with name: if simple word to target card name specifically
-        const scryfallQuery = term
-          ? (term.includes(':') || term.includes('(') ? term : `name:${term}`)
-          : undefined;
+        // Build flexible query matching card name or creature/card types (e.g. sphinx, goblin)
+        const scryfallQuery = term ? buildSmartSearchQuery(term) : undefined;
 
         const result = await searchArenaCards({
           query: scryfallQuery,
@@ -43,13 +41,23 @@ export const CommanderPickerModal: React.FC<CommanderPickerModalProps> = ({
 
         if (isCancelled) return;
 
-        // Strict name filtering when user searches: guarantees that cards without the search term in their name/subtypes are never shown
+        // Flexible client filtering: matches card name, type line, subtypes, or oracle text
         if (term) {
           const lowerTerm = term.toLowerCase();
-          const filtered = result.cards.filter(c => 
-            c.name.toLowerCase().includes(lowerTerm) || 
-            (c.subtypes && c.subtypes.some(s => s.toLowerCase().includes(lowerTerm)))
-          );
+          const tokens = lowerTerm.replace(/[,']/g, ' ').split(/\s+/).filter(Boolean);
+          const filtered = result.cards.filter(c => {
+            const name = c.name.toLowerCase();
+            const typeLine = (c.typeLine || '').toLowerCase();
+            const subtypes = (c.subtypes || []).map(s => s.toLowerCase());
+            const oracle = (c.oracleText || '').toLowerCase();
+
+            return tokens.every(t =>
+              name.includes(t) ||
+              typeLine.includes(t) ||
+              subtypes.some(s => s.includes(t)) ||
+              oracle.includes(t)
+            );
+          });
           setCommanders(filtered);
         } else {
           setCommanders(result.cards);
@@ -96,7 +104,7 @@ export const CommanderPickerModal: React.FC<CommanderPickerModalProps> = ({
         <div className="relative">
           <input
             type="text"
-            placeholder="Search any Commander (e.g. Rusko, Nicol Bolas, Atraxa, Sheoldred, Etali)..."
+            placeholder="Search by name, creature type (e.g. Sphinx, Goblin, Atraxa, Nicol Bolas)..."
             value={searchTerm}
             onChange={e => setSearchTerm(e.target.value)}
             className="w-full bg-[#0e121a] border border-[#c5a059]/30 rounded-xl pl-10 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-amber-500/80 transition shadow-inner"
