@@ -911,6 +911,8 @@ export const App: React.FC = () => {
                     onUpdateDeck={handleUpdateDeck}
                     onSelectCardDetail={setSelectedCardDetail}
                     onOpenExport={() => setExportImportMode('export')}
+                    onOpenImport={() => setIsImportDeckModalOpen(true)}
+                    onOpenSync={() => setIsSyncOpen(true)}
                     wildcardCost={wildcardCost}
                     userCollection={userCollection}
                     onAddCard={card => handleAddCard(card, false)}
@@ -951,6 +953,8 @@ export const App: React.FC = () => {
           onUpdateDeck={handleUpdateDeck}
           onSelectCardDetail={setSelectedCardDetail}
           onOpenExport={() => setExportImportMode('export')}
+          onOpenImport={() => setIsImportDeckModalOpen(true)}
+          onOpenSync={() => setIsSyncOpen(true)}
           wildcardCost={wildcardCost}
           userCollection={userCollection}
           onAddCard={card => handleAddCard(card, false)}
