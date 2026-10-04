@@ -9,6 +9,7 @@ import { CardImage } from './CardImage';
 import { OwnershipPips } from './OwnershipPips';
 import { DeckCraftingCostWidget } from './DeckCraftingCostWidget';
 import { getCardOwnedCount } from '../services/ownershipService';
+import { StandardDeckDoctor } from './StandardDeckDoctor';
 
 interface DeckListWorkspaceProps {
   deck: Deck;
@@ -234,31 +235,40 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
   return (
     <div className="arena-panel rounded-2xl p-4 shadow-xl flex flex-col h-full relative">
       {/* Workspace Header & Stats */}
-      <div className="flex items-center justify-between pb-3 border-b border-[#c5a059]/20">
-        <div className="flex items-center gap-3">
-          <h2 className="font-fantasy font-black text-base text-slate-100">{deck.name}</h2>
-          <span className="text-xs px-3 py-0.5 rounded-full capitalize font-bold bg-[#161b26] text-amber-400 border border-[#c5a059]/30">
-            {deck.format}
-          </span>
+      {deck.format === 'standard' ? (
+        <div className="mb-2">
+          <StandardDeckDoctor 
+            deck={deck}
+            onSelectRoleFilter={() => {}} 
+          />
         </div>
+      ) : (
+        <div className="flex items-center justify-between pb-3 border-b border-[#c5a059]/20">
+          <div className="flex items-center gap-3">
+            <h2 className="font-fantasy font-black text-base text-slate-100">{deck.name}</h2>
+            <span className="text-xs px-3 py-0.5 rounded-full capitalize font-bold bg-[#161b26] text-amber-400 border border-[#c5a059]/30">
+              {deck.format}
+            </span>
+          </div>
 
-        <div className="flex items-center gap-2 text-xs font-semibold">
-          <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
-            mainCount === 60
-              ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
-              : 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
-          }`}>
-            Mainboard: <strong className="text-slate-100 font-black">{mainCount}</strong> / 60
-          </span>
-          <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
-            sideCount <= 15
-              ? 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
-              : 'bg-rose-950/60 text-rose-300 border-rose-500/40'
-          }`}>
-            Sideboard: <strong className="text-slate-100 font-black">{sideCount}</strong> / 15
-          </span>
+          <div className="flex items-center gap-2 text-xs font-semibold">
+            <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
+              mainCount === (deck.format === 'brawl' ? 100 : 60)
+                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                : 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
+            }`}>
+              Mainboard: <strong className="text-slate-100 font-black">{mainCount}</strong> / {deck.format === 'brawl' ? 100 : 60}
+            </span>
+            <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
+              sideCount <= 15
+                ? 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
+                : 'bg-rose-950/60 text-rose-300 border-rose-500/40'
+            }`}>
+              Sideboard: <strong className="text-slate-100 font-black">{sideCount}</strong> / 15
+            </span>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Live Deck Crafting Cost Breakdown */}
       {wildcardInventory && (
@@ -272,49 +282,61 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
         </div>
       )}
 
-      {mainCount < 60 && (
+      {/* Format Warnings */}
+      {deck.format !== 'standard' && mainCount < (deck.format === 'brawl' ? 100 : 60) && (
         <div className="mt-2 bg-amber-950/40 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 shadow-sm font-medium">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
-          <span>MTG Arena requires a minimum of 60 cards in the mainboard for this format.</span>
+          <span>MTG Arena requires a minimum of {deck.format === 'brawl' ? 100 : 60} cards in the mainboard for this format.</span>
         </div>
       )}
 
-      {/* Main deck card categories */}
-      <div className="mt-3 flex-1 overflow-y-auto space-y-4 pr-1 min-h-[400px] max-h-[620px]">
-        {Object.entries(categories).map(([category, cards]) => {
-          if (cards.length === 0) return null;
-          const catCount = cards.reduce((acc, c) => acc + c.quantity, 0);
+      {/* Split Mainboard / Sideboard Layout */}
+      <div className="mt-4 flex-1 overflow-hidden flex gap-4 min-h-[400px] max-h-[620px]">
+        
+        {/* Mainboard Column */}
+        <div className="flex-1 overflow-y-auto space-y-4 pr-2">
+          {Object.entries(categories).map(([category, cards]) => {
+            if (cards.length === 0) return null;
+            const catCount = cards.reduce((acc, c) => acc + c.quantity, 0);
 
-          return (
-            <div key={category} className="space-y-1.5">
-              <div className="flex items-center justify-between text-xs font-fantasy font-bold text-[#c5a059] uppercase tracking-wider px-1">
-                <span>{category} ({catCount})</span>
+            return (
+              <div key={category} className="space-y-1.5">
+                <div className="flex items-center justify-between text-xs font-fantasy font-bold text-[#c5a059] uppercase tracking-wider px-1">
+                  <span>{category} ({catCount})</span>
+                </div>
+                <div className="space-y-1">
+                  {cards.map(item => renderCardRow(item, false))}
+                </div>
               </div>
-              <div className="space-y-1">
-                {cards.map(item => renderCardRow(item, false))}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
 
-        {/* Sideboard Section */}
-        {deck.sideboard.length > 0 && (
-          <div className="pt-3 border-t border-[#c5a059]/20 space-y-1.5">
-            <div className="flex items-center justify-between text-xs font-fantasy font-bold text-slate-400 uppercase tracking-wider px-1">
-              <span>Sideboard ({sideCount})</span>
+          {deck.mainboard.length === 0 && (
+            <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
+              <p className="font-fantasy font-bold text-slate-200">Your mainboard is currently empty</p>
+              <p className="text-xs mt-1 text-slate-400">
+                Add Arena cards from the explorer on the left or load a pre-built Meta Deck.
+              </p>
             </div>
-            <div className="space-y-1">
-              {deck.sideboard.map(item => renderCardRow(item, true))}
-            </div>
-          </div>
-        )}
+          )}
+        </div>
 
-        {deck.mainboard.length === 0 && (
-          <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
-            <p className="font-fantasy font-bold text-slate-200">Your deck is currently empty</p>
-            <p className="text-xs mt-1 text-slate-400">
-              Add Arena cards from the explorer on the left or load a pre-built Meta Deck.
-            </p>
+        {/* Sideboard Column */}
+        {(deck.format === 'standard' || deck.sideboard.length > 0) && (
+          <div className="w-[280px] xl:w-[320px] flex-shrink-0 border-l border-[#c5a059]/20 pl-4 overflow-y-auto space-y-1.5 flex flex-col">
+            <div className="flex items-center justify-between text-xs font-fantasy font-bold text-slate-400 uppercase tracking-wider px-1 mb-2">
+              <span>Sideboard ({sideCount}/15)</span>
+            </div>
+            
+            <div className="space-y-1 flex-1">
+              {deck.sideboard.length > 0 ? (
+                deck.sideboard.map(item => renderCardRow(item, true))
+              ) : (
+                <div className="h-32 flex items-center justify-center text-center p-4 text-xs text-slate-500 font-medium bg-slate-900/30 rounded-xl border border-dashed border-slate-700/50">
+                  Sideboard is empty.<br/>Add up to 15 cards for BO3 matches.
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>
