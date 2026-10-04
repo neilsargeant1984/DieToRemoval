@@ -1,5 +1,4 @@
 import React from 'react';
-import { Card } from '../types/card';
 import { Deck } from '../types/deck';
 import { analyzeStandardDeckHealth } from '../utils/standardAdvisor';
 import { validateStandardDeck } from '../utils/standardValidator';
