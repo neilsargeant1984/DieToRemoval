@@ -35,7 +35,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
   const mainCount = deck.mainboard.reduce((acc, c) => acc + c.quantity, 0);
   const sideCount = deck.sideboard.reduce((acc, c) => acc + c.quantity, 0);
 
-  // Group mainboard cards by category
   const categories = {
     Creatures: deck.mainboard.filter(c => c.card.types.includes('Creature')),
     Planeswalkers: deck.mainboard.filter(c => c.card.types.includes('Planeswalker')),
@@ -63,7 +62,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
       if (newQty <= 0) {
         list.splice(index, 1);
       } else {
-        // Enforce maximum copies allowed by MTG rules and card text
         const maxAllowed = getMaxCardCopies(card, deck.format);
         if (newQty > maxAllowed) {
           return;
@@ -142,7 +140,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
         onMouseEnter={() => setHoveredCard(card)}
         onMouseLeave={() => setHoveredCard(null)}
       >
-        {/* Quantity Controls & Card Name */}
         <div className="flex items-center gap-2.5 min-w-0 flex-1">
           <div className="flex items-center bg-[#0e121a] border border-[#c5a059]/30 rounded-lg px-1 flex-shrink-0 shadow-sm">
             <button
@@ -167,6 +164,10 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
             title={`${card.rarity} card`}
           />
 
+          <div className="w-14 h-9 rounded bg-slate-800 overflow-hidden flex-shrink-0 border border-slate-700/50 relative">
+            <img src={card.imageUrl} alt={card.name} className="absolute inset-0 w-full h-full object-cover object-[50%_15%]" />
+          </div>
+
           <button
             onClick={() => onSelectCardDetail(card)}
             className="text-left font-bold text-slate-200 hover:text-amber-300 transition truncate text-sm flex items-center gap-1.5"
@@ -185,7 +186,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
           </button>
         </div>
 
-        {/* Owned Status & Mana Cost & Actions */}
         <div className="flex items-center gap-2.5 flex-shrink-0">
           <OwnershipPips
             card={card}
@@ -193,8 +193,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
             size="sm"
             onCountChange={(_, updated) => onUpdateCollection?.(updated)}
           />
-
-          {/* Wildcard deficiency badge */}
           {!isBasic && (
             <span
               className={`text-[10px] px-1.5 py-0.5 rounded-lg font-mono ${
@@ -207,12 +205,9 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
               {owned >= quantity ? `${owned} owned` : `Need ${quantity - owned} WC`}
             </span>
           )}
-
           {card.manaCost && (
             <ManaCost manaCost={card.manaCost} size="sm" />
           )}
-
-          {/* Action buttons (Swap section, Delete) */}
           <button
             onClick={() => handleMoveSection(card, isSideboard)}
             className="text-slate-400 hover:text-amber-400 p-1 rounded-lg opacity-0 group-hover:opacity-100 transition"
@@ -234,7 +229,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
 
   return (
     <div className="arena-panel rounded-2xl p-4 shadow-xl flex flex-col h-full relative">
-      {/* Workspace Header & Stats */}
       {deck.format === 'standard' ? (
         <div className="mb-2">
           <StandardDeckDoctor 
@@ -251,7 +245,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
               {deck.format}
             </span>
           </div>
-
           <div className="flex items-center gap-2 text-xs font-semibold">
             <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
               mainCount === (deck.format === 'brawl' ? 100 : 60)
@@ -271,7 +264,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Live Deck Crafting Cost Breakdown */}
       {wildcardInventory && (
         <div className="mt-3">
           <DeckCraftingCostWidget
@@ -283,7 +275,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Format Warnings */}
       {deck.format !== 'standard' && mainCount < (deck.format === 'brawl' ? 100 : 60) && (
         <div className="mt-2 bg-amber-950/40 border border-amber-500/40 text-amber-300 px-3 py-1.5 rounded-xl text-xs flex items-center gap-2 shadow-sm font-medium">
           <AlertTriangle className="w-4 h-4 flex-shrink-0 text-amber-400" />
@@ -291,15 +282,11 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Split Mainboard / Sideboard Layout */}
       <div className="mt-4 flex-1 overflow-hidden flex gap-4 min-h-[400px] max-h-[620px]">
-        
-        {/* Mainboard Column */}
         <div className="flex-1 overflow-y-auto space-y-4 pr-2">
           {Object.entries(categories).map(([category, cards]) => {
             if (cards.length === 0) return null;
             const catCount = cards.reduce((acc, c) => acc + c.quantity, 0);
-
             return (
               <div key={category} className="space-y-1.5">
                 <div className="flex items-center justify-between text-xs font-fantasy font-bold text-[#c5a059] uppercase tracking-wider px-1">
@@ -311,7 +298,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
               </div>
             );
           })}
-
           {deck.mainboard.length === 0 && (
             <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-500">
               <p className="font-fantasy font-bold text-slate-200">Your mainboard is currently empty</p>
@@ -321,14 +307,11 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
             </div>
           )}
         </div>
-
-        {/* Sideboard Column */}
         {(deck.format === 'standard' || deck.sideboard.length > 0) && (
           <div className="w-[280px] xl:w-[320px] flex-shrink-0 border-l border-[#c5a059]/20 pl-4 overflow-y-auto space-y-1.5 flex flex-col">
             <div className="flex items-center justify-between text-xs font-fantasy font-bold text-slate-400 uppercase tracking-wider px-1 mb-2">
               <span>Sideboard ({sideCount}/15)</span>
             </div>
-            
             <div className="space-y-1 flex-1">
               {deck.sideboard.length > 0 ? (
                 deck.sideboard.map(item => renderCardRow(item, true))
@@ -341,8 +324,6 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
           </div>
         )}
       </div>
-
-      {/* Floating Card Art Tooltip on Hover */}
       {hoveredCard && (
         <div className="absolute right-4 bottom-4 pointer-events-none z-50 w-52 rounded-2xl shadow-2xl border-2 border-[#c5a059] overflow-hidden animate-in fade-in duration-150">
           <CardImage
