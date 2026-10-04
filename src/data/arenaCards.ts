@@ -23,25 +23,6 @@ export const ARENA_CARDS: Card[] = [
     legalities: { standard: false, timeless: true, historic: true, explorer: false, brawl: true, alchemy: false }
   },
   {
-    id: "liliana-the-faultless",
-    arenaId: 106445,
-    name: "Liliana the Faultless",
-    manaCost: "{2}{B}{B}",
-    cmc: 4,
-    colors: ["B"],
-    colorIdentity: ["B"],
-    typeLine: "Legendary Creature — Human Cleric",
-    types: ["Creature"],
-    subtypes: ["Human", "Cleric"],
-    rarity: "mythic",
-    set: "FRA",
-    setName: "Reality Fracture",
-    collectorNumber: "200",
-    imageUrl: "https://cards.scryfall.io/normal/front/7/0/70d8c400-87dc-4f15-808f-e54a95d779fc.jpg?1788329194",
-    oracleText: "Lifelink\nWhenever you gain life, each opponent loses that much life.",
-    legalities: { standard: true, timeless: true, historic: true, explorer: false, brawl: true, alchemy: true }
-  },
-  {
     id: "liliana-the-repentant",
     arenaId: 106476,
     name: "Liliana the Repentant",
