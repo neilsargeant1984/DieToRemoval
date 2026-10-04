@@ -32,6 +32,7 @@ import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { deckCloudService } from './services/deckCloudService';
 import { AuthModal } from './components/AuthModal';
 import { WildcardEditModal } from './components/WildcardEditModal';
+import { NewDeckModal } from './components/NewDeckModal';
 
 export const App: React.FC = () => {
   // Navigation State
@@ -151,6 +152,7 @@ export const App: React.FC = () => {
   const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
   const [isImportDeckModalOpen, setIsImportDeckModalOpen] = useState(false);
   const [isManaModalOpen, setIsManaModalOpen] = useState(false);
+  const [isNewDeckModalOpen, setIsNewDeckModalOpen] = useState(false);
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
 
@@ -395,6 +397,11 @@ export const App: React.FC = () => {
   };
 
   const handleChangeFormat = (format: FormatType) => {
+    // Prevent format switching from altering a populated active deck
+    if (activeDeck.format !== format && (activeDeck.mainboard.length > 0 || activeDeck.sideboard?.length > 0)) {
+      setIsNewDeckModalOpen(true);
+      return;
+    }
     setActiveDeck(prev => ({
       ...prev,
       format,
@@ -990,6 +997,15 @@ export const App: React.FC = () => {
       )}
 
       {/* Modals */}
+      <NewDeckModal
+        isOpen={isNewDeckModalOpen}
+        onClose={() => setIsNewDeckModalOpen(false)}
+        onCreateDeck={(format) => {
+          handleCreateNewDeck(format);
+          setIsNewDeckModalOpen(false);
+        }}
+      />
+
       <CommanderPickerModal
         isOpen={isCommanderPickerOpen}
         onClose={() => setIsCommanderPickerOpen(false)}
