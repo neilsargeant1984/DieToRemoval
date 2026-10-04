@@ -240,6 +240,7 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
           <StandardDeckDoctor 
             deck={deck}
             onSelectRoleFilter={() => {}} 
+            onOpenSynergyMatrix={() => {}}
           />
         </div>
       ) : (
