@@ -1,12 +1,22 @@
 import { Deck } from '../types/deck';
+
 export const analyzeStandardDeckHealth = (deck: Deck) => {
   const counts = { threats: 0, removal: 0, board_wipe: 0, card_advantage: 0, lands: 0 };
-  deck.mainboard.forEach(card => {
-    const typeLine = card.type_line || '';
-    if (typeLine.includes('Land')) counts.lands += 1;
-    else if (typeLine.includes('Creature') || typeLine.includes('Planeswalker')) counts.threats += 1;
-    else if (typeLine.includes('Instant') || typeLine.includes('Sorcery')) counts.removal += 1;
+  
+  deck.mainboard.forEach(item => {
+    const card = item.card;
+    const qty = item.quantity;
+    const typeLine = (card.typeLine || '').toLowerCase();
+    
+    if (typeLine.includes('land')) {
+      counts.lands += qty;
+    } else if (typeLine.includes('creature') || typeLine.includes('planeswalker')) {
+      counts.threats += qty;
+    } else if (typeLine.includes('instant') || typeLine.includes('sorcery')) {
+      counts.removal += qty;
+    }
   });
+  
   return {
     counts,
     targets: {
