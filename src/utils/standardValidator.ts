@@ -57,7 +57,7 @@ export function validateStandardDeck(deck: Deck): StandardValidationResult {
 
   const checkLegality = (item: DeckCard) => {
     const { card } = item;
-    if (card.legalities && card.legalities.standard !== 'legal') {
+    if (card.legalities && card.legalities.standard === false) {
       isValid = false;
       if (!illegalCards.find(c => c.name === card.name)) {
         illegalCards.push(card);
