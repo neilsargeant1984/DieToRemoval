@@ -5,7 +5,6 @@ import { Search, Plus, Sparkles, BookOpen, X, ShieldAlert, Loader2, Globe } from
 import { ManaCost } from './ManaCost';
 import { OwnershipPips } from './OwnershipPips';
 import { UserCollection } from '../types/collection';
-
 import { FunctionalRole } from '../utils/roleClassifier';
 
 interface CardSearchPanelProps {
@@ -40,6 +39,8 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
   const [cards, setCards] = useState<Card[]>([]);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isLoading, setIsLoading] = useState<boolean>(true);
+
+  const isGridMode = !searchTerm.trim();
 
   // Sync format changes from parent
   useEffect(() => {
@@ -328,8 +329,8 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
         </div>
       </div>
 
-      {/* Results List */}
-      <div className="mt-4 flex-1 overflow-y-auto space-y-2 pr-1 min-h-[400px] max-h-[620px]">
+      {/* Results Layout */}
+      <div className="mt-4 flex-1 overflow-y-auto pr-1 min-h-[400px] max-h-[620px]">
         {isLoading && cards.length === 0 ? (
           <div className="h-64 flex flex-col items-center justify-center text-center p-6 text-slate-400 space-y-2">
             <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
@@ -342,89 +343,134 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
             <p className="font-fantasy font-bold text-slate-200">No MTG Arena cards found</p>
             <p className="text-xs mt-1 text-slate-400">Try another search term or switch format legality (e.g. Standard vs Timeless).</p>
           </div>
-        ) : (
-          cards.map(card => {
-            const rarityGems = {
-              common: 'bg-stone-400',
-              uncommon: 'bg-sky-500',
-              rare: 'bg-amber-500',
-              mythic: 'bg-orange-500'
-            };
-
-            return (
+        ) : isGridMode ? (
+          /* Visual Grid Mode (Triggered when search bar is empty) */
+          <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 gap-3 p-1">
+            {cards.map(card => (
               <div
                 key={card.id}
-                className="group relative card-tile rounded-xl p-2.5 flex items-center justify-between gap-3 transition cursor-pointer shadow-sm hover:border-amber-400/50"
+                className="group relative rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-amber-400 transition-all shadow-md bg-[#0e121a]"
                 onClick={() => onSelectCardDetail(card)}
               >
-                {/* Left: Mana & Name */}
-                <div className="flex items-center gap-2.5 flex-1 min-w-0">
-                  <div
-                    className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${rarityGems[card.rarity]}`}
-                    title={`${card.rarity} rarity`}
-                  />
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-1.5">
-                      <span className="font-bold text-sm text-slate-200 truncate group-hover:text-amber-300 transition">
-                        {card.name}
-                      </span>
-                      {card.isDigitalOnly && (
-                        <span className="px-1.5 py-0.2 text-[10px] bg-purple-950/80 text-purple-300 border border-purple-500/50 rounded font-bold flex-shrink-0">
-                          Digital
-                        </span>
-                      )}
-                      {card.isAlchemyRebalanced && (
-                        <span className="px-1.5 py-0.2 text-[10px] bg-indigo-950/80 text-indigo-300 border border-indigo-500/50 rounded font-bold flex-shrink-0">
-                          Rebalanced
-                        </span>
-                      )}
-                      {card.spellbook && (
-                        <span className="flex items-center gap-1 px-1.5 py-0.2 text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 rounded font-bold flex-shrink-0">
-                          <BookOpen className="w-2.5 h-2.5" />
-                          Spellbook ({card.spellbook.length})
-                        </span>
-                      )}
-                    </div>
-                    <div className="text-xs text-slate-400 truncate flex items-center gap-2 font-medium">
-                      <span>{card.typeLine}</span>
-                      <span className="text-slate-600">•</span>
-                      <span className="text-slate-500 uppercase">{card.set} #{card.collectorNumber}</span>
-                    </div>
-                  </div>
-                </div>
+                <img
+                  src={card.imageUrl}
+                  alt={card.name}
+                  className="w-full h-auto block rounded-lg aspect-[2.5/3.5] object-cover"
+                  loading="lazy"
+                />
 
-                {/* Right: Ownership Pips, Mana Cost & Quick Add Buttons */}
-                <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
-                  <OwnershipPips
-                    card={card}
-                    userCollection={userCollection}
-                    size="sm"
-                    showBadge={true}
-                    onCountChange={(_, updated) => onUpdateCollection?.(updated)}
-                  />
-                  {card.manaCost && (
-                    <span className="text-xs font-mono bg-[#0e121a] px-2 py-0.5 rounded-lg text-amber-400 font-bold border border-[#c5a059]/30 shadow-inner">
-                      {card.manaCost}
-                    </span>
-                  )}
+                {/* Hover Actions Overlay */}
+                <div className="absolute inset-0 bg-[#0b0e14]/80 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-3 gap-2 backdrop-blur-sm rounded-lg">
+                  <div onClick={e => e.stopPropagation()} className="mb-auto mt-1 flex w-full justify-end">
+                    <OwnershipPips
+                      card={card}
+                      userCollection={userCollection}
+                      size="sm"
+                      onCountChange={(_, updated) => onUpdateCollection?.(updated)}
+                    />
+                  </div>
                   <button
-                    onClick={() => onAddCard(card, false)}
-                    className="p-1.5 btn-mythic-spark text-slate-950 rounded-lg transition shadow-sm hover:scale-105"
-                    title="Add 1 copy to Mainboard"
+                    onClick={(e) => { e.stopPropagation(); onAddCard(card, false); }}
+                    className="w-full py-2 btn-mythic-spark text-slate-950 font-black rounded-lg shadow-xl hover:scale-105 transition"
                   >
-                    <Plus className="w-4 h-4 font-extrabold" />
+                    Add to Deck
                   </button>
                   <button
-                    onClick={() => onAddCard(card, true)}
-                    className="px-2 py-1 bg-[#1c2230] hover:bg-[#252d40] text-slate-300 hover:text-white rounded-lg text-xs font-bold border border-[#c5a059]/30 transition shadow-sm"
-                    title="Add 1 copy to Sideboard"
+                    onClick={(e) => { e.stopPropagation(); onAddCard(card, true); }}
+                    className="w-full py-1.5 bg-[#1c2230] text-slate-200 font-bold border border-[#c5a059]/40 rounded-lg hover:bg-[#252d40] hover:text-white transition"
                   >
-                    +Side
+                    + Sideboard
                   </button>
                 </div>
               </div>
-            );
-          })
+            ))}
+          </div>
+        ) : (
+          /* Compact List Mode (Triggered when searching for a specific card) */
+          <div className="space-y-2">
+            {cards.map(card => {
+              const rarityGems = {
+                common: 'bg-stone-400',
+                uncommon: 'bg-sky-500',
+                rare: 'bg-amber-500',
+                mythic: 'bg-orange-500'
+              };
+
+              return (
+                <div
+                  key={card.id}
+                  className="group relative card-tile rounded-xl p-2.5 flex items-center justify-between gap-3 transition cursor-pointer shadow-sm hover:border-amber-400/50"
+                  onClick={() => onSelectCardDetail(card)}
+                >
+                  {/* Left: Mana & Name */}
+                  <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                    <div
+                      className={`w-2.5 h-2.5 rounded-full flex-shrink-0 shadow-sm ${rarityGems[card.rarity]}`}
+                      title={`${card.rarity} rarity`}
+                    />
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-sm text-slate-200 truncate group-hover:text-amber-300 transition">
+                          {card.name}
+                        </span>
+                        {card.isDigitalOnly && (
+                          <span className="px-1.5 py-0.2 text-[10px] bg-purple-950/80 text-purple-300 border border-purple-500/50 rounded font-bold flex-shrink-0">
+                            Digital
+                          </span>
+                        )}
+                        {card.isAlchemyRebalanced && (
+                          <span className="px-1.5 py-0.2 text-[10px] bg-indigo-950/80 text-indigo-300 border border-indigo-500/50 rounded font-bold flex-shrink-0">
+                            Rebalanced
+                          </span>
+                        )}
+                        {card.spellbook && (
+                          <span className="flex items-center gap-1 px-1.5 py-0.2 text-[10px] bg-emerald-950/80 text-emerald-300 border border-emerald-500/50 rounded font-bold flex-shrink-0">
+                            <BookOpen className="w-2.5 h-2.5" />
+                            Spellbook ({card.spellbook.length})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs text-slate-400 truncate flex items-center gap-2 font-medium">
+                        <span>{card.typeLine}</span>
+                        <span className="text-slate-600">•</span>
+                        <span className="text-slate-500 uppercase">{card.set} #{card.collectorNumber}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Right: Ownership Pips, Mana Cost & Quick Add Buttons */}
+                  <div className="flex items-center gap-2 flex-shrink-0" onClick={e => e.stopPropagation()}>
+                    <OwnershipPips
+                      card={card}
+                      userCollection={userCollection}
+                      size="sm"
+                      showBadge={true}
+                      onCountChange={(_, updated) => onUpdateCollection?.(updated)}
+                    />
+                    {card.manaCost && (
+                      <span className="text-xs font-mono bg-[#0e121a] px-2 py-0.5 rounded-lg text-amber-400 font-bold border border-[#c5a059]/30 shadow-inner">
+                        {card.manaCost}
+                      </span>
+                    )}
+                    <button
+                      onClick={() => onAddCard(card, false)}
+                      className="p-1.5 btn-mythic-spark text-slate-950 rounded-lg transition shadow-sm hover:scale-105"
+                      title="Add 1 copy to Mainboard"
+                    >
+                      <Plus className="w-4 h-4 font-extrabold" />
+                    </button>
+                    <button
+                      onClick={() => onAddCard(card, true)}
+                      className="px-2 py-1 bg-[#1c2230] hover:bg-[#252d40] text-slate-300 hover:text-white rounded-lg text-xs font-bold border border-[#c5a059]/30 transition shadow-sm"
+                      title="Add 1 copy to Sideboard"
+                    >
+                      +Side
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
 
