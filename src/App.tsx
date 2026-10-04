@@ -72,13 +72,11 @@ export const App: React.FC = () => {
         // Fallback
       }
     }
-    // Default initial deck
-    const defaultCommander = ARENA_CARDS.find(c => c.name.includes('Liliana')) || ARENA_CARDS[0];
+    // Default initial deck - True Blank Slate
     return [{
       id: 'default-brawl-deck',
-      name: `${defaultCommander.name} Brawl`,
+      name: 'New Brawl Deck',
       format: 'brawl',
-      commander: { card: defaultCommander, quantity: 1 },
       mainboard: [],
       sideboard: [],
       createdAt: new Date().toISOString(),
@@ -106,12 +104,11 @@ export const App: React.FC = () => {
         // Fallback
       }
     }
-    const defaultCommander = ARENA_CARDS.find(c => c.name.includes('Liliana')) || ARENA_CARDS[0];
+    // Default initial deck - True Blank Slate
     return {
       id: 'default-brawl-deck',
-      name: `${defaultCommander.name} Brawl`,
+      name: 'New Brawl Deck',
       format: 'brawl',
-      commander: { card: defaultCommander, quantity: 1 },
       mainboard: [],
       sideboard: [],
       createdAt: new Date().toISOString(),
@@ -539,12 +536,10 @@ export const App: React.FC = () => {
   const handleCreateNewDeck = (format: FormatType) => {
     let newDeck: Deck;
     if (format === 'brawl') {
-      const defaultCommander = ARENA_CARDS.find(c => c.name.includes('Liliana')) || ARENA_CARDS[0];
       newDeck = {
         id: `deck-brawl-${Date.now()}`,
-        name: `New ${defaultCommander.name} Brawl`,
+        name: `New Brawl Deck`,
         format: 'brawl',
-        commander: { card: defaultCommander, quantity: 1 },
         mainboard: [],
         sideboard: [],
         createdAt: new Date().toISOString(),
