@@ -1,6 +1,7 @@
 import { Card, CardFace, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { ARENA_CARDS } from '../data/arenaCards';
 import { FunctionalRole } from '../utils/roleClassifier';
+import { isCardOnArena } from './ownershipService';
 
 // In-memory cache for search queries to provide 0ms instant response on repeat searches
 const searchCache = new Map<string, { cards: Card[]; totalCards: number; timestamp: number }>();
@@ -222,12 +223,13 @@ export function transformScryfallCard(raw: any): Card {
 
   // Format legalities
   const rawLegalities = raw.legalities || {};
+  const isArenaGame = (Array.isArray(raw.games) && raw.games.includes('arena')) || isCardOnArena(raw.name);
   const legalities: Record<FormatType, boolean> = {
     standard: rawLegalities.standard === 'legal',
     timeless: rawLegalities.timeless === 'legal' || rawLegalities.timeless === 'restricted',
     historic: rawLegalities.historic === 'legal',
     explorer: rawLegalities.explorer === 'legal',
-    brawl: rawLegalities.brawl === 'legal' || rawLegalities.standardbrawl === 'legal',
+    brawl: isArenaGame && (rawLegalities.brawl === 'legal' || rawLegalities.standardbrawl === 'legal'),
     alchemy: rawLegalities.alchemy === 'legal'
   };
 

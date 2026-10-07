@@ -32,6 +32,7 @@ import { getCommanderTriggerConfig } from '../utils/commanderTriggers';
 import { getMaxCardCopies } from '../utils/cardRules';
 import { ARENA_LANDS_DATABASE, convertArenaLandToCard } from '../data/arenaLands';
 import { CardImage } from './CardImage';
+import { isCardOnArena } from '../services/ownershipService';
 
 export type SynergyCategoryTab = 
   | 'meta_consensus'
@@ -306,6 +307,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           const uniqueComm: EDHRECCardView[] = [];
           const commSeen = new Set<string>();
           for (const item of communityRes.value.cards) {
+            if (!isCardOnArena(item.card.name)) continue;
             const key = item.card.name.toLowerCase().trim();
             if (!commSeen.has(key)) {
               commSeen.add(key);
@@ -321,6 +323,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         // Also add community cards into candidate pool (keyed strictly by canonical card.name to prevent alternate print duplicates)
         if (communityRes.status === 'fulfilled' && communityRes.value?.cards) {
           for (const item of communityRes.value.cards) {
+            if (!isCardOnArena(item.card.name)) continue;
             if (!item.card.colorIdentity.every(col => commander.colorIdentity.includes(col))) continue;
             const key = item.card.name.toLowerCase().trim();
             if (!cardMap.has(key)) {
@@ -335,6 +338,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         const addCards = (res: PromiseSettledResult<{ cards: Card[] }>) => {
           if (res.status === 'fulfilled' && res.value?.cards) {
             for (const c of res.value.cards) {
+              if (!isCardOnArena(c.name)) continue;
               if (!c.colorIdentity.every(col => commander.colorIdentity.includes(col))) continue;
               const key = c.name.toLowerCase().trim();
               if (!cardMap.has(key)) {

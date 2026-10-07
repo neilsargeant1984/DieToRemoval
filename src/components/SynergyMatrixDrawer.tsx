@@ -3,6 +3,7 @@ import { Card } from '../types/card';
 import { calculateSynergy, SynergyMatchResult } from '../utils/synergyGraph';
 import { explainSynergy } from '../utils/synergyExplainer';
 import { searchArenaCards } from '../services/scryfallService';
+import { isCardOnArena } from '../services/ownershipService';
 import { UserCollection } from '../types/collection';
 import { CardImage } from './CardImage';
 import { 
@@ -56,6 +57,7 @@ export const SynergyMatrixDrawer: React.FC<SynergyMatrixDrawerProps> = ({
         // Run Causal Synergy Graph against all candidates
         const scored: SynergyMatchResult[] = [];
         for (const candidate of searchRes.cards) {
+          if (!isCardOnArena(candidate.name)) continue;
           const match = calculateSynergy(commander, candidate);
           if (match) {
             scored.push(match);

@@ -1,6 +1,7 @@
 import { Card } from '../types/card';
 import { searchArenaCards, transformScryfallCard } from './scryfallService';
 import { ARENA_CARDS } from '../data/arenaCards';
+import { isCardOnArena } from './ownershipService';
 
 export interface EDHRECCardView {
   card: Card;
@@ -99,6 +100,9 @@ export async function fetchArenaCommunityMeta(
         const cleanName = (cv.name || '').trim();
         if (!cleanName || cleanName.toLowerCase() === commander.name.toLowerCase()) continue;
 
+        // PRE-FILTER: Discard immediately if not in the MTGA card database
+        if (!isCardOnArena(cleanName)) continue;
+
         if (!rawCardsMap.has(cleanName)) {
           rawCardsMap.set(cleanName, {
             id: cv.id,
@@ -146,9 +150,17 @@ export async function fetchArenaCommunityMeta(
         if (collRes.ok) {
           const collData = await collRes.json();
           for (const raw of collData.data || []) {
-            const isArenaLegal = raw.legalities?.brawl === 'legal' || 
+            const hasArenaGame = Array.isArray(raw.games) && raw.games.includes('arena');
+            const onArenaDb = isCardOnArena(raw.name);
+            // Strict Arena availability check
+            if (!hasArenaGame && !onArenaDb) continue;
+
+            const isArenaLegal = (hasArenaGame && (
+              raw.legalities?.brawl === 'legal' || 
               raw.legalities?.standardbrawl === 'legal' || 
-              (raw.games?.includes('arena') && (raw.legalities?.historic === 'legal' || raw.legalities?.timeless === 'legal'));
+              raw.legalities?.historic === 'legal' || 
+              raw.legalities?.timeless === 'legal'
+            )) || (onArenaDb && raw.legalities?.brawl !== 'banned');
 
             if (isArenaLegal) {
               const card = transformScryfallCard(raw);
@@ -174,6 +186,7 @@ export async function fetchArenaCommunityMeta(
     });
 
     for (const c of arenaResult.cards) {
+      if (!isCardOnArena(c.name)) continue;
       if (!arenaCardIndex.has(c.name.toLowerCase())) {
         arenaCardIndex.set(c.name.toLowerCase(), c);
       }
@@ -186,11 +199,12 @@ export async function fetchArenaCommunityMeta(
 
     for (const [name, rawItem] of rawCardsMap.entries()) {
       // Check if this card exists on MTG Arena and is legal in Brawl
+      if (!isCardOnArena(name)) continue;
       const lower = name.toLowerCase();
       // Prioritize the canonical regular card printing by name to avoid promo / secret lair art
       const arenaCard = arenaCardIndex.get(lower) || (rawItem.id ? arenaCardIndex.get(rawItem.id) : undefined);
 
-      if (arenaCard && arenaCard.colorIdentity.every(col => commander.colorIdentity.includes(col))) {
+      if (arenaCard && isCardOnArena(arenaCard.name) && arenaCard.colorIdentity.every(col => commander.colorIdentity.includes(col))) {
         const potential = rawItem.potential_decks || totalDecks;
         const num = rawItem.num_decks || 0;
         const inclusion = potential > 0 ? Math.round((num / potential) * 100) : 0;

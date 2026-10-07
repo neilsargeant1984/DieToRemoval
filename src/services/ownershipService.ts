@@ -2,6 +2,7 @@ import { Card, CardRarity } from '../types/card';
 import { UserCollection, WildcardInventory } from '../types/collection';
 import { Deck } from '../types/deck';
 import arenaDatabaseData from '../data/arenaDatabase.json';
+import { ARENA_CARDS } from '../data/arenaCards';
 
 // Type mapping for the compact arenaDatabase
 const arenaDatabase = arenaDatabaseData as unknown as Record<string, [string, string, string]>;
@@ -17,6 +18,42 @@ for (const [idStr, data] of Object.entries(arenaDatabase)) {
   } else {
     nameToIdsMap.set(cardName, [numId]);
   }
+}
+
+// Also index curated Arena cards & digital exclusives
+for (const card of ARENA_CARDS) {
+  const cName = card.name.toLowerCase();
+  if (!nameToIdsMap.has(cName)) {
+    nameToIdsMap.set(cName, [card.arenaId || 0]);
+  }
+}
+
+/**
+ * Fast O(1) verification checking if a given card exists in MTG Arena.
+ * Matches against the comprehensive 25,000+ card official MTGA database,
+ * resolving split cards, MDFCs, and Alchemy/rebalanced prefixes.
+ */
+export function isCardOnArena(cardName: string): boolean {
+  if (!cardName) return false;
+  const rawClean = cardName.trim().toLowerCase();
+  if (nameToIdsMap.has(rawClean)) return true;
+
+  // Strip "A-" Alchemy rebalance prefix
+  const withoutA = rawClean.replace(/^a-/, '').trim();
+  if (nameToIdsMap.has(withoutA)) return true;
+
+  // Handle double-faced / MDFC / flip cards ("Front // Back")
+  const frontFace = rawClean.split('//')[0].trim();
+  if (nameToIdsMap.has(frontFace)) return true;
+
+  const frontFaceNoA = withoutA.split('//')[0].trim();
+  if (nameToIdsMap.has(frontFaceNoA)) return true;
+
+  // Handle split cards formatted with triple slashes ("Front /// Back")
+  const frontFaceTriple = rawClean.split('///')[0].trim();
+  if (nameToIdsMap.has(frontFaceTriple)) return true;
+
+  return false;
 }
 
 /**
