@@ -29,11 +29,18 @@ export function validateStandardDeck(deck: Deck): StandardValidationResult {
     messages.push(`Sideboard has ${sideboardCount} cards (maximum 15).`);
   }
 
-  const basicLands = new Set(['Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes']);
+  const isBasicLand = (card: Card) =>
+    (card.typeLine || '').toLowerCase().includes('basic') ||
+    [
+      'Plains', 'Island', 'Swamp', 'Mountain', 'Forest', 'Wastes',
+      'Snow-Covered Plains', 'Snow-Covered Island', 'Snow-Covered Swamp',
+      'Snow-Covered Mountain', 'Snow-Covered Forest'
+    ].includes(card.name);
+
   const nameCounts = new Map<string, { qty: number; card: Card }>();
   
   const processItem = (item: DeckCard) => {
-    if (!basicLands.has(item.card.name)) {
+    if (!isBasicLand(item.card)) {
       const existing = nameCounts.get(item.card.name);
       if (existing) {
         existing.qty += item.quantity;
@@ -57,6 +64,7 @@ export function validateStandardDeck(deck: Deck): StandardValidationResult {
 
   const checkLegality = (item: DeckCard) => {
     const { card } = item;
+    if (isBasicLand(card)) return; // Basic lands are always legal
     if (card.legalities && card.legalities.standard === false) {
       isValid = false;
       if (!illegalCards.find(c => c.name === card.name)) {

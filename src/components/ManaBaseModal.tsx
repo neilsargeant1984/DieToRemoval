@@ -37,25 +37,35 @@ export const ManaBaseModal: React.FC<ManaBaseModalProps> = ({
   userCollection = {}
 }) => {
   const commander = deck.commander?.card;
+  const isStandard = deck.format === 'standard';
+  const minLandLimit = isStandard ? 18 : 30;
+  const maxLandLimit = isStandard ? 30 : 44;
 
   const defaultLandTarget = useMemo(() => {
+    if (isStandard) return 24;
     const cmdCmc = commander ? commander.cmc : 4;
     return cmdCmc <= 3 ? 36 : (cmdCmc >= 6 ? 38 : 37);
-  }, [commander]);
+  }, [commander, isStandard]);
 
   const [targetCount, setTargetCount] = useState<number>(defaultLandTarget);
   const [preserveCustom, setPreserveCustom] = useState<boolean>(false);
+
+  // Sync targetCount when format or commander changes
+  React.useEffect(() => {
+    setTargetCount(defaultLandTarget);
+  }, [defaultLandTarget]);
 
   // Generate result reactively based on options
   const result = useMemo(() => {
     return generateOptimalManaBase({
       commander,
       mainboard: deck.mainboard,
+      format: deck.format,
       targetLandCount: targetCount,
       preserveCustomNonBasics: preserveCustom,
       userCollection
     });
-  }, [commander, deck.mainboard, targetCount, preserveCustom, userCollection]);
+  }, [commander, deck.mainboard, deck.format, targetCount, preserveCustom, userCollection]);
 
   if (!isOpen) return null;
 
@@ -161,7 +171,7 @@ export const ManaBaseModal: React.FC<ManaBaseModalProps> = ({
                 <span className="text-xs text-slate-300 font-medium">Target Lands:</span>
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setTargetCount(Math.max(30, targetCount - 1))}
+                    onClick={() => setTargetCount(Math.max(minLandLimit, targetCount - 1))}
                     className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
                   >
                     <Minus className="w-3.5 h-3.5" />
@@ -170,7 +180,7 @@ export const ManaBaseModal: React.FC<ManaBaseModalProps> = ({
                     {targetCount}
                   </span>
                   <button
-                    onClick={() => setTargetCount(Math.min(44, targetCount + 1))}
+                    onClick={() => setTargetCount(Math.min(maxLandLimit, targetCount + 1))}
                     className="p-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200 transition"
                   >
                     <Plus className="w-3.5 h-3.5" />

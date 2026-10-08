@@ -33,6 +33,7 @@ import { deckCloudService } from './services/deckCloudService';
 import { AuthModal } from './components/AuthModal';
 import { WildcardEditModal } from './components/WildcardEditModal';
 import { NewDeckModal } from './components/NewDeckModal';
+import { FunctionalRole } from './utils/roleClassifier';
 
 export const App: React.FC = () => {
   // Navigation State
@@ -150,6 +151,7 @@ export const App: React.FC = () => {
   const [isImportDeckModalOpen, setIsImportDeckModalOpen] = useState(false);
   const [isManaModalOpen, setIsManaModalOpen] = useState(false);
   const [isNewDeckModalOpen, setIsNewDeckModalOpen] = useState(false);
+  const [standardRoleFilter, setStandardRoleFilter] = useState<FunctionalRole | 'lands' | 'sideboard' | null>(null);
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
 
@@ -825,6 +827,7 @@ export const App: React.FC = () => {
             activeDeckId={activeDeck.id}
             onLoadDeck={handleLoadDeck}
             onCreateNewDeck={handleCreateNewDeck}
+            onOpenNewDeckModal={() => setIsNewDeckModalOpen(true)}
             onDeleteDeck={handleDeleteDeck}
             onDuplicateDeck={handleDuplicateDeck}
             onRenameDeck={handleRenameDeck}
@@ -919,6 +922,8 @@ export const App: React.FC = () => {
             <div className="lg:col-span-5 h-[calc(100vh-180px)] sticky top-20">
               <CardSearchPanel
                 currentFormat={activeDeck.format}
+                activeRoleFilter={standardRoleFilter}
+                onClearRoleFilter={() => setStandardRoleFilter(null)}
                 onAddCard={handleAddCard}
                 onSelectCardDetail={setSelectedCardDetail}
                 userCollection={userCollection}
@@ -934,6 +939,10 @@ export const App: React.FC = () => {
                 onUpdateCollection={setUserCollection}
                 onUpdateDeck={handleUpdateDeck}
                 onSelectCardDetail={setSelectedCardDetail}
+                activeRoleFilter={standardRoleFilter}
+                onSelectRoleFilter={(role) => setStandardRoleFilter(prev => prev === role ? null : role)}
+                onOpenManaOptimizer={() => setIsManaModalOpen(true)}
+                onOpenSynergyMatrix={() => setStandardRoleFilter(prev => prev === 'threats' ? null : 'threats')}
               />
             </div>
           </div>

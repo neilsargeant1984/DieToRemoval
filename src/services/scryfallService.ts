@@ -378,6 +378,10 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
       parts.push('((o:"draw a card" or o:"draw two cards" or o:"draw three cards" or o:"draw cards" or o:"draws a card" or o:investigate or (o:"exile the top" (o:"you may play" or o:"you may cast"))) and -(o:"whenever an opponent draws" -o:"you draw") and -"Orcish Bowmasters" and -"Smothering Tithe")');
     } else if (params.roleFilter === 'lands') {
       parts.push('t:land');
+    } else if (params.roleFilter === 'threats') {
+      parts.push('(t:creature or t:planeswalker)');
+    } else if (params.roleFilter === 'sideboard') {
+      parts.push('(t:instant or t:sorcery or o:"destroy" or o:"exile" or o:"counter" or o:"protection" or o:"graveyard")');
     }
   }
 

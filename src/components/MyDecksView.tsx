@@ -37,6 +37,7 @@ interface MyDecksViewProps {
   onRenameDeck: (deckId: string, newName: string) => void;
   onOpenImportModal: () => void;
   onOpenSync?: () => void;
+  onOpenNewDeckModal?: () => void;
   userCollection: UserCollection;
 }
 
@@ -166,6 +167,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
   onRenameDeck,
   onOpenImportModal,
   onOpenSync,
+  onOpenNewDeckModal,
   userCollection
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'custom' | 'imported'>('all');
@@ -254,11 +256,11 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
           </button>
 
           <button
-            onClick={() => onCreateNewDeck('brawl')}
+            onClick={() => onOpenNewDeckModal ? onOpenNewDeckModal() : onCreateNewDeck('brawl')}
             className="btn-mythic-spark flex items-center gap-1.5 px-4 py-2 text-xs font-black rounded-xl transition shadow-md hover:scale-105"
           >
             <Plus className="w-3.5 h-3.5" />
-            <span>New Brawl Deck</span>
+            <span>New Deck</span>
           </button>
         </div>
       </div>

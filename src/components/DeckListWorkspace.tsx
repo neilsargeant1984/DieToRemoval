@@ -10,6 +10,7 @@ import { OwnershipPips } from './OwnershipPips';
 import { DeckCraftingCostWidget } from './DeckCraftingCostWidget';
 import { getCardOwnedCount } from '../services/ownershipService';
 import { StandardDeckDoctor } from './StandardDeckDoctor';
+import { FunctionalRole } from '../utils/roleClassifier';
 
 interface DeckListWorkspaceProps {
   deck: Deck;
@@ -19,6 +20,10 @@ interface DeckListWorkspaceProps {
   onUpdateCollection?: (col: UserCollection) => void;
   onUpdateDeck: (updated: Deck) => void;
   onSelectCardDetail: (card: Card) => void;
+  activeRoleFilter?: FunctionalRole | 'lands' | 'sideboard' | null;
+  onSelectRoleFilter?: (role: FunctionalRole | 'lands' | 'sideboard') => void;
+  onOpenManaOptimizer?: () => void;
+  onOpenSynergyMatrix?: () => void;
 }
 
 export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
@@ -28,7 +33,11 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
   onOpenWildcardModal,
   onUpdateCollection,
   onUpdateDeck,
-  onSelectCardDetail
+  onSelectCardDetail,
+  activeRoleFilter,
+  onSelectRoleFilter,
+  onOpenManaOptimizer,
+  onOpenSynergyMatrix
 }) => {
   const [hoveredCard, setHoveredCard] = useState<Card | null>(null);
 
@@ -229,38 +238,40 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
 
   return (
     <div className="arena-panel rounded-2xl p-4 shadow-xl flex flex-col h-full relative">
-      {deck.format === 'standard' ? (
-        <div className="mb-2">
+      <div className="flex items-center justify-between pb-3 border-b border-[#c5a059]/20">
+        <div className="flex items-center gap-3">
+          <h2 className="font-fantasy font-black text-base text-slate-100">{deck.name}</h2>
+          <span className="text-xs px-3 py-0.5 rounded-full capitalize font-bold bg-[#161b26] text-amber-400 border border-[#c5a059]/30">
+            {deck.format}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-xs font-semibold">
+          <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
+            mainCount >= (deck.format === 'brawl' ? 100 : 60)
+              ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+              : 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
+          }`}>
+            Mainboard: <strong className="text-slate-100 font-black">{mainCount}</strong> / {deck.format === 'brawl' ? 100 : 60}
+          </span>
+          <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
+            sideCount <= 15
+              ? 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
+              : 'bg-rose-950/60 text-rose-300 border-rose-500/40'
+          }`}>
+            Sideboard: <strong className="text-slate-100 font-black">{sideCount}</strong> / 15
+          </span>
+        </div>
+      </div>
+
+      {deck.format === 'standard' && (
+        <div className="mt-3">
           <StandardDeckDoctor 
             deck={deck}
-            onSelectRoleFilter={() => {}} 
-            onOpenSynergyMatrix={() => {}}
+            activeRoleFilter={activeRoleFilter}
+            onSelectRoleFilter={onSelectRoleFilter || (() => {})} 
+            onOpenManaOptimizer={onOpenManaOptimizer}
+            onOpenSynergyMatrix={onOpenSynergyMatrix}
           />
-        </div>
-      ) : (
-        <div className="flex items-center justify-between pb-3 border-b border-[#c5a059]/20">
-          <div className="flex items-center gap-3">
-            <h2 className="font-fantasy font-black text-base text-slate-100">{deck.name}</h2>
-            <span className="text-xs px-3 py-0.5 rounded-full capitalize font-bold bg-[#161b26] text-amber-400 border border-[#c5a059]/30">
-              {deck.format}
-            </span>
-          </div>
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
-              mainCount === (deck.format === 'brawl' ? 100 : 60)
-                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
-                : 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
-            }`}>
-              Mainboard: <strong className="text-slate-100 font-black">{mainCount}</strong> / {deck.format === 'brawl' ? 100 : 60}
-            </span>
-            <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
-              sideCount <= 15
-                ? 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
-                : 'bg-rose-950/60 text-rose-300 border-rose-500/40'
-            }`}>
-              Sideboard: <strong className="text-slate-100 font-black">{sideCount}</strong> / 15
-            </span>
-          </div>
         </div>
       )}
 

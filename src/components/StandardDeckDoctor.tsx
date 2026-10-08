@@ -18,19 +18,24 @@ import {
 
 interface StandardDeckDoctorProps {
   deck: Deck;
+  activeRoleFilter?: FunctionalRole | 'lands' | 'sideboard' | null;
   onSelectRoleFilter: (role: FunctionalRole | 'lands' | 'sideboard') => void;
-  onOpenSynergyMatrix: () => void;
+  onOpenSynergyMatrix?: () => void;
   onOpenManaOptimizer?: () => void;
 }
 
 export const StandardDeckDoctor: React.FC<StandardDeckDoctorProps> = ({
   deck,
+  activeRoleFilter,
   onSelectRoleFilter,
   onOpenSynergyMatrix,
   onOpenManaOptimizer
 }) => {
   const health = analyzeStandardDeckHealth(deck);
   const validation = validateStandardDeck(deck);
+
+  const mainCount = deck.mainboard.reduce((total, item) => total + item.quantity, 0);
+  const sideCount = deck.sideboard ? deck.sideboard.reduce((total, item) => total + item.quantity, 0) : 0;
 
   const roles = [
     {
@@ -87,7 +92,7 @@ export const StandardDeckDoctor: React.FC<StandardDeckDoctorProps> = ({
       id: 'sideboard' as const,
       label: 'Sideboard',
       icon: Layers,
-      current: deck.sideboard?.length || 0,
+      current: sideCount,
       target: 15,
       color: 'text-purple-400',
       bgColor: 'bg-purple-400',
@@ -122,7 +127,7 @@ export const StandardDeckDoctor: React.FC<StandardDeckDoctorProps> = ({
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-sm font-bold text-slate-100">60-Card Format</span>
               <span className="text-xs text-slate-400 border-l border-slate-700 pl-2">
-                {deck.mainboard.length}/60 Main • {deck.sideboard?.length || 0}/15 Side
+                {mainCount}/60 Main • {sideCount}/15 Side
               </span>
             </div>
           </div>
@@ -138,13 +143,15 @@ export const StandardDeckDoctor: React.FC<StandardDeckDoctorProps> = ({
               <span>⚡ Mana Base</span>
             </button>
           )}
-          <button
-            onClick={onOpenSynergyMatrix}
-            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 text-xs font-bold rounded-lg transition shadow-md hover:scale-105"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-slate-950 font-bold" />
-            <span>⚡ Find Synergies</span>
-          </button>
+          {onOpenSynergyMatrix && (
+            <button
+              onClick={onOpenSynergyMatrix}
+              className="flex items-center gap-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 text-xs font-bold rounded-lg transition shadow-md hover:scale-105"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-slate-950 font-bold" />
+              <span>⚡ Find Synergies</span>
+            </button>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
@@ -152,11 +159,16 @@ export const StandardDeckDoctor: React.FC<StandardDeckDoctorProps> = ({
           const Icon = r.icon;
           const pct = Math.min(100, Math.round((r.current / r.target) * 100));
           const isOptimal = r.current >= r.target;
+          const isSelected = activeRoleFilter === r.id;
           return (
             <button
               key={r.id}
               onClick={() => onSelectRoleFilter(r.id)}
-              className="bg-slate-950/60 hover:bg-slate-800/70 border border-slate-800/80 hover:border-slate-700 p-2.5 rounded-xl text-left transition flex flex-col justify-between group"
+              className={`p-2.5 rounded-xl text-left transition flex flex-col justify-between group border ${
+                isSelected
+                  ? 'bg-blue-950/70 border-blue-400 ring-1 ring-blue-400 shadow-md'
+                  : 'bg-slate-950/60 hover:bg-slate-800/70 border-slate-800/80 hover:border-slate-700'
+              }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-1.5">
