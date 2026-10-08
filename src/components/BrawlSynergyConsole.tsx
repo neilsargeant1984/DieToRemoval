@@ -34,10 +34,11 @@ import { ARENA_LANDS_DATABASE, convertArenaLandToCard } from '../data/arenaLands
 import { CardImage } from './CardImage';
 import { isCardOnArena } from '../services/ownershipService';
 import { PowerTier } from '../utils/bracketEvaluator';
-import { getCardWeightInfo } from '../data/arenaCardWeights';
+import { getCardWeightInfo, ARENA_CARD_WEIGHTS, CardWeightInfo } from '../data/arenaCardWeights';
 
 export type SynergyCategoryTab = 
   | 'meta_consensus'
+  | 'max_power'
   | 'meta_staples'
   | 'commander_triggers'
   | 'creatures' 
@@ -55,6 +56,7 @@ export type SynergyCategoryTab =
 
 export type MetaSubCategory = 
   | 'high_synergy'
+  | 'max_power'
   | 'creatures' 
   | 'instants' 
   | 'sorceries' 
@@ -79,6 +81,7 @@ export interface MetaSubCategoryOption {
 export const META_SUB_CATEGORIES: MetaSubCategoryOption[] = [
   // Curated / EDHREC Parity
   { id: 'high_synergy', label: 'High Synergy (+Lift)', icon: '✨', group: 'curated' },
+  { id: 'max_power', label: 'Max Power (Game Changers)', icon: '🔥', group: 'curated' },
   // Card Types
   { id: 'creatures', label: 'Creatures', icon: '🗡️', group: 'types' },
   { id: 'instants', label: 'Instants', icon: '⚡', group: 'types' },
@@ -105,6 +108,11 @@ export function matchesMetaSubCategory(card: Card, subCat: MetaSubCategory, comm
       return communityItem.category === 'highsynergy' || (communityItem.synergy !== undefined && communityItem.synergy >= 15);
     }
     return false;
+  }
+
+  if (subCat === 'max_power') {
+    const weightInfo = getCardWeightInfo(card.name);
+    return Boolean(weightInfo?.isGameChanger || (weightInfo?.weight && weightInfo.weight >= 250));
   }
 
   if (subCat === 'creatures') {
@@ -214,6 +222,13 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     setMultiRoleOnly(false);
   }, [commander?.id]);
 
+  // Fallback to meta_consensus if tier drops below max_power while on max_power tab
+  useEffect(() => {
+    if (targetPowerTier !== 'max_power' && activeTab === 'max_power') {
+      handleTabChange('meta_consensus');
+    }
+  }, [targetPowerTier, activeTab]);
+
   // Fetch candidate cards for the Commander's Color Identity across all functional archetypes
   useEffect(() => {
     if (!commander) {
@@ -259,6 +274,13 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           order: 'edhrec'
         });
 
+        const maxPowerPromise = searchArenaCards({
+          format: 'brawl',
+          commanderColorIdentity: commander.colorIdentity,
+          query: '(!"The One Ring" or !"Mana Drain" or !"Demonic Tutor" or !"Swords to Plowshares" or !"Esper Sentinel" or !"Dark Ritual" or !"Orcish Bowmasters" or !"Rhystic Study" or !"Smothering Tithe" or !"Wash Away" or !"Fierce Guardianship" or !"Chrome Mox" or !"Cyclonic Rift" or !"Toxic Deluge" or !"Vampiric Tutor" or !"Green Sun\'s Zenith" or !"Field of the Dead" or !"Thoughtseize" or !"Lightning Bolt" or !"Fatal Push" or !"Displacer Kitten" or !"Underworld Breach" or !"Thassa\'s Oracle" or !"Tainted Pact" or !"Minsc & Boo, Timeless Heroes")',
+          order: 'edhrec'
+        });
+
         // Query EDHREC Community Consensus + Scryfall role pools concurrently
         const [
           communityRes, 
@@ -270,7 +292,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           protRes, 
           triggerRes,
           planeswalkerRes,
-          lifegainRes
+          lifegainRes,
+          maxPowerRes
         ] = await Promise.allSettled([
           fetchArenaCommunityMeta(commander),
           searchArenaCards({
@@ -311,7 +334,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           }),
           triggerPromise,
           planeswalkerPromise,
-          lifegainPromise
+          lifegainPromise,
+          maxPowerPromise
         ]);
 
         if (communityRes.status === 'fulfilled' && communityRes.value?.cards) {
@@ -368,6 +392,7 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         addCards(triggerRes);
         addCards(planeswalkerRes);
         addCards(lifegainRes);
+        addCards(maxPowerRes);
 
         const allCards = Array.from(cardMap.values());
         setCandidates(allCards);
@@ -576,6 +601,127 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         reason: entry.reason,
         roleChips: entry.roleChips
       }));
+    }
+
+    if (activeTab === 'max_power') {
+      const maxPowerMap = new Map<string, { card: Card; score: number; badge: string; reason: string; roleChips: RoleChip[] }>();
+
+      // 1. Known high-weight / Game Changer cards from ARENA_CARD_WEIGHTS
+      for (const [cardName, weightInfo] of Object.entries(ARENA_CARD_WEIGHTS) as [string, CardWeightInfo][]) {
+        const candidate = candidates.find(c => c.name.toLowerCase() === cardName.toLowerCase())
+          || communityMeta.find(item => item.card.name.toLowerCase() === cardName.toLowerCase())?.card;
+
+        if (candidate) {
+          const roleChips = getCardRoleChips(candidate, commander);
+          const isGc = weightInfo.isGameChanger;
+          let badge = isGc 
+            ? `🔥 Game Changer (+${weightInfo.weight} pts)`
+            : weightInfo.category === 'fast_mana'
+            ? `⚡ Fast Mana (+${weightInfo.weight} pts)`
+            : weightInfo.category === 'free_interaction'
+            ? `🛡️ Free Interaction (+${weightInfo.weight} pts)`
+            : weightInfo.category === 'tutor'
+            ? `🎯 Premier Tutor (+${weightInfo.weight} pts)`
+            : `🔥 Max Power (+${weightInfo.weight} pts)`;
+
+          const reason = weightInfo.reason 
+            ? `${isGc ? 'WotC Game Changer: ' : ''}${weightInfo.reason} (+${weightInfo.weight} matchmaking weight)`
+            : `Top-tier Max Power staple on MTG Arena (+${weightInfo.weight} matchmaking weight)`;
+
+          const score = isGc ? 99 : Math.min(98, 88 + Math.round((weightInfo.weight / 500) * 10));
+
+          maxPowerMap.set(cardName.toLowerCase(), {
+            card: candidate,
+            score,
+            badge,
+            reason,
+            roleChips
+          });
+        }
+      }
+
+      // 2. High-inclusion community meta cards that are fast mana, free spells, or elite staples
+      for (const item of communityMeta) {
+        const c = item.card;
+        const key = c.name.toLowerCase();
+        if (maxPowerMap.has(key)) continue;
+
+        const weightInfo = getCardWeightInfo(c.name);
+        const roleChips = getCardRoleChips(c, commander);
+        const causalMatch = calculateSynergy(commander, c);
+
+        const isFreeOrCheapInteraction = (c.cmc <= 2 && (roleChips.some(r => r.id === 'removal' || r.id === 'protection')));
+        const isFastRamp = (c.cmc <= 2 && roleChips.some(r => r.id === 'ramp'));
+        const isHighInclusion = item.inclusion >= 35;
+
+        if (weightInfo || isFreeOrCheapInteraction || isFastRamp || isHighInclusion) {
+          const isGc = weightInfo?.isGameChanger;
+          const score = isGc 
+            ? 99 
+            : weightInfo?.weight 
+            ? Math.min(97, 85 + Math.round((weightInfo.weight / 500) * 10))
+            : Math.min(94, 75 + Math.round(item.inclusion * 0.2));
+
+          const badge = isGc
+            ? `🔥 Game Changer (+${weightInfo?.weight} pts)`
+            : weightInfo?.weight
+            ? `🔥 Max Power (+${weightInfo.weight} pts)`
+            : isFastRamp
+            ? `⚡ Fast Ramp`
+            : isFreeOrCheapInteraction
+            ? `🎯 Efficient Interaction`
+            : `⭐ ${item.inclusion}% Inclusion`;
+
+          const reason = weightInfo?.reason
+            ? `${weightInfo.reason} (+${weightInfo.weight} matchmaking weight)`
+            : causalMatch
+            ? explainSynergy(commander, causalMatch)
+            : `Max Power staple played in ${item.inclusion}% of high-level community decks`;
+
+          maxPowerMap.set(key, {
+            card: c,
+            score,
+            badge,
+            reason,
+            roleChips
+          });
+        }
+      }
+
+      // 3. Any remaining candidates with weightInfo
+      for (const c of candidates) {
+        const key = c.name.toLowerCase();
+        if (maxPowerMap.has(key)) continue;
+        const weightInfo = getCardWeightInfo(c.name);
+        if (weightInfo) {
+          const roleChips = getCardRoleChips(c, commander);
+          maxPowerMap.set(key, {
+            card: c,
+            score: weightInfo.isGameChanger ? 99 : 92,
+            badge: weightInfo.isGameChanger ? `🔥 Game Changer (+${weightInfo.weight} pts)` : `⚡ Max Power (+${weightInfo.weight} pts)`,
+            reason: weightInfo.reason || `Hell-Queue weight staple (+${weightInfo.weight} pts)`,
+            roleChips
+          });
+        }
+      }
+
+      const list = Array.from(maxPowerMap.values());
+      list.sort((a, b) => {
+        // Game Changers first
+        const aGc = a.badge.includes('Game Changer') ? 1 : 0;
+        const bGc = b.badge.includes('Game Changer') ? 1 : 0;
+        if (bGc !== aGc) return bGc - aGc;
+
+        // Score descending
+        if (b.score !== a.score) return b.score - a.score;
+
+        // Mana curve efficiency (lower CMC first)
+        if (a.card.cmc !== b.card.cmc) return a.card.cmc - b.card.cmc;
+
+        return a.card.name.localeCompare(b.card.name);
+      });
+
+      return list;
     }
 
     if (activeTab === 'meta_staples') {
@@ -955,8 +1101,9 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
     }
   };
 
-  const tabs: { id: SynergyCategoryTab; label: string; icon: string }[] = [
+  const tabs: { id: SynergyCategoryTab; label: string; icon: string; highlight?: boolean }[] = [
     { id: 'meta_consensus', label: 'What People Are Playing', icon: '🔥' },
+    ...(targetPowerTier === 'max_power' ? [{ id: 'max_power' as SynergyCategoryTab, label: 'Max Power', icon: '⚡', highlight: true }] : []),
     { id: 'meta_staples', label: 'Staple Cards', icon: '⭐' },
     ...(triggerConfig.hasTriggers ? [{ id: 'commander_triggers' as SynergyCategoryTab, label: triggerConfig.tabLabel, icon: '🎯' }] : []),
     { id: 'creatures', label: 'Creatures', icon: '🗡️' },
@@ -1049,6 +1196,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
               className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
                 isActive
                   ? 'btn-mythic-spark shadow-sm'
+                  : tab.highlight
+                  ? 'bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30 shadow-sm'
                   : 'bg-[#121622] text-stone-400 hover:text-stone-200 hover:bg-[#171c28] border border-white/5'
               }`}
             >
@@ -1172,6 +1321,29 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
               </button>
             );
           })}
+        </div>
+      )}
+
+      {/* "Max Power" In-Tab Context Banner */}
+      {activeTab === 'max_power' && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-gradient-to-r from-red-950/40 via-amber-950/30 to-[#0e121b] border border-amber-500/40 shadow-inner">
+          <div className="flex items-center gap-2">
+            <span className="text-base">🔥</span>
+            <div>
+              <div className="text-xs font-extrabold text-amber-300 flex items-center gap-2">
+                <span>Hell-Queue & Max Power Optimization</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-900/60 text-red-200 border border-red-500/40 font-black uppercase tracking-wider">
+                  Tier 1 Staples
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-300">
+                Official WotC Game Changers, fast mana accelerants, free counterspells, and hyper-efficient tutors legal in {commander.name}'s color identity.
+              </p>
+            </div>
+          </div>
+          <div className="text-xs text-amber-400 font-bold bg-black/40 px-3 py-1 rounded-xl border border-amber-500/20">
+            {displayedList.length} High-Impact Cards
+          </div>
         </div>
       )}
 

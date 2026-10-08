@@ -442,6 +442,15 @@ export const App: React.FC = () => {
     setActiveDeck(updated);
   };
 
+  const handleSelectBrawlPowerTier = (tier: PowerTier) => {
+    setBrawlPowerTier(tier);
+    if (tier === 'max_power') {
+      setSynergyTab('max_power');
+    } else if (synergyTab === 'max_power') {
+      setSynergyTab('meta_consensus');
+    }
+  };
+
   const handleChangeFormat = (format: FormatType) => {
     if (activeDeck.format === format) {
       if (format === 'brawl' && !activeDeck.commander) {
@@ -932,7 +941,7 @@ export const App: React.FC = () => {
               onToggleDeckDrawer={() => setIsDeckDrawerOpen(!isDeckDrawerOpen)}
               isDeckDrawerOpen={isDeckDrawerOpen}
               activePowerTier={brawlPowerTier}
-              onSelectPowerTier={setBrawlPowerTier}
+              onSelectPowerTier={handleSelectBrawlPowerTier}
               selectedRoleTab={synergyTab}
               onSelectRoleFilter={(role) => {
                 if (role === 'ramp') setSynergyTab('ramp');
