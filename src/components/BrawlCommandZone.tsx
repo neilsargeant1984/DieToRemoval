@@ -231,11 +231,11 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                   <button
                     type="button"
                     onClick={onOpenCommanderPicker}
-                    className="flex-1 py-1.5 px-3 rounded-xl bg-[#141926] hover:bg-[#1c2335] text-amber-300 border border-amber-500/30 hover:border-amber-400 text-xs font-bold transition flex items-center justify-center gap-1.5"
-                    title="Choose a different commander"
+                    className="flex-1 py-1.5 px-3 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/50 hover:border-amber-400 text-xs font-bold transition flex items-center justify-center gap-1.5 shadow-sm"
+                    title="Find and switch to a different commander"
                   >
                     <Crown className="w-3.5 h-3.5 text-amber-400" />
-                    <span>Change</span>
+                    <span>Find New</span>
                   </button>
                 </div>
               </div>
@@ -244,7 +244,7 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
             /* Empty Commander Altar / Pedestal */
             <div
               onClick={onOpenCommanderPicker}
-              className="w-64 sm:w-72 lg:w-80 h-80 sm:h-96 rounded-2xl border-2 border-dashed border-[#c5a059]/40 hover:border-amber-400 bg-[#0d1017]/80 hover:bg-[#141926] transition flex flex-col items-center justify-center p-6 text-center cursor-pointer shadow-xl group"
+              className="w-64 sm:w-72 lg:w-80 h-80 sm:h-96 rounded-2xl border-2 border-dashed border-[#c5a059]/40 hover:border-amber-400 bg-[#0d1017]/80 hover:bg-[#141926] transition flex flex-col items-center justify-center p-6 text-center cursor-pointer shadow-xl group relative overflow-hidden"
             >
               <div className="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 group-hover:scale-110 group-hover:bg-amber-500/20 transition mb-3 shadow-lg">
                 <Crown className="w-8 h-8" />
@@ -255,6 +255,11 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
               <p className="text-xs text-stone-400 mt-1 max-w-xs">
                 Pick any legendary creature or planeswalker on MTG Arena to lead your deck
               </p>
+
+              <div className="mt-4 px-4 py-2 rounded-xl bg-gradient-to-r from-amber-500/25 via-orange-500/25 to-amber-500/25 border border-amber-500/50 text-amber-300 text-xs font-bold flex items-center gap-2 group-hover:scale-105 group-hover:border-amber-400 transition shadow-md">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <span>⚡ Find a New Commander</span>
+              </div>
             </div>
           )}
         </div>

@@ -38,6 +38,7 @@ interface MyDecksViewProps {
   onOpenImportModal: () => void;
   onOpenSync?: () => void;
   onOpenNewDeckModal?: () => void;
+  onOpenCommanderFinder?: () => void;
   userCollection: UserCollection;
 }
 
@@ -168,6 +169,7 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
   onOpenImportModal,
   onOpenSync,
   onOpenNewDeckModal,
+  onOpenCommanderFinder,
   userCollection
 }) => {
   const [activeTab, setActiveTab] = useState<'all' | 'custom' | 'imported'>('all');
@@ -244,6 +246,17 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
             >
               <RefreshCw className="w-3.5 h-3.5 text-amber-400" />
               <span>Sync Arena Account</span>
+            </button>
+          )}
+
+          {onOpenCommanderFinder && (
+            <button
+              onClick={onOpenCommanderFinder}
+              className="flex items-center gap-1.5 px-3.5 py-2 text-xs font-bold bg-[#141a29] hover:bg-[#1c2438] text-amber-300 border border-amber-500/40 rounded-xl transition shadow-sm hover:border-amber-400"
+              title="Discover a new Brawl commander on MTG Arena by color & strategy"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
+              <span>Find a Commander</span>
             </button>
           )}
 
@@ -436,13 +449,24 @@ export const MyDecksView: React.FC<MyDecksViewProps> = ({
                 <span>Import Deck from MTG Arena</span>
               </button>
             ) : (
-              <button
-                onClick={() => onCreateNewDeck('brawl')}
-                className="btn-mythic-spark inline-flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold rounded-xl transition shadow-md"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                <span>Create New Brawl Deck</span>
-              </button>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <button
+                  onClick={() => onCreateNewDeck('brawl')}
+                  className="btn-mythic-spark inline-flex items-center gap-1.5 px-4 py-2 text-xs font-extrabold rounded-xl transition shadow-md"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>Create New Brawl Deck</span>
+                </button>
+                {onOpenCommanderFinder && (
+                  <button
+                    onClick={onOpenCommanderFinder}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#141a29] hover:bg-[#1c2438] text-amber-300 border border-amber-500/40 text-xs font-bold rounded-xl transition shadow-sm hover:border-amber-400"
+                  >
+                    <Crown className="w-3.5 h-3.5 text-amber-400" />
+                    <span>⚡ Find a Commander</span>
+                  </button>
+                )}
+              </div>
             )}
           </div>
         </div>

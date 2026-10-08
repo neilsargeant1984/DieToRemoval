@@ -14,7 +14,7 @@ import { AnalyticsModal } from './components/AnalyticsModal';
 import { GoldfishModal } from './components/GoldfishModal';
 import { MetaDecksModal } from './components/MetaDecksModal';
 import { ExportImportModal } from './components/ExportImportModal';
-import { CommanderPickerModal } from './components/CommanderPickerModal';
+import { CommanderFinderModal } from './components/CommanderFinderModal';
 import { MyDecksView } from './components/MyDecksView';
 import { SaveDeckConflictModal } from './components/SaveDeckConflictModal';
 import { SaveBeforeCommanderChangeModal } from './components/SaveBeforeCommanderChangeModal';
@@ -809,6 +809,7 @@ export const App: React.FC = () => {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
         onOpenWildcards={() => setIsWildcardModalOpen(true)}
+        onOpenCommanderFinder={() => setIsCommanderPickerOpen(true)}
       />
 
       {/* Main App Content */}
@@ -828,6 +829,7 @@ export const App: React.FC = () => {
             onLoadDeck={handleLoadDeck}
             onCreateNewDeck={handleCreateNewDeck}
             onOpenNewDeckModal={() => setIsNewDeckModalOpen(true)}
+            onOpenCommanderFinder={() => setIsCommanderPickerOpen(true)}
             onDeleteDeck={handleDeleteDeck}
             onDuplicateDeck={handleDuplicateDeck}
             onRenameDeck={handleRenameDeck}
@@ -1008,9 +1010,14 @@ export const App: React.FC = () => {
           handleCreateNewDeck(format);
           setIsNewDeckModalOpen(false);
         }}
+        onFindCommander={() => {
+          handleCreateNewDeck('brawl');
+          setIsNewDeckModalOpen(false);
+          setIsCommanderPickerOpen(true);
+        }}
       />
 
-      <CommanderPickerModal
+      <CommanderFinderModal
         isOpen={isCommanderPickerOpen}
         onClose={() => setIsCommanderPickerOpen(false)}
         onSelectCommander={handleSelectCommander}

@@ -32,6 +32,7 @@ interface ArenaNavbarProps {
   onOpenAuth?: () => void;
   onSignOut?: () => void;
   onOpenWildcards?: () => void;
+  onOpenCommanderFinder?: () => void;
 }
 
 export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
@@ -47,7 +48,8 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
   user,
   onOpenAuth,
   onSignOut,
-  onOpenWildcards
+  onOpenWildcards,
+  onOpenCommanderFinder
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#0e121a]/95 border-b border-[#c5a059]/25 backdrop-blur-xl px-4 py-2.5 shadow-2xl">
@@ -240,9 +242,22 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
           </div>
 
           {currentFormat === 'brawl' && (
-            <span className="hidden md:inline text-[11px] text-amber-400/90 font-semibold">
-              ⚔️ 100-Card Singleton • Commander Color Identity Locked
-            </span>
+            <div className="flex items-center gap-3">
+              {onOpenCommanderFinder && (
+                <button
+                  type="button"
+                  onClick={onOpenCommanderFinder}
+                  className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/50 text-xs font-bold transition shadow-sm hover:scale-105"
+                  title="Discover Brawl commanders by color identity and playstyle archetypes"
+                >
+                  <Crown className="w-3.5 h-3.5 text-amber-400" />
+                  <span>⚡ Find a Commander</span>
+                </button>
+              )}
+              <span className="hidden md:inline text-[11px] text-amber-400/90 font-semibold">
+                ⚔️ 100-Card Singleton • Commander Color Identity Locked
+              </span>
+            </div>
           )}
         </div>
       )}
