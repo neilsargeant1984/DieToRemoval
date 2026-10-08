@@ -7,6 +7,7 @@ import { getSetBannerArt, getSetIconSvgUri } from '../data/arenaSetArt';
 import { searchArenaCards } from '../services/scryfallService';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
+import { NewsConsole } from './NewsConsole';
 import {
   Sparkles,
   Newspaper,
@@ -909,93 +910,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
         /* ========================================================
             TAB 2: NEWS & ANNOUNCEMENTS HUB
             ======================================================== */
-        <div className="space-y-6">
-          <div className="bg-[#0f131d]/90 border border-amber-500/30 rounded-3xl p-6 backdrop-blur-xl shadow-2xl space-y-6">
-            <div className="flex items-center justify-between border-b border-white/10 pb-4 flex-wrap gap-2">
-              <div>
-                <h3 className="text-xl font-fantasy font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-amber-200 via-amber-400 to-rose-400 m-0">
-                  MTG Arena News Hub
-                </h3>
-                <p className="text-xs text-stone-400 mt-1">
-                  Official announcements, release notes, and competitive event schedules
-                </p>
-              </div>
-              <span className="px-2.5 py-1 rounded-full text-xs font-bold uppercase bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                Phase 1 Preview
-              </span>
-            </div>
-
-            {/* News Articles Feed */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {/* News Item 1: Reality Fracture */}
-              <div className="bg-[#121623] border border-amber-500/20 hover:border-amber-400/50 rounded-2xl p-4 space-y-3 transition group">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/40 font-bold uppercase">
-                    New Release
-                  </span>
-                  <span className="text-stone-400 font-mono">Oct 2026</span>
-                </div>
-                <h4 className="text-sm font-bold text-stone-100 group-hover:text-amber-300 transition-colors leading-snug">
-                  Reality Fracture Arrives on MTG Arena!
-                </h4>
-                <p className="text-xs text-stone-400 leading-relaxed">
-                  The latest set Reality Fracture is now live in MTG Arena! Explore brand new mechanics, commanders, and archetype powerhouses in Brawl, Standard, and Timeless formats.
-                </p>
-                <div className="pt-2 flex items-center justify-between text-xs text-amber-400 font-semibold">
-                  <span className="flex items-center gap-1 group-hover:underline">
-                    View Set Breakdown <ChevronDown className="w-3.5 h-3.5 rotate-[-90deg]" />
-                  </span>
-                </div>
-              </div>
-
-              {/* News Item 2: Format & Balance Updates */}
-              <div className="bg-[#121623] border border-white/5 hover:border-white/20 rounded-2xl p-4 space-y-3 transition group">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 border border-blue-500/40 font-bold uppercase">
-                    Format Update
-                  </span>
-                  <span className="text-stone-400 font-mono">Oct 2026</span>
-                </div>
-                <h4 className="text-sm font-bold text-stone-100 group-hover:text-amber-300 transition-colors leading-snug">
-                  Brawl & Timeless Matchmaking Tuning
-                </h4>
-                <p className="text-xs text-stone-400 leading-relaxed">
-                  Commander tier evaluations have been updated across MTG Arena. Discover synergistic card recommendations tailored for high-tier brawl matchmaking.
-                </p>
-                <div className="pt-2 flex items-center justify-between text-xs text-stone-400 font-semibold">
-                  <span>Matchmaking Tier Notes</span>
-                </div>
-              </div>
-
-              {/* News Item 3: Upcoming Events */}
-              <div className="bg-[#121623] border border-white/5 hover:border-white/20 rounded-2xl p-4 space-y-3 transition group">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 font-bold uppercase">
-                    Competitive
-                  </span>
-                  <span className="text-stone-400 font-mono">Upcoming</span>
-                </div>
-                <h4 className="text-sm font-bold text-stone-100 group-hover:text-amber-300 transition-colors leading-snug">
-                  Arena Championship & Qualifier Weekend
-                </h4>
-                <p className="text-xs text-stone-400 leading-relaxed">
-                  Prepare your decklists for the next Arena Open and Qualifier Play-In events. Practice goldfish turns and tune your mana base curve right in DieToRemoval!
-                </p>
-                <div className="pt-2 flex items-center justify-between text-xs text-stone-400 font-semibold">
-                  <span>Event Schedule</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Next Steps Note */}
-            <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-200/90 flex items-center gap-3">
-              <Sparkles className="w-5 h-5 text-amber-400 flex-shrink-0" />
-              <span>
-                <strong>Next Step:</strong> Once we have perfected the Latest Set Release showcase and filters, we will connect this News console to live MTG Arena patch feeds and community articles!
-              </span>
-            </div>
-          </div>
-        </div>
+        <NewsConsole />
       )}
     </div>
   );
