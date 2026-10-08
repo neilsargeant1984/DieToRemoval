@@ -3,7 +3,8 @@ import { Card, FormatType } from './types/card';
 import { Deck, DeckCard } from './types/deck';
 import { UserCollection, WildcardInventory } from './types/collection';
 import { ArenaNavbar, MainNavTab } from './components/ArenaNavbar';
-import { BrawlCommandZone, BrawlSubMode } from './components/BrawlCommandZone';
+import { BrawlCommandZone } from './components/BrawlCommandZone';
+import { PowerTier } from './utils/bracketEvaluator';
 import { BrawlSynergyConsole, SynergyCategoryTab } from './components/BrawlSynergyConsole';
 import { DeckDrawer } from './components/DeckDrawer';
 import { CardLibraryView } from './components/CardLibraryView';
@@ -41,7 +42,7 @@ import { FunctionalRole } from './utils/roleClassifier';
 export const App: React.FC = () => {
   // Navigation State
   const [navTab, setNavTab] = useState<MainNavTab>('deck_builder');
-  const [brawlSubMode, setBrawlSubMode] = useState<BrawlSubMode>('brawl_historic');
+  const [brawlPowerTier, setBrawlPowerTier] = useState<PowerTier>('focused');
   const [synergyTab, setSynergyTab] = useState<SynergyCategoryTab>('meta_consensus');
   const [isDeckDrawerOpen, setIsDeckDrawerOpen] = useState<boolean>(() => {
     const saved = localStorage.getItem('arenaforge_deck_tray_open');
@@ -930,8 +931,8 @@ export const App: React.FC = () => {
               onOpenImport={() => setIsImportDeckModalOpen(true)}
               onToggleDeckDrawer={() => setIsDeckDrawerOpen(!isDeckDrawerOpen)}
               isDeckDrawerOpen={isDeckDrawerOpen}
-              activeSubMode={brawlSubMode}
-              onSelectSubMode={setBrawlSubMode}
+              activePowerTier={brawlPowerTier}
+              onSelectPowerTier={setBrawlPowerTier}
               selectedRoleTab={synergyTab}
               onSelectRoleFilter={(role) => {
                 if (role === 'ramp') setSynergyTab('ramp');
@@ -952,6 +953,7 @@ export const App: React.FC = () => {
                 {activeDeck.commander && (
                   <BrawlSynergyConsole
                     commander={activeDeck.commander.card}
+                    targetPowerTier={brawlPowerTier}
                     onAddCard={card => handleAddCard(card, false)}
                     onRemoveCard={handleRemoveCard}
                     onSelectCardDetail={setSelectedCardDetail}

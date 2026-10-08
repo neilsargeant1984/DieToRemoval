@@ -20,13 +20,16 @@ import {
   Save,
   Sparkles,
   RefreshCw,
-  UploadCloud
+  UploadCloud,
+  AlertTriangle,
+  Flame
 } from 'lucide-react';
 import { FormattedOracleText } from './FormattedOracleText';
 import { CardImage } from './CardImage';
 import { getCardFaceData, hasMultipleFaces } from '../utils/cardFaceUtils';
+import { PowerTier, evaluateDeckBracket } from '../utils/bracketEvaluator';
 
-export type BrawlSubMode = 'brawl_historic' | 'competitive_brawl' | 'standard_brawl';
+export type BrawlSubMode = 'casual' | 'focused' | 'max_power' | 'brawl_historic' | 'competitive_brawl' | 'standard_brawl';
 
 interface BrawlCommandZoneProps {
   commander?: Card;
@@ -38,8 +41,10 @@ interface BrawlCommandZoneProps {
   onOpenImport?: () => void;
   onToggleDeckDrawer: () => void;
   isDeckDrawerOpen: boolean;
-  activeSubMode: BrawlSubMode;
-  onSelectSubMode: (mode: BrawlSubMode) => void;
+  activePowerTier?: PowerTier;
+  onSelectPowerTier?: (tier: PowerTier) => void;
+  activeSubMode?: BrawlSubMode;
+  onSelectSubMode?: (mode: BrawlSubMode) => void;
   selectedRoleTab?: string;
   onSelectRoleFilter?: (role: FunctionalRole | 'lands') => void;
   onOpenManaOptimizer?: () => void;
@@ -56,6 +61,8 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   onOpenImport,
   onToggleDeckDrawer,
   isDeckDrawerOpen,
+  activePowerTier = 'focused',
+  onSelectPowerTier,
   activeSubMode,
   onSelectSubMode,
   selectedRoleTab,
@@ -65,7 +72,18 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
 }) => {
   const mainCount = deck.mainboard.reduce((a, b) => a + b.quantity, 0);
   const totalDeckCount = mainCount + (commander ? 1 : 0);
-  const targetDeckSize = activeSubMode === 'standard_brawl' ? 60 : 100;
+  const targetDeckSize = 100;
+
+  const bracketReport = React.useMemo(() => evaluateDeckBracket(deck), [deck]);
+  const currentTier: PowerTier = activePowerTier || (activeSubMode === 'competitive_brawl' ? 'max_power' : 'focused');
+
+  const handleSelectTier = (tier: PowerTier) => {
+    if (onSelectPowerTier) {
+      onSelectPowerTier(tier);
+    } else if (onSelectSubMode) {
+      onSelectSubMode(tier === 'max_power' ? 'competitive_brawl' : 'brawl_historic');
+    }
+  };
 
   const health = analyzeBrawlDeckHealth(deck.mainboard, commander);
 
@@ -269,34 +287,53 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
 
         {/* Commander Details & Mode Selector Column */}
         <div className="flex-1 w-full space-y-5">
-          {/* Top Row: Sub-mode Pills */}
+          {/* Top Row: Power Tier Selector & Live Matchmaking Bracket Meter */}
           <div className="flex flex-wrap items-center justify-between gap-3">
-            <div className="flex items-center gap-1 bg-[#0d1017]/90 p-1 rounded-xl border border-white/5">
-              {[
-                { id: 'brawl_historic' as BrawlSubMode, label: 'Brawl', sub: '100 Cards' },
-                { id: 'competitive_brawl' as BrawlSubMode, label: 'Competitive Brawl', sub: 'Hell-Queue' },
-                { id: 'standard_brawl' as BrawlSubMode, label: 'Standard Brawl', sub: '60 Cards' }
-              ].map(sub => {
-                const isActive = activeSubMode === sub.id;
-                return (
-                  <button
-                    key={sub.id}
-                    onClick={() => onSelectSubMode(sub.id)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg text-xs font-bold transition ${
-                      isActive
-                        ? 'bg-gradient-to-r from-amber-500/25 to-orange-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
-                        : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
-                    }`}
-                  >
-                    <span>{sub.label}</span>
-                    <span className={`text-[9px] font-normal px-1 rounded ${
-                      isActive ? 'bg-amber-400 text-slate-950 font-bold' : 'text-stone-500'
-                    }`}>
-                      {sub.sub}
-                    </span>
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap items-center gap-2.5">
+              {/* Target Power Tier Selector */}
+              <div className="flex items-center gap-1 bg-[#0d1017]/90 p-1 rounded-xl border border-white/5">
+                {[
+                  { id: 'casual' as PowerTier, label: '🌿 Casual', sub: 'Bracket 1-2' },
+                  { id: 'focused' as PowerTier, label: '⚡ Focused', sub: 'Bracket 3' },
+                  { id: 'max_power' as PowerTier, label: '🔥 Max Power', sub: 'Hell-Queue' }
+                ].map(tier => {
+                  const isActive = currentTier === tier.id;
+                  return (
+                    <button
+                      key={tier.id}
+                      onClick={() => handleSelectTier(tier.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        isActive
+                          ? 'bg-gradient-to-r from-amber-500/25 to-orange-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
+                          : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
+                      }`}
+                    >
+                      <span>{tier.label}</span>
+                      <span className={`text-[9px] font-normal px-1 rounded ${
+                        isActive ? 'bg-amber-400 text-slate-950 font-bold' : 'text-stone-500'
+                      }`}>
+                        {tier.sub}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Live Evaluated Bracket & MTG Arena Deck Weight Badge */}
+              <div 
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-sm ${
+                  bracketReport.currentBracket === 4
+                    ? 'bg-rose-950/70 border-rose-500/50 text-rose-300'
+                    : bracketReport.currentBracket === 3
+                    ? 'bg-amber-950/70 border-amber-500/50 text-amber-300'
+                    : 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
+                }`}
+                title={`Estimated MTG Arena Deck Weight: ~${bracketReport.totalEstimatedWeight} pts (${bracketReport.gameChangersFound.length} Game Changers in 99)`}
+              >
+                <span>{bracketReport.currentBracket === 4 ? '🔥' : bracketReport.currentBracket === 3 ? '⚡' : '🌿'}</span>
+                <span>Deck: {bracketReport.currentBracketLabel}</span>
+                <span className="font-mono text-[10px] opacity-75">~{bracketReport.totalEstimatedWeight} pts</span>
+              </div>
             </div>
 
             {/* Deck Drawer Toggle */}
@@ -313,6 +350,30 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
               <span>{isDeckDrawerOpen ? 'Hide Decklist' : 'Show Decklist'} ({totalDeckCount}/{targetDeckSize})</span>
             </button>
           </div>
+
+          {/* Hell-Queue Matchmaking Alert if player added high-weight staples */}
+          {bracketReport.hellQueueWarning && (
+            <div className="bg-rose-950/50 border border-rose-500/40 rounded-xl p-3 text-xs text-rose-200 flex items-start gap-2.5 shadow-md animate-in fade-in">
+              <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+              <div className="space-y-1">
+                <p className="font-semibold text-rose-300">
+                  Arena Matchmaking Alert (Hell-Queue Risk)
+                </p>
+                <p className="text-[11px] text-rose-200/90 leading-relaxed">
+                  {bracketReport.hellQueueWarning}
+                </p>
+                {bracketReport.gameChangersFound.length > 0 && (
+                  <div className="flex flex-wrap gap-1.5 pt-1">
+                    {bracketReport.gameChangersFound.map(m => (
+                      <span key={m.card.id} className="text-[10px] font-mono px-2 py-0.5 rounded bg-rose-900/60 border border-rose-700/60 text-rose-200">
+                        ★ {m.card.name} (+{m.weightInfo.weight} pts)
+                      </span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Commander Meta Box */}
           {commander ? (

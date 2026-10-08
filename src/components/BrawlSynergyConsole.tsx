@@ -33,6 +33,8 @@ import { getMaxCardCopies } from '../utils/cardRules';
 import { ARENA_LANDS_DATABASE, convertArenaLandToCard } from '../data/arenaLands';
 import { CardImage } from './CardImage';
 import { isCardOnArena } from '../services/ownershipService';
+import { PowerTier } from '../utils/bracketEvaluator';
+import { getCardWeightInfo } from '../data/arenaCardWeights';
 
 export type SynergyCategoryTab = 
   | 'meta_consensus'
@@ -151,6 +153,7 @@ interface BrawlSynergyConsoleProps {
   isDeckTrayOpen?: boolean;
   onToggleDeckTray?: () => void;
   onOpenManaOptimizer?: () => void;
+  targetPowerTier?: PowerTier;
 }
 
 export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
@@ -166,7 +169,8 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   onSelectTab,
   isDeckTrayOpen,
   onToggleDeckTray,
-  onOpenManaOptimizer
+  onOpenManaOptimizer,
+  targetPowerTier = 'focused'
 }) => {
   const [internalTab, setInternalTab] = useState<SynergyCategoryTab>('meta_consensus');
   const activeTab = controlledTab || internalTab;
@@ -511,9 +515,17 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         const causalMatch = calculateSynergy(commander, item.card);
         const roleChips = getCardRoleChips(item.card, commander);
         const hasHighSynergy = item.category === 'highsynergy' || (item.synergy !== undefined && item.synergy >= 15);
+        const weightInfo = getCardWeightInfo(item.card.name);
         
         let badge: string;
-        if (hasHighSynergy && item.synergy > 0) {
+        let score = hasHighSynergy ? Math.max(item.inclusion, 80 + Math.min(item.synergy, 19)) : item.inclusion;
+
+        if (targetPowerTier === 'max_power' && (weightInfo?.isGameChanger || (weightInfo?.weight && weightInfo.weight >= 350))) {
+          badge = `🔥 Max Power Staple`;
+          score += 30;
+        } else if (targetPowerTier === 'casual' && weightInfo?.isGameChanger) {
+          badge = `⚠️ High Weight (+${weightInfo.weight} pts)`;
+        } else if (hasHighSynergy && item.synergy > 0) {
           badge = `✨ +${item.synergy}% Synergy`;
         } else if (item.inclusion >= 40) {
           badge = `🔥 ${item.inclusion}% of Decks`;
@@ -521,14 +533,16 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           badge = roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Engine` : `⭐ ${item.inclusion}% of Decks`;
         }
 
-        const reason = causalMatch 
+        const reason = (weightInfo?.isGameChanger && targetPowerTier === 'max_power')
+          ? `Top-tier Game Changer: Format-defining power staple on MTG Arena (+${weightInfo.weight} matchmaking weight)`
+          : causalMatch 
           ? explainSynergy(commander, causalMatch)
           : `Played in ${item.inclusion}% of community decks (${item.numDecks.toLocaleString()} decks)${item.synergy > 0 ? ` with +${item.synergy}% synergy lift` : ''}`;
 
         return {
           card: item.card,
           item,
-          score: hasHighSynergy ? Math.max(item.inclusion, 80 + Math.min(item.synergy, 19)) : item.inclusion,
+          score,
           badge,
           reason,
           roleChips
@@ -736,9 +750,17 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
       const causalMatch = calculateSynergy(commander, c);
       const roleChips = getCardRoleChips(c, commander);
       const hasHighSynergy = item.category === 'highsynergy' || (item.synergy !== undefined && item.synergy >= 15);
+      const weightInfo = getCardWeightInfo(c.name);
 
       let badge: string;
-      if (hasHighSynergy && item.synergy > 0) {
+      let score = hasHighSynergy ? Math.max(item.inclusion, 80 + Math.min(item.synergy, 19)) : item.inclusion;
+
+      if (targetPowerTier === 'max_power' && (weightInfo?.isGameChanger || (weightInfo?.weight && weightInfo.weight >= 350))) {
+        badge = `🔥 Max Power Staple`;
+        score += 30;
+      } else if (targetPowerTier === 'casual' && weightInfo?.isGameChanger) {
+        badge = `⚠️ High Weight (+${weightInfo.weight} pts)`;
+      } else if (hasHighSynergy && item.synergy > 0) {
         badge = `⚡ +${item.synergy}% Synergy`;
       } else if (item.inclusion >= 35) {
         badge = `🔥 ${item.inclusion}% of Decks`;
@@ -746,11 +768,11 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         badge = roleChips.length >= 2 ? `✨ ${roleChips.length}-in-1 Engine` : `⭐ ${item.inclusion}% of Decks`;
       }
 
-      const reason = causalMatch 
+      const reason = (weightInfo?.isGameChanger && targetPowerTier === 'max_power')
+        ? `Top-tier Game Changer: Format-defining power staple on MTG Arena (+${weightInfo.weight} matchmaking weight)`
+        : causalMatch 
         ? explainSynergy(commander, causalMatch)
         : `Played in ${item.inclusion}% of community decks (${item.numDecks.toLocaleString()} decks)${item.synergy > 0 ? ` with +${item.synergy}% synergy lift` : ''}`;
-
-      const score = hasHighSynergy ? Math.max(item.inclusion, 80 + Math.min(item.synergy, 19)) : item.inclusion;
 
       edhrecCardsForTab.push({
         card: c,
