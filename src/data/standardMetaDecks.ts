@@ -300,5 +300,40 @@ Sideboard
 2 Tishana's Tidebinder (LCI) 81
 2 Disdainful Stroke (WOE) 47
 2 Rest in Peace (BIG) 4`
+  },
+  {
+    id: 'mono-white-tokens',
+    name: 'Mono-White Caretaker Tokens',
+    tier: 'Tier 1',
+    winrate: '57.6%',
+    metaShare: '10.4%',
+    archetype: 'Control',
+    colors: ['W'],
+    description: 'Grinds out infinite card advantage and token swarms with Caretaker\'s Talent, Carrot Cake, and Beza stabilizer.',
+    keyCards: ['Caretaker\'s Talent', 'Beza, the Bounding Spring', 'Carrot Cake', 'Sunfall'],
+    arenaExportText: `Deck
+4 Caretaker's Talent (BLB) 6
+3 Beza, the Bounding Spring (BLB) 2
+4 Carrot Cake (BLB) 7
+4 Novice Inspector (MKM) 29
+4 Get Lost (LCI) 14
+4 Sunfall (MOM) 40
+3 Temporary Lockdown (DMU) 36
+3 Elspeth's Smite (MOM) 13
+2 The Wandering Emperor (NEO) 42
+3 Fountainport (BLB) 253
+4 Mirrex (ONE) 254
+2 Demolition Field (BRO) 260
+20 Plains (DMU) 277
+
+Sideboard
+3 Loran of the Third Path (BRO) 12
+2 Rest in Peace (BIG) 4
+2 Knockout Blow (SNC) 20
+2 Destroy Evil (DMU) 17
+2 Tishana's Tidebinder (LCI) 81
+2 Negate (MOM) 68
+2 Disdainful Stroke (WOE) 47`
   }
 ];
+
