@@ -1094,7 +1094,7 @@ export const App: React.FC = () => {
         }}
         userCollection={userCollection}
         wildcardInventory={wildcardInventory}
-        onOpenSync={() => setIsWildcardModalOpen(true)}
+        onOpenWildcards={() => setIsWildcardModalOpen(true)}
       />
 
       <CardDetailModal
@@ -1119,28 +1119,12 @@ export const App: React.FC = () => {
         onSelectCardDetail={setSelectedCardDetail}
       />
 
-      {/* MTG Arena Full Account Sync & Wildcard Stash Hub */}
-      <CollectionSyncModal
+      {/* Wildcard Stash Manager Modal */}
+      <WildcardEditModal
         isOpen={isWildcardModalOpen}
         onClose={() => setIsWildcardModalOpen(false)}
-        onSyncCollection={(col) => {
-          setUserCollection(col);
-          localStorage.setItem('arenaforge_user_collection', JSON.stringify(col));
-          setSaveNotification(`Synced ${Object.keys(col).length} cards to your MTG Arena collection!`);
-          setTimeout(() => setSaveNotification(null), 3500);
-        }}
-        onSyncDecks={(decks) => {
-          setSavedDecks(prev => {
-            const existingNames = new Set(prev.map(d => d.name.toLowerCase()));
-            const newDecks = decks.filter(d => !existingNames.has(d.name.toLowerCase()));
-            return [...newDecks, ...prev];
-          });
-          setSaveNotification(`Synced ${decks.length} deck(s) from MTG Arena to My Decks!`);
-          setTimeout(() => setSaveNotification(null), 3500);
-        }}
-        onSyncWildcards={handleSyncWildcards}
-        currentWildcards={wildcardInventory}
-        currentCollectionCount={Object.keys(userCollection).length}
+        inventory={wildcardInventory}
+        onSaveInventory={handleSyncWildcards}
       />
 
       <ImportDeckModal

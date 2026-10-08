@@ -30,8 +30,7 @@ import {
   Swords,
   Mountain,
   Shield,
-  Info,
-  UploadCloud
+  Info
 } from 'lucide-react';
 
 interface StandardMetaModalProps {
@@ -40,7 +39,7 @@ interface StandardMetaModalProps {
   onLoadDeck: (deck: Deck) => void;
   userCollection: UserCollection;
   wildcardInventory?: WildcardInventory;
-  onOpenSync?: () => void;
+  onOpenWildcards?: () => void;
 }
 
 type CraftFilter = 'all' | 'ready_to_play' | 'craftable_now' | 'tier1' | 'latest_set';
@@ -78,7 +77,7 @@ export const StandardMetaModal: React.FC<StandardMetaModalProps> = ({
   onLoadDeck,
   userCollection,
   wildcardInventory = { common: 0, uncommon: 0, rare: 0, mythic: 0 },
-  onOpenSync
+  onOpenWildcards
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [craftFilter, setCraftFilter] = useState<CraftFilter>('all');
@@ -378,29 +377,24 @@ export const StandardMetaModal: React.FC<StandardMetaModalProps> = ({
           </div>
 
           <div className="flex items-center gap-3">
-            {/* User Wildcard Stash Summary */}
-            <div className="hidden lg:flex items-center gap-2.5 bg-[#0e121a] px-3 py-1.5 rounded-xl border border-white/5 text-xs">
+            {/* User Wildcard Stash Summary (Clickable to Edit) */}
+            <button
+              type="button"
+              onClick={onOpenWildcards}
+              className="flex items-center gap-2.5 bg-[#0e121a] hover:bg-[#151a26] px-3.5 py-1.5 rounded-xl border border-white/5 hover:border-amber-500/40 text-xs shadow-inner transition cursor-pointer group"
+              title="Click to update your Wildcard Stash"
+            >
               <span className="text-[10px] text-stone-400 font-bold uppercase tracking-wider">Your Stash:</span>
               <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-amber-300" title="Rare Wildcards">
-                <div className="w-2.5 h-2.5 rounded-full bg-amber-400" />
+                <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm" />
                 <span>{wildcardInventory.rare} Rare</span>
               </div>
               <div className="flex items-center gap-1 text-[11px] font-mono font-bold text-orange-400" title="Mythic Wildcards">
-                <div className="w-2.5 h-2.5 rounded-full bg-orange-500" />
+                <div className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm" />
                 <span>{wildcardInventory.mythic} Mythic</span>
               </div>
-            </div>
-
-            {onOpenSync && (
-              <button
-                onClick={onOpenSync}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-950/40 to-amber-950/40 hover:from-cyan-900/50 hover:to-amber-900/50 text-cyan-300 hover:text-white text-xs font-bold rounded-xl border border-cyan-500/40 hover:border-cyan-400 shadow-sm transition"
-                title="Upload MTG Arena Player.log to calculate exact card ownership"
-              >
-                <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
-                <span>Sync Collection</span>
-              </button>
-            )}
+              <span className="text-[10px] text-amber-400 font-bold ml-1 group-hover:underline">Edit ✎</span>
+            </button>
 
             <button
               onClick={onClose}
@@ -411,27 +405,6 @@ export const StandardMetaModal: React.FC<StandardMetaModalProps> = ({
             </button>
           </div>
         </div>
-
-        {/* Collection Status Banner if empty */}
-        {!hasCollectionCards && (
-          <div className="mt-2.5 bg-blue-950/40 border border-blue-500/30 px-3.5 py-2 rounded-xl text-xs text-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
-            <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />
-              <span>
-                <strong>Note on Collection Ownership:</strong> Percentages shown are mathematically accurate. Because your MTG Arena collection isn't synced yet, owned percentages (~25%–37%) reflect the unlimited basic lands provided to every player.
-              </span>
-            </div>
-            {onOpenSync && (
-              <button
-                onClick={onOpenSync}
-                className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-lg text-xs transition shrink-0 shadow-md flex items-center gap-1.5 self-start sm:self-auto"
-              >
-                <UploadCloud className="w-3.5 h-3.5" />
-                <span>Upload Player.log</span>
-              </button>
-            )}
-          </div>
-        )}
 
         {/* Filters & Search Toolbar */}
         <div className="py-3 space-y-2.5 border-b border-[#c5a059]/20 flex-shrink-0">
