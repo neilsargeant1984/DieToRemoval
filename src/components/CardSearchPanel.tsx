@@ -1,18 +1,22 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { searchArenaCards, buildSmartSearchQuery } from '../services/scryfallService';
-import { Search, Plus, Sparkles, X, ShieldAlert, Loader2, Globe } from 'lucide-react';
+import { Search, Plus, Minus, Trash2, Sparkles, X, ShieldAlert, Loader2, Globe } from 'lucide-react';
 import { ManaCost } from './ManaCost';
 import { OwnershipPips } from './OwnershipPips';
 import { UserCollection } from '../types/collection';
 import { FunctionalRole } from '../utils/roleClassifier';
+import { getMaxCardCopies } from '../utils/cardRules';
 
 interface CardSearchPanelProps {
   currentFormat: FormatType;
   commander?: Card;
+  deckCardCounts?: Map<string, number>;
+  sideboardCardCounts?: Map<string, number>;
   activeRoleFilter?: FunctionalRole | 'lands' | null;
   onClearRoleFilter?: () => void;
   onAddCard: (card: Card, toSideboard?: boolean) => void;
+  onRemoveCard?: (card: Card, removeAll?: boolean, fromSideboard?: boolean) => void;
   onSelectCardDetail: (card: Card) => void;
   userCollection?: UserCollection;
   onUpdateCollection?: (col: UserCollection) => void;
@@ -21,9 +25,12 @@ interface CardSearchPanelProps {
 export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
   currentFormat,
   commander,
+  deckCardCounts,
+  sideboardCardCounts,
   activeRoleFilter,
   onClearRoleFilter,
   onAddCard,
+  onRemoveCard,
   onSelectCardDetail,
   userCollection = {},
   onUpdateCollection
@@ -344,44 +351,210 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
         ) : (
           /* Persistent 3-Column Visual Grid Mode */
           <div className="grid grid-cols-3 gap-3 p-1">
-            {cards.map(card => (
-              <div
-                key={card.id}
-                className="group relative rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-amber-400 transition-all shadow-md bg-[#0e121a]"
-                onClick={() => onSelectCardDetail(card)}
-              >
-                <img
-                  src={card.imageUrl}
-                  alt={card.name}
-                  className="w-full h-auto block rounded-lg aspect-[2.5/3.5] object-cover"
-                  loading="lazy"
-                />
+            {cards.map(card => {
+              const cardKey = card.name.toLowerCase().trim();
+              const mainCount = deckCardCounts?.get(cardKey) || 0;
+              const sideCount = sideboardCardCounts?.get(cardKey) || 0;
+              const totalCount = mainCount + sideCount;
+              const maxAllowed = getMaxCardCopies(card, selectedFormat);
+              const isMaxReached = totalCount >= maxAllowed;
 
-                {/* Hover Actions Overlay */}
-                <div className="absolute inset-0 bg-[#0b0e14]/85 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center p-2.5 gap-2 backdrop-blur-sm rounded-lg">
-                  <div onClick={e => e.stopPropagation()} className="mb-auto mt-0.5 flex w-full justify-end">
-                    <OwnershipPips
-                      card={card}
-                      userCollection={userCollection}
-                      size="sm"
-                      onCountChange={(_, updated) => onUpdateCollection?.(updated)}
-                    />
+              return (
+                <div
+                  key={card.id}
+                  className="group relative rounded-xl overflow-hidden cursor-pointer border-2 border-transparent hover:border-amber-400 transition-all shadow-md bg-[#0e121a]"
+                  onClick={() => onSelectCardDetail(card)}
+                >
+                  <img
+                    src={card.imageUrl}
+                    alt={card.name}
+                    className="w-full h-auto block rounded-lg aspect-[2.5/3.5] object-cover"
+                    loading="lazy"
+                  />
+
+                  {/* Hover Actions Overlay */}
+                  <div className="absolute inset-0 bg-[#0b0e14]/90 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-2 backdrop-blur-sm rounded-lg">
+                    {/* Top Header: In-deck badge & Ownership pips */}
+                    <div onClick={e => e.stopPropagation()} className="flex w-full items-center justify-between">
+                      {totalCount > 0 ? (
+                        <span className="text-[10px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-500/25 text-amber-300 border border-amber-500/50 shadow-sm leading-none">
+                          {totalCount}x in Deck
+                        </span>
+                      ) : (
+                        <span />
+                      )}
+                      <OwnershipPips
+                        card={card}
+                        userCollection={userCollection}
+                        size="sm"
+                        onCountChange={(_, updated) => onUpdateCollection?.(updated)}
+                      />
+                    </div>
+
+                    {/* Bottom Actions: Add to Deck Stepper + Sideboard */}
+                    <div className="w-full flex flex-col gap-1.5" onClick={e => e.stopPropagation()}>
+                      {/* Add to Deck Button with Plus / Minus Stepper */}
+                      {mainCount === 0 ? (
+                        <div className="w-full flex items-stretch rounded-lg overflow-hidden shadow-lg border border-amber-400/40 btn-mythic-spark p-0">
+                          <button
+                            type="button"
+                            disabled={true}
+                            className="px-2 py-1.5 flex items-center justify-center text-slate-900/30 cursor-not-allowed border-r border-black/10"
+                            title="No copies in mainboard"
+                          >
+                            <Minus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isMaxReached}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isMaxReached) onAddCard(card, false);
+                            }}
+                            className="flex-1 py-1.5 px-1 flex items-center justify-center text-slate-950 font-black text-xs hover:bg-black/10 transition select-none tracking-tight disabled:opacity-40"
+                            title={isMaxReached ? `Maximum ${maxAllowed} copies reached` : "Add to deck"}
+                          >
+                            <span>Add to Deck</span>
+                          </button>
+                          <button
+                            type="button"
+                            disabled={isMaxReached}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isMaxReached) onAddCard(card, false);
+                            }}
+                            className="px-2 py-1.5 flex items-center justify-center text-slate-950 hover:bg-black/15 transition active:scale-95 border-l border-black/10 disabled:opacity-40"
+                            title={isMaxReached ? `Maximum ${maxAllowed} copies reached` : "Add 1 copy"}
+                          >
+                            <Plus className="w-3.5 h-3.5 stroke-[2.5]" />
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="w-full flex items-stretch rounded-lg overflow-hidden shadow-lg border border-amber-400/60 bg-[#0d1017] p-0.5">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveCard?.(card, false, false);
+                            }}
+                            className="px-2 py-1 rounded-md bg-[#161c28] hover:bg-rose-950 text-stone-300 hover:text-rose-300 border border-white/5 hover:border-rose-700 transition active:scale-95 flex items-center justify-center"
+                            title={mainCount === 1 ? "Remove card from deck" : "Decrease copies"}
+                          >
+                            {mainCount === 1 ? (
+                              <Trash2 className="w-3.5 h-3.5 text-rose-400" />
+                            ) : (
+                              <Minus className="w-3.5 h-3.5" />
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isMaxReached}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isMaxReached) onAddCard(card, false);
+                            }}
+                            className="flex-1 py-1 px-1 flex flex-col items-center justify-center text-center transition hover:bg-white/5 rounded-md mx-0.5 select-none"
+                            title={isMaxReached ? `Maximum ${maxAllowed} copies reached` : "Add another copy"}
+                          >
+                            <span className="text-xs font-black text-amber-300 leading-none">
+                              {mainCount} in Deck
+                            </span>
+                            {maxAllowed < 100 && (
+                              <span className="text-[9px] font-semibold text-slate-400 leading-none mt-0.5">
+                                ({maxAllowed} Max)
+                              </span>
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isMaxReached}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isMaxReached) onAddCard(card, false);
+                            }}
+                            className={`px-2 py-1 rounded-md border transition active:scale-95 flex items-center justify-center ${
+                              isMaxReached
+                                ? 'opacity-30 cursor-not-allowed bg-[#161c28] text-stone-500 border-white/5'
+                                : 'bg-[#161c28] hover:bg-emerald-950 text-stone-300 hover:text-emerald-300 border border-white/5 hover:border-emerald-700'
+                            }`}
+                            title={isMaxReached ? `Maximum ${maxAllowed} copies reached` : "Add another copy"}
+                          >
+                            <Plus className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                      )}
+
+                      {/* Sideboard Button / Stepper */}
+                      {sideCount === 0 ? (
+                        <button
+                          type="button"
+                          disabled={isMaxReached}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            if (!isMaxReached) onAddCard(card, true);
+                          }}
+                          className="w-full py-1 bg-[#1c2230] text-slate-200 font-bold text-xs border border-[#c5a059]/40 rounded-lg hover:bg-[#252d40] hover:text-white transition flex items-center justify-center gap-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                          title={isMaxReached ? "Max copies reached across deck" : "Add copy to sideboard"}
+                        >
+                          <Plus className="w-3 h-3 text-[#c5a059]" />
+                          <span>Sideboard</span>
+                        </button>
+                      ) : (
+                        <div className="w-full flex items-center justify-between bg-[#0d1017] border border-white/10 rounded-lg p-0.5 shadow-inner">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              onRemoveCard?.(card, false, true);
+                            }}
+                            className="p-1 rounded-md bg-[#141926] hover:bg-rose-950 text-stone-300 hover:text-rose-300 border border-white/5 hover:border-rose-800 transition"
+                            title={sideCount === 1 ? "Remove from sideboard" : "Decrease sideboard copies"}
+                          >
+                            {sideCount === 1 ? (
+                              <Trash2 className="w-3 h-3 text-rose-400" />
+                            ) : (
+                              <Minus className="w-3 h-3" />
+                            )}
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isMaxReached}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isMaxReached) onAddCard(card, true);
+                            }}
+                            className="flex-1 text-center font-bold text-sky-300 hover:text-sky-200 text-[11px] truncate px-1"
+                            title={isMaxReached ? "Max copies reached across deck" : "Add another copy to sideboard"}
+                          >
+                            {sideCount} in SB
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={isMaxReached}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              if (!isMaxReached) onAddCard(card, true);
+                            }}
+                            className={`p-1 rounded-md border transition ${
+                              isMaxReached
+                                ? 'opacity-30 cursor-not-allowed bg-[#141926] text-stone-500 border-white/5'
+                                : 'bg-[#141926] hover:bg-sky-950 text-stone-300 hover:text-sky-300 border border-white/5 hover:border-sky-800'
+                            }`}
+                            title={isMaxReached ? "Max copies reached across deck" : "Add copy to sideboard"}
+                          >
+                            <Plus className="w-3 h-3" />
+                          </button>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onAddCard(card, false); }}
-                    className="w-full py-1.5 btn-mythic-spark text-slate-950 font-black text-xs rounded-lg shadow-xl hover:scale-105 transition"
-                  >
-                    Add to Deck
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); onAddCard(card, true); }}
-                    className="w-full py-1 bg-[#1c2230] text-slate-200 font-bold text-xs border border-[#c5a059]/40 rounded-lg hover:bg-[#252d40] hover:text-white transition"
-                  >
-                    + Sideboard
-                  </button>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>

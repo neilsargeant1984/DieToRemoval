@@ -30,7 +30,8 @@ import {
   Swords,
   Mountain,
   Shield,
-  Info
+  Info,
+  UploadCloud
 } from 'lucide-react';
 
 interface StandardMetaModalProps {
@@ -39,6 +40,7 @@ interface StandardMetaModalProps {
   onLoadDeck: (deck: Deck) => void;
   userCollection: UserCollection;
   wildcardInventory?: WildcardInventory;
+  onOpenSync?: () => void;
 }
 
 type CraftFilter = 'all' | 'ready_to_play' | 'craftable_now' | 'tier1' | 'latest_set';
@@ -75,7 +77,8 @@ export const StandardMetaModal: React.FC<StandardMetaModalProps> = ({
   onClose,
   onLoadDeck,
   userCollection,
-  wildcardInventory = { common: 0, uncommon: 0, rare: 0, mythic: 0 }
+  wildcardInventory = { common: 0, uncommon: 0, rare: 0, mythic: 0 },
+  onOpenSync
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [craftFilter, setCraftFilter] = useState<CraftFilter>('all');
@@ -388,6 +391,17 @@ export const StandardMetaModal: React.FC<StandardMetaModalProps> = ({
               </div>
             </div>
 
+            {onOpenSync && (
+              <button
+                onClick={onOpenSync}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-950/40 to-amber-950/40 hover:from-cyan-900/50 hover:to-amber-900/50 text-cyan-300 hover:text-white text-xs font-bold rounded-xl border border-cyan-500/40 hover:border-cyan-400 shadow-sm transition"
+                title="Upload MTG Arena Player.log to calculate exact card ownership"
+              >
+                <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
+                <span>Sync Collection</span>
+              </button>
+            )}
+
             <button
               onClick={onClose}
               className="text-stone-400 hover:text-white p-2 rounded-xl bg-[#141a29] hover:bg-[#1c2438] transition border border-[#c5a059]/30"
@@ -400,13 +414,22 @@ export const StandardMetaModal: React.FC<StandardMetaModalProps> = ({
 
         {/* Collection Status Banner if empty */}
         {!hasCollectionCards && (
-          <div className="mt-2.5 bg-blue-950/40 border border-blue-500/30 px-3.5 py-2 rounded-xl text-xs text-blue-200 flex items-center justify-between gap-3 flex-shrink-0">
+          <div className="mt-2.5 bg-blue-950/40 border border-blue-500/30 px-3.5 py-2 rounded-xl text-xs text-blue-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 flex-shrink-0">
             <div className="flex items-center gap-2">
               <Info className="w-4 h-4 text-blue-400 flex-shrink-0" />
               <span>
-                <strong>Note on Collection Ownership:</strong> Percentages shown are mathematically accurate. Because your MTG Arena collection isn't synced yet, owned percentages (~25%–37%) reflect the unlimited basic lands provided to every player. Sync via <em>Wildcard Stash &gt; Upload Player.log</em> to view your exact card collection!
+                <strong>Note on Collection Ownership:</strong> Percentages shown are mathematically accurate. Because your MTG Arena collection isn't synced yet, owned percentages (~25%–37%) reflect the unlimited basic lands provided to every player.
               </span>
             </div>
+            {onOpenSync && (
+              <button
+                onClick={onOpenSync}
+                className="px-3.5 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white font-extrabold rounded-lg text-xs transition shrink-0 shadow-md flex items-center gap-1.5 self-start sm:self-auto"
+              >
+                <UploadCloud className="w-3.5 h-3.5" />
+                <span>Upload Player.log</span>
+              </button>
+            )}
           </div>
         )}
 

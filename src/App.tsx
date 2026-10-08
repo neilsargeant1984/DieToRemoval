@@ -33,6 +33,7 @@ import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { deckCloudService } from './services/deckCloudService';
 import { AuthModal } from './components/AuthModal';
 import { WildcardEditModal } from './components/WildcardEditModal';
+import { CollectionSyncModal } from './components/CollectionSyncModal';
 import { NewDeckModal } from './components/NewDeckModal';
 import { FunctionalRole } from './utils/roleClassifier';
 
@@ -348,6 +349,14 @@ export const App: React.FC = () => {
     return map;
   }, [activeDeck.mainboard]);
 
+  const sideboardCardCounts = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const item of activeDeck.sideboard) {
+      map.set(item.card.name.toLowerCase().trim(), item.quantity);
+    }
+    return map;
+  }, [activeDeck.sideboard]);
+
   // Deck Manipulation Handlers
   const handleAddCard = (card: Card, toSideboard: boolean = false) => {
     const list = toSideboard ? [...activeDeck.sideboard] : [...activeDeck.mainboard];
@@ -355,10 +364,17 @@ export const App: React.FC = () => {
     const index = list.findIndex(c => c.card.name.toLowerCase().trim() === card.name.toLowerCase().trim());
     const maxAllowed = getMaxCardCopies(card, activeDeck.format);
 
+    // Calculate total copies across mainboard and sideboard
+    const otherList = toSideboard ? activeDeck.mainboard : activeDeck.sideboard;
+    const currentInThis = index >= 0 ? list[index].quantity : 0;
+    const otherItem = otherList.find(c => c.card.name.toLowerCase().trim() === card.name.toLowerCase().trim());
+    const currentInOther = otherItem ? otherItem.quantity : 0;
+
+    if (currentInThis + currentInOther >= maxAllowed) {
+      return; // Already reached the maximum copies allowed
+    }
+
     if (index >= 0) {
-      if (list[index].quantity >= maxAllowed) {
-        return; // Already reached the maximum copies allowed
-      }
       list[index] = { ...list[index], quantity: list[index].quantity + 1 };
     } else {
       list.push({ card, quantity: 1 });
@@ -371,7 +387,7 @@ export const App: React.FC = () => {
     }
   };
 
-  const handleRemoveCard = (card: Card, removeAll: boolean = false) => {
+  const handleRemoveCard = (card: Card, removeAll: boolean = false, fromSideboard?: boolean) => {
     const updateList = (items: typeof activeDeck.mainboard) => {
       const idx = items.findIndex(c => 
         c.card.name.toLowerCase().trim() === card.name.toLowerCase().trim() || c.card.id === card.id
@@ -385,12 +401,26 @@ export const App: React.FC = () => {
       return updated;
     };
 
-    setActiveDeck({
-      ...activeDeck,
-      mainboard: updateList(activeDeck.mainboard),
-      sideboard: updateList(activeDeck.sideboard),
-      updatedAt: new Date().toISOString()
-    });
+    if (fromSideboard === true) {
+      setActiveDeck({
+        ...activeDeck,
+        sideboard: updateList(activeDeck.sideboard),
+        updatedAt: new Date().toISOString()
+      });
+    } else if (fromSideboard === false) {
+      setActiveDeck({
+        ...activeDeck,
+        mainboard: updateList(activeDeck.mainboard),
+        updatedAt: new Date().toISOString()
+      });
+    } else {
+      setActiveDeck({
+        ...activeDeck,
+        mainboard: updateList(activeDeck.mainboard),
+        sideboard: updateList(activeDeck.sideboard),
+        updatedAt: new Date().toISOString()
+      });
+    }
   };
 
   const handleUpdateDeck = (updated: Deck) => {
@@ -949,9 +979,12 @@ export const App: React.FC = () => {
             <div className="lg:col-span-5 h-[calc(100vh-180px)] sticky top-20">
               <CardSearchPanel
                 currentFormat={activeDeck.format}
+                deckCardCounts={deckCardCounts}
+                sideboardCardCounts={sideboardCardCounts}
                 activeRoleFilter={standardRoleFilter}
                 onClearRoleFilter={() => setStandardRoleFilter(null)}
                 onAddCard={handleAddCard}
+                onRemoveCard={handleRemoveCard}
                 onSelectCardDetail={setSelectedCardDetail}
                 userCollection={userCollection}
                 onUpdateCollection={setUserCollection}
@@ -1061,6 +1094,7 @@ export const App: React.FC = () => {
         }}
         userCollection={userCollection}
         wildcardInventory={wildcardInventory}
+        onOpenSync={() => setIsWildcardModalOpen(true)}
       />
 
       <CardDetailModal
@@ -1085,12 +1119,28 @@ export const App: React.FC = () => {
         onSelectCardDetail={setSelectedCardDetail}
       />
 
-      {/* Wildcard Stash Manager Modal */}
-      <WildcardEditModal
+      {/* MTG Arena Full Account Sync & Wildcard Stash Hub */}
+      <CollectionSyncModal
         isOpen={isWildcardModalOpen}
         onClose={() => setIsWildcardModalOpen(false)}
-        inventory={wildcardInventory}
-        onSaveInventory={handleSyncWildcards}
+        onSyncCollection={(col) => {
+          setUserCollection(col);
+          localStorage.setItem('arenaforge_user_collection', JSON.stringify(col));
+          setSaveNotification(`Synced ${Object.keys(col).length} cards to your MTG Arena collection!`);
+          setTimeout(() => setSaveNotification(null), 3500);
+        }}
+        onSyncDecks={(decks) => {
+          setSavedDecks(prev => {
+            const existingNames = new Set(prev.map(d => d.name.toLowerCase()));
+            const newDecks = decks.filter(d => !existingNames.has(d.name.toLowerCase()));
+            return [...newDecks, ...prev];
+          });
+          setSaveNotification(`Synced ${decks.length} deck(s) from MTG Arena to My Decks!`);
+          setTimeout(() => setSaveNotification(null), 3500);
+        }}
+        onSyncWildcards={handleSyncWildcards}
+        currentWildcards={wildcardInventory}
+        currentCollectionCount={Object.keys(userCollection).length}
       />
 
       <ImportDeckModal

@@ -161,14 +161,14 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
             </div>
           </button>
 
-          {/* Wildcard Vault Manager CTA */}
+          {/* Sync MTGA Account & Collection CTA */}
           <button
-            onClick={onOpenWildcards}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-[#1c2335] text-amber-300 hover:text-amber-200 text-xs font-bold rounded-xl border border-amber-500/30 shadow-sm transition"
-            title="Set your in-game wildcards for deck crafting calculations"
+            onClick={onOpenSync || onOpenWildcards}
+            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-cyan-950/40 via-[#141926] to-amber-950/40 hover:from-cyan-900/40 hover:to-amber-900/40 text-cyan-300 hover:text-white text-xs font-bold rounded-xl border border-cyan-500/40 hover:border-cyan-400 shadow-sm transition"
+            title="Upload Player.log to sync your MTG Arena cards, decks, and wildcards"
           >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Wildcard Vault</span>
+            <UploadCloud className="w-3.5 h-3.5 text-cyan-400" />
+            <span>Sync MTGA Account</span>
           </button>
 
           {/* Import Deck */}
