@@ -198,13 +198,13 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      className={`w-full bg-[#0e121a] border relative transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-2xl ${
+      className={`w-full bg-[#0d1017]/95 border relative transition-all duration-150 flex flex-col justify-between overflow-hidden shadow-2xl backdrop-blur-xl ${
         isDragOver 
           ? 'border-amber-400 ring-2 ring-amber-400/90 ring-inset bg-amber-950/20' 
-          : 'border-[#c5a059]/25'
+          : 'border-white/5'
       } ${
         variant === 'inline'
-          ? 'rounded-3xl h-[calc(100vh-100px)] arena-panel-elevated'
+          ? 'rounded-3xl h-[calc(100vh-100px)] arena-panel'
           : 'max-w-md h-full rounded-l-3xl border-l'
       }`}
     >
@@ -236,35 +236,30 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
       )}
 
       {/* Header */}
-      <div className="p-4 border-b border-white/10 flex items-center justify-between bg-[#121622] flex-shrink-0">
+      <div className="p-3.5 border-b border-white/5 flex items-center justify-between bg-[#111520]/80 flex-shrink-0">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center">
-            <Layers className="w-4 h-4 text-amber-400" />
-          </div>
-          <div>
-            <h3 className="font-fantasy font-black text-sm text-white flex items-center gap-2">
-              <span>Decklist</span>
-              <span className={`text-xs px-2 py-0.5 rounded font-mono font-bold ${
-                totalDeckCount === targetDeckSize
-                  ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                  : 'bg-orange-950 text-orange-300 border border-orange-700'
-              }`}>
-                {totalDeckCount} / {targetDeckSize}
-              </span>
+          <Layers className="w-4 h-4 text-amber-400" />
+          <div className="flex items-center gap-2">
+            <h3 className="font-fantasy font-black text-sm text-white">
+              Decklist
             </h3>
-            <span className="text-[11px] text-stone-400">
-              {deck.format === 'brawl' ? 'Brawl Singleton Deck' : 'Constructed Deck'}
+            <span className={`text-xs px-2 py-0.5 rounded-lg font-mono font-bold border ${
+              totalDeckCount === targetDeckSize
+                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
+                : 'bg-[#161b26] text-amber-300 border-white/10'
+            }`}>
+              {totalDeckCount} / {targetDeckSize}
             </span>
           </div>
         </div>
 
         <button
           onClick={onClose}
-          className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-stone-400 hover:text-amber-300 hover:bg-white/10 transition border border-transparent hover:border-white/10"
+          className="flex items-center gap-1 px-2 py-1 rounded-lg text-stone-400 hover:text-stone-200 hover:bg-white/5 transition text-xs"
           title="Hide Decklist"
         >
-          <PanelRightClose className="w-4 h-4 text-stone-400" />
-          <span className="text-xs font-bold">Hide</span>
+          <PanelRightClose className="w-3.5 h-3.5" />
+          <span>Hide</span>
         </button>
       </div>
 

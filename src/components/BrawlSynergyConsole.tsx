@@ -1128,32 +1128,30 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
   return (
     <div className="arena-panel rounded-3xl p-6 shadow-2xl space-y-4">
       {/* Console Header */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/10">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-2.5 border-b border-white/5">
         <div className="flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-amber-400" />
-          <div>
-            <h3 className="font-fantasy font-black text-lg text-white flex items-center gap-2">
-              <span>Commander Synergies</span>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-orange-950/80 text-orange-300 border border-orange-500/40">
-                {commander.name}
-              </span>
-            </h3>
-            <p className="text-[11px] text-stone-400">
-              Causal recommendations filtered strictly for {commander.colorIdentity.join('/') || 'Colorless'} legal cards on MTG Arena
-            </p>
-          </div>
+          <Sparkles className="w-4 h-4 text-amber-400" />
+          <h3 className="font-fantasy font-black text-lg text-white flex items-center gap-2">
+            <span>Commander Synergies</span>
+          </h3>
+          <span 
+            className="text-[11px] text-stone-400 hover:text-stone-300 transition cursor-help flex items-center gap-1"
+            title={`Recommendations filtered strictly for ${commander.colorIdentity.join('/') || 'Colorless'} legal cards on MTG Arena`}
+          >
+            • {commander.colorIdentity.length === 0 ? 'Colorless' : commander.colorIdentity.join('/')} Legal
+          </span>
         </div>
 
         {/* Multi-Role Filter Toggle, Tray Toggle & Card Count */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-2">
           {onToggleDeckTray && (
             <button
               onClick={onToggleDeckTray}
               title={isDeckTrayOpen ? 'Hide Decklist' : 'Show Decklist'}
-              className={`text-xs px-3 py-1.5 rounded-xl font-bold border transition flex items-center gap-1.5 shadow-sm ${
+              className={`text-xs px-2.5 py-1.5 rounded-xl font-semibold border transition flex items-center gap-1.5 shadow-sm ${
                 isDeckTrayOpen
                   ? 'bg-amber-500/15 text-amber-300 border-amber-500/30 hover:bg-amber-500/25'
-                  : 'bg-[#0d1017]/90 text-stone-300 hover:text-white border-white/5 hover:bg-[#141926]'
+                  : 'bg-[#0d1017]/80 text-stone-300 hover:text-white border-white/5 hover:bg-[#141926]'
               }`}
             >
               <Layers className="w-3.5 h-3.5 text-amber-400" />
@@ -1163,24 +1161,24 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
           <button
             onClick={() => setMultiRoleOnly(!multiRoleOnly)}
-            title="Filter to show only multi-role powerhouses that fulfill 2 or more functional roles"
-            className={`text-xs px-3 py-1.5 rounded-xl font-bold border transition flex items-center gap-1.5 shadow-sm ${
+            title="Show cards that fulfill 2 or more functional roles"
+            className={`text-xs px-2.5 py-1.5 rounded-xl font-semibold border transition flex items-center gap-1.5 shadow-sm ${
               multiRoleOnly
                 ? 'btn-mythic-spark shadow-md'
-                : 'bg-[#0d1017]/90 text-stone-300 hover:text-white border-white/5 hover:bg-[#141926]'
+                : 'bg-[#0d1017]/80 text-stone-300 hover:text-white border-white/5 hover:bg-[#141926]'
             }`}
           >
             <span>✨</span>
-            <span>Multi-Role Only</span>
+            <span>Multi-Role</span>
             {multiRoleCount > 0 && (
-              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-extrabold ${multiRoleOnly ? 'bg-slate-950 text-amber-300' : 'bg-white/10 text-stone-300'}`}>
+              <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${multiRoleOnly ? 'bg-slate-950 text-amber-300' : 'bg-white/10 text-stone-300'}`}>
                 {multiRoleCount}
               </span>
             )}
           </button>
 
-          <span className="text-xs text-stone-400 font-medium">
-            {displayedList.length} cards matched
+          <span className="text-xs text-stone-400 font-medium bg-[#121622]/80 px-2.5 py-1 rounded-xl border border-white/5">
+            {displayedList.length} cards
           </span>
         </div>
       </div>
@@ -1193,12 +1191,12 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
             <button
               key={tab.id}
               onClick={() => handleTabChange(tab.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap ${
                 isActive
                   ? 'btn-mythic-spark shadow-sm'
                   : tab.highlight
-                  ? 'bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30 shadow-sm'
-                  : 'bg-[#121622] text-stone-400 hover:text-stone-200 hover:bg-[#171c28] border border-white/5'
+                  ? 'bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-red-500/20 text-amber-300 border border-amber-500/40 hover:bg-amber-500/30'
+                  : 'bg-[#121622]/90 text-stone-300 hover:text-white hover:bg-[#171c28] border border-white/5'
               }`}
             >
               <span>{tab.icon}</span>
@@ -1208,21 +1206,61 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
         })}
       </div>
 
-      {/* "What People Are Playing" In-Tab Category Controls (Dropdown menu with default Creatures + Sub-Pills view) */}
-      {activeTab === 'meta_consensus' && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-2xl bg-[#0e121b] border border-amber-500/25 shadow-inner">
-          <div className="flex items-center gap-2.5 flex-wrap">
-            <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5 pl-1">
-              <Flame className="w-3.5 h-3.5 text-amber-400" />
-              <span>Consensus Type:</span>
-            </span>
+      {/* "Max Power" In-Tab Context Banner */}
+      {activeTab === 'max_power' && (
+        <div className="flex flex-wrap items-center justify-between gap-3 p-2.5 rounded-xl bg-gradient-to-r from-red-950/40 via-amber-950/20 to-[#0e121b] border border-red-500/30">
+          <div className="flex items-center gap-2">
+            <span className="text-sm">🔥</span>
+            <div>
+              <div className="text-xs font-bold text-amber-300 flex items-center gap-2">
+                <span>Hell-Queue & Max Power Optimization</span>
+                <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-red-900/60 text-red-200 border border-red-500/40 font-bold uppercase">
+                  Tier 1 Staples
+                </span>
+              </div>
+              <p className="text-[11px] text-stone-400">
+                WotC Game Changers, fast mana accelerants, free counterspells, and high-synergy tutors.
+              </p>
+            </div>
+          </div>
+          <div className="text-xs text-amber-300 font-semibold bg-black/40 px-2.5 py-1 rounded-lg border border-amber-500/20">
+            {displayedList.length} Cards
+          </div>
+        </div>
+      )}
 
-            {/* Dropdown Menu (Default view as requested) */}
+      {/* Unified Search & In-Tab Filters Toolbar */}
+      <div className="flex flex-wrap items-center justify-between gap-2.5 p-2 rounded-2xl bg-[#0e121b]/90 border border-white/5 shadow-inner">
+        <div className="flex items-center gap-2 flex-1 min-w-[240px] max-w-md">
+          <div className="relative flex-1">
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
+            <input
+              type="text"
+              value={tabSearchQuery}
+              onChange={(e) => setTabSearchQuery(e.target.value)}
+              placeholder={`Search ${currentTabObj?.label || 'cards'}...`}
+              className="w-full pl-8 pr-7 py-1.5 bg-[#0d1017] border border-white/10 focus:border-amber-500/60 rounded-xl text-xs text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500/30 transition shadow-inner"
+            />
+            {tabSearchQuery && (
+              <button
+                onClick={() => setTabSearchQuery('')}
+                className="absolute right-2 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-stone-400 hover:text-stone-200 transition"
+                title="Clear search"
+              >
+                <X className="w-3 h-3" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* When in What People Are Playing: Integrated Dropdown & Sub-Pills Switch */}
+        {activeTab === 'meta_consensus' && (
+          <div className="flex items-center gap-2 flex-wrap">
             <div className="relative inline-flex items-center">
               <select
                 value={metaSubCategory}
                 onChange={(e) => setMetaSubCategory(e.target.value as MetaSubCategory)}
-                className="appearance-none bg-[#141926] hover:bg-[#1a2133] border border-amber-500/40 hover:border-amber-400 text-stone-100 font-bold text-xs py-1.5 pl-8 pr-8 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer shadow transition"
+                className="appearance-none bg-[#141926] hover:bg-[#1a2133] border border-white/10 hover:border-amber-400/50 text-stone-200 font-semibold text-xs py-1.5 pl-7 pr-7 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-400/50 cursor-pointer transition shadow-sm"
               >
                 <optgroup label="Curated Synergy" className="bg-[#121622] text-stone-300 font-semibold">
                   {META_SUB_CATEGORIES.filter(c => c.group === 'curated').map(cat => (
@@ -1256,44 +1294,38 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-xs">
                 {currentSubCatObj?.icon || '✨'}
               </span>
-              <ChevronDown className="w-3.5 h-3.5 text-amber-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <ChevronDown className="w-3.5 h-3.5 text-stone-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
 
-            {/* Quick Summary Badge */}
-            <span className="text-[11px] font-semibold text-stone-400 bg-white/5 px-2.5 py-1 rounded-lg border border-white/5">
-              Showing <strong className="text-amber-300">{displayedList.length}</strong> {currentSubCatObj?.label.toLowerCase()}
-            </span>
-          </div>
-
-          {/* Toggle between Dropdown and Sub-Pills */}
-          <div className="flex items-center gap-1 bg-[#121622] p-1 rounded-xl border border-white/5">
+            {/* Toggle Dropdown / Sub-Pills */}
             <button
-              onClick={() => setMetaFilterMode('dropdown')}
-              title="Compact Dropdown View"
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ${
-                metaFilterMode === 'dropdown'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'text-stone-400 hover:text-stone-200'
-              }`}
-            >
-              <Filter className="w-3 h-3 text-amber-400" />
-              <span>Dropdown</span>
-            </button>
-            <button
-              onClick={() => setMetaFilterMode('pills')}
-              title="Interactive Sub-Pills View"
-              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition flex items-center gap-1.5 ${
+              onClick={() => setMetaFilterMode(metaFilterMode === 'pills' ? 'dropdown' : 'pills')}
+              title={metaFilterMode === 'pills' ? 'Hide Sub-Pills' : 'Show All Sub-Pills'}
+              className={`px-2.5 py-1.5 rounded-xl text-xs font-semibold transition flex items-center gap-1 border ${
                 metaFilterMode === 'pills'
-                  ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40'
-                  : 'text-stone-400 hover:text-stone-200'
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/30'
+                  : 'bg-[#121622] text-stone-400 hover:text-stone-200 border-white/5'
               }`}
             >
               <span>💊</span>
-              <span>Sub-Pills</span>
+              <span>{metaFilterMode === 'pills' ? 'Sub-Pills' : 'Pills'}</span>
             </button>
           </div>
+        )}
+
+        {/* Clean sorting tag */}
+        <div className="text-[11px] text-stone-400 font-medium">
+          {tabSearchQuery.trim() ? (
+            <span className="text-amber-300 font-semibold">
+              {displayedList.length} matches
+            </span>
+          ) : (
+            <span className="text-stone-400">
+              {activeTab === 'meta_consensus' ? 'Community Consensus' : 'Highest Synergy'}
+            </span>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Sub-Pills Bar (Visible when toggled to Sub-Pills mode) */}
       {activeTab === 'meta_consensus' && metaFilterMode === 'pills' && (
@@ -1305,10 +1337,10 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
               <button
                 key={cat.id}
                 onClick={() => setMetaSubCategory(cat.id)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-semibold transition whitespace-nowrap ${
                   isCatActive
                     ? 'btn-mythic-spark shadow-sm'
-                    : 'bg-[#121622] text-stone-400 hover:text-stone-200 hover:bg-[#171c28] border border-white/5'
+                    : 'bg-[#121622]/90 text-stone-400 hover:text-stone-200 hover:bg-[#171c28] border border-white/5'
                 }`}
               >
                 <span>{cat.icon}</span>
@@ -1323,65 +1355,6 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
           })}
         </div>
       )}
-
-      {/* "Max Power" In-Tab Context Banner */}
-      {activeTab === 'max_power' && (
-        <div className="flex flex-wrap items-center justify-between gap-3 p-3 rounded-2xl bg-gradient-to-r from-red-950/40 via-amber-950/30 to-[#0e121b] border border-amber-500/40 shadow-inner">
-          <div className="flex items-center gap-2">
-            <span className="text-base">🔥</span>
-            <div>
-              <div className="text-xs font-extrabold text-amber-300 flex items-center gap-2">
-                <span>Hell-Queue & Max Power Optimization</span>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-900/60 text-red-200 border border-red-500/40 font-black uppercase tracking-wider">
-                  Tier 1 Staples
-                </span>
-              </div>
-              <p className="text-[11px] text-stone-300">
-                Official WotC Game Changers, fast mana accelerants, free counterspells, and hyper-efficient tutors legal in {commander.name}'s color identity.
-              </p>
-            </div>
-          </div>
-          <div className="text-xs text-amber-400 font-bold bg-black/40 px-3 py-1 rounded-xl border border-amber-500/20">
-            {displayedList.length} High-Impact Cards
-          </div>
-        </div>
-      )}
-
-      {/* Tab In-Category Search Toolbar */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pt-1 border-t border-white/10">
-        <div className="relative flex-1 min-w-[260px] max-w-md">
-          <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-stone-400 pointer-events-none" />
-          <input
-            type="text"
-            value={tabSearchQuery}
-            onChange={(e) => setTabSearchQuery(e.target.value)}
-            placeholder={`Search within ${activeTab === 'meta_consensus' ? `${currentSubCatObj?.label || 'What People Are Playing'} (Community)` : (currentTabObj?.label || 'this tab')}... (e.g. card name, rules text)`}
-            className="w-full pl-9 pr-8 py-2 bg-[#0d1017] border border-white/10 focus:border-amber-500 rounded-xl text-xs text-stone-100 placeholder:text-stone-500 focus:outline-none focus:ring-1 focus:ring-amber-500/40 transition shadow-inner"
-          />
-          {tabSearchQuery && (
-            <button
-              onClick={() => setTabSearchQuery('')}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded-full text-stone-400 hover:text-stone-200 hover:bg-stone-800 transition"
-              title="Clear search"
-            >
-              <X className="w-3.5 h-3.5" />
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center gap-2 text-xs text-stone-400 font-medium">
-          {tabSearchQuery.trim() ? (
-            <span className="text-amber-300 font-bold bg-amber-500/15 px-2.5 py-1 rounded-lg border border-amber-500/30">
-              Showing {displayedList.length} of {baseDisplayedList.length} cards
-            </span>
-          ) : (
-            <span className="text-stone-400 font-medium text-[11px] flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-pulse" />
-              <span>{displayedList.length} cards • <strong>{activeTab === 'meta_consensus' ? 'Ranked by Community Consensus & Synergy' : 'Ranked by Highest Synergy First'}</strong></span>
-            </span>
-          )}
-        </div>
-      </div>
 
       {/* 1-Click Auto-Build Banner for Lands Tab */}
       {activeTab === 'lands' && onOpenManaOptimizer && (

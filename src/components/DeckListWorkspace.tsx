@@ -248,61 +248,57 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
 
   return (
     <div className="arena-panel rounded-2xl p-4 shadow-xl flex flex-col h-full relative">
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[#c5a059]/20">
-        <div className="flex flex-wrap items-center gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/5">
+        <div className="flex flex-wrap items-center gap-2.5">
           <h2 className="font-fantasy font-black text-base text-slate-100">{deck.name}</h2>
-          <span className="text-xs px-3 py-0.5 rounded-full capitalize font-bold bg-[#161b26] text-amber-400 border border-[#c5a059]/30">
+          <span className="text-[11px] px-2.5 py-0.5 rounded-full capitalize font-semibold bg-[#121622] text-amber-300 border border-white/5">
             {deck.format}
           </span>
-          <div className="flex items-center gap-2 text-xs font-semibold">
-            <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
+          <div className="flex items-center gap-1.5 text-xs font-semibold">
+            <span className={`px-2 py-0.5 rounded-lg border ${
               mainCount >= (deck.format === 'brawl' ? 100 : 60)
-                ? 'bg-emerald-950/60 text-emerald-300 border-emerald-500/40'
-                : 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
+                ? 'bg-emerald-950/40 text-emerald-300 border-emerald-500/30'
+                : 'bg-[#121622] text-stone-300 border-white/5'
             }`}>
-              Mainboard: <strong className="text-slate-100 font-black">{mainCount}</strong> / {deck.format === 'brawl' ? 100 : 60}
+              Main: <strong className="text-white">{mainCount}</strong>/{deck.format === 'brawl' ? 100 : 60}
             </span>
-            <span className={`px-2.5 py-0.5 rounded-lg border shadow-sm ${
-              sideCount <= 15
-                ? 'bg-[#161b26] text-slate-300 border-[#c5a059]/20'
-                : 'bg-rose-950/60 text-rose-300 border-rose-500/40'
-            }`}>
-              Sideboard: <strong className="text-slate-100 font-black">{sideCount}</strong> / 15
+            <span className="px-2 py-0.5 rounded-lg border bg-[#121622] text-stone-300 border-white/5">
+              Side: <strong className="text-white">{sideCount}</strong>/15
             </span>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           {onOpenImport && (
             <button
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-[#1e2538] text-amber-300 text-xs font-bold rounded-xl border border-amber-500/30 hover:border-amber-400/60 transition shadow-sm"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141926] hover:bg-[#1e2538] text-stone-200 hover:text-white text-xs font-semibold rounded-xl border border-white/10 hover:border-amber-400/40 transition shadow-sm"
               title="Import MTG Arena formatted decklist"
             >
-              <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
-              <span>Import Deck</span>
+              <UploadCloud className="w-3.5 h-3.5 text-stone-400" />
+              <span>Import</span>
             </button>
           )}
 
           {onSaveDeck && (
             <button
               onClick={onSaveDeck}
-              className="btn-mythic-spark flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-extrabold rounded-xl transition shadow-md"
+              className="btn-mythic-spark flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl transition shadow-md"
               title="Save this deck to My Decks"
             >
               <Save className="w-3.5 h-3.5" />
-              <span>Save to My Decks</span>
+              <span>Save Deck</span>
             </button>
           )}
 
           {onOpenExport && (
             <button
               onClick={onOpenExport}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-[#1e2538] text-slate-200 hover:text-white text-xs font-bold rounded-xl border border-white/10 hover:border-[#c5a059]/40 transition shadow-sm"
+              className="flex items-center gap-1.5 px-2.5 py-1.5 bg-[#141926] hover:bg-[#1e2538] text-stone-200 hover:text-white text-xs font-semibold rounded-xl border border-white/10 hover:border-amber-400/30 transition shadow-sm"
               title="Export deck to Arena clipboard format"
             >
-              <Download className="w-3.5 h-3.5 text-[#c5a059]" />
+              <Download className="w-3.5 h-3.5 text-stone-400" />
               <span>Export</span>
             </button>
           )}
@@ -314,11 +310,10 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
                   onClearDeck();
                 }
               }}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-rose-950/40 text-stone-400 hover:text-rose-400 text-xs font-bold rounded-xl border border-white/10 hover:border-rose-500/30 transition shadow-sm"
+              className="p-1.5 text-stone-400 hover:text-rose-400 rounded-lg hover:bg-white/5 transition"
               title="Clear all cards from this deck"
             >
-              <Trash2 className="w-3.5 h-3.5 text-stone-400 hover:text-rose-400" />
-              <span>Clear Deck</span>
+              <Trash2 className="w-3.5 h-3.5" />
             </button>
           )}
         </div>

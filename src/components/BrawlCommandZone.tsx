@@ -17,6 +17,8 @@ import {
   BookOpen, 
   Mountain, 
   ChevronRight, 
+  ChevronDown,
+  ChevronUp,
   Save,
   Sparkles,
   RefreshCw,
@@ -157,9 +159,11 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   ];
 
   const [isFlipped, setIsFlipped] = React.useState<boolean>(false);
+  const [isRulesExpanded, setIsRulesExpanded] = React.useState<boolean>(false);
 
   React.useEffect(() => {
     setIsFlipped(false);
+    setIsRulesExpanded(false);
   }, [commander?.id]);
 
   const isMultiFace = hasMultipleFaces(commander);
@@ -291,26 +295,27 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex flex-wrap items-center gap-2.5">
               {/* Target Power Tier Selector */}
-              <div className="flex items-center gap-1 bg-[#0d1017]/90 p-1 rounded-xl border border-white/5">
+              <div className="flex items-center gap-1 bg-[#0d1017]/80 p-0.5 rounded-xl border border-white/5">
                 {[
-                  { id: 'casual' as PowerTier, label: '🌿 Casual', sub: 'Bracket 1-2' },
-                  { id: 'focused' as PowerTier, label: '⚡ Focused', sub: 'Bracket 3' },
-                  { id: 'max_power' as PowerTier, label: '🔥 Max Power', sub: 'Hell-Queue' }
+                  { id: 'casual' as PowerTier, label: 'Casual', icon: '🌿', sub: 'B1-2' },
+                  { id: 'focused' as PowerTier, label: 'Focused', icon: '⚡', sub: 'B3' },
+                  { id: 'max_power' as PowerTier, label: 'Max Power', icon: '🔥', sub: 'Hell-Q' }
                 ].map(tier => {
                   const isActive = currentTier === tier.id;
                   return (
                     <button
                       key={tier.id}
                       onClick={() => handleSelectTier(tier.id)}
-                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                      className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-semibold transition ${
                         isActive
-                          ? 'bg-gradient-to-r from-amber-500/25 to-orange-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
+                          ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
                           : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
                       }`}
                     >
+                      <span>{tier.icon}</span>
                       <span>{tier.label}</span>
-                      <span className={`text-[9px] font-normal px-1 rounded ${
-                        isActive ? 'bg-amber-400 text-slate-950 font-bold' : 'text-stone-500'
+                      <span className={`text-[9px] px-1 rounded ${
+                        isActive ? 'bg-amber-400/20 text-amber-200 font-bold' : 'text-stone-500'
                       }`}>
                         {tier.sub}
                       </span>
@@ -321,18 +326,12 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
 
               {/* Live Evaluated Bracket & MTG Arena Deck Weight Badge */}
               <div 
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold border shadow-sm ${
-                  bracketReport.currentBracket === 4
-                    ? 'bg-rose-950/70 border-rose-500/50 text-rose-300'
-                    : bracketReport.currentBracket === 3
-                    ? 'bg-amber-950/70 border-amber-500/50 text-amber-300'
-                    : 'bg-emerald-950/70 border-emerald-500/50 text-emerald-300'
-                }`}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-medium bg-[#121622]/80 border border-white/5 text-stone-300 shadow-sm"
                 title={`Estimated MTG Arena Deck Weight: ~${bracketReport.totalEstimatedWeight} pts (${bracketReport.gameChangersFound.length} Game Changers in 99)`}
               >
                 <span>{bracketReport.currentBracket === 4 ? '🔥' : bracketReport.currentBracket === 3 ? '⚡' : '🌿'}</span>
-                <span>Deck: {bracketReport.currentBracketLabel}</span>
-                <span className="font-mono text-[10px] opacity-75">~{bracketReport.totalEstimatedWeight} pts</span>
+                <span>Deck: <strong className={bracketReport.currentBracket === 4 ? 'text-rose-400' : bracketReport.currentBracket === 3 ? 'text-amber-300' : 'text-emerald-400'}>{bracketReport.currentBracketLabel}</strong></span>
+                <span className="font-mono text-[10px] text-stone-400">~{bracketReport.totalEstimatedWeight} pts</span>
               </div>
             </div>
 
@@ -429,71 +428,81 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                 </div>
               </div>
 
-              {/* Commander Oracle / Rules & Abilities Console */}
-              <div className="bg-[#0a0e17]/95 border border-amber-500/25 rounded-xl p-3.5 shadow-inner">
-                <div className="flex items-center justify-between gap-2 mb-2 pb-1.5 border-b border-white/5">
-                  <div className="flex items-center gap-2">
-                    <span className="text-[10px] font-fantasy font-black tracking-wider uppercase text-amber-400 flex items-center gap-1.5">
-                      <BookOpen className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Card Text & Abilities</span>
-                    </span>
+              {/* Sleek Minimalist Commander Rules Bar */}
+              <div className="bg-[#0d111a]/80 border border-white/5 rounded-xl p-2.5 backdrop-blur-md">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {/* Face Toggle Tabs for Transforming / Multi-Face Cards */}
+                    {isMultiFace && (
+                      <div className="flex items-center gap-1 bg-[#121622] p-0.5 rounded-lg border border-white/5">
+                        <button
+                          type="button"
+                          onClick={() => setIsFlipped(false)}
+                          className={`px-2 py-0.5 rounded text-[11px] font-bold transition flex items-center gap-1 ${
+                            !isFlipped
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : 'text-stone-400 hover:text-stone-200'
+                          }`}
+                        >
+                          ✦ {commander.cardFaces?.[0]?.name || commander.name.split(' // ')[0]}
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setIsFlipped(true)}
+                          className={`px-2 py-0.5 rounded text-[11px] font-bold transition flex items-center gap-1 ${
+                            isFlipped
+                              ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                              : 'text-stone-400 hover:text-stone-200'
+                          }`}
+                        >
+                          ✦ {commander.cardFaces?.[1]?.name || commander.name.split(' // ')[1]}
+                        </button>
+                      </div>
+                    )}
+
                     {commander.isDigitalOnly && (
-                      <span className="flex items-center gap-1 text-[9px] font-bold bg-purple-950/80 text-purple-300 border border-purple-500/50 px-2 py-0.5 rounded-full shadow-sm">
+                      <span className="flex items-center gap-1 text-[10px] font-bold bg-purple-950/60 text-purple-300 border border-purple-500/30 px-2 py-0.5 rounded-full">
                         <Sparkles className="w-2.5 h-2.5 text-purple-400" />
                         Digital Only
                       </span>
                     )}
+
+                    <button
+                      type="button"
+                      onClick={() => setIsRulesExpanded(!isRulesExpanded)}
+                      className="text-xs font-semibold text-stone-300 hover:text-amber-300 transition flex items-center gap-1.5 py-0.5 px-2 rounded-lg hover:bg-white/5"
+                    >
+                      <BookOpen className="w-3.5 h-3.5 text-amber-400" />
+                      <span>{isRulesExpanded ? 'Hide Rules Text' : 'Show Rules Text'}</span>
+                      {isRulesExpanded ? (
+                        <ChevronUp className="w-3.5 h-3.5 text-stone-400" />
+                      ) : (
+                        <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
+                      )}
+                    </button>
                   </div>
 
                   {onSelectCardDetail && (
                     <button
                       type="button"
                       onClick={() => onSelectCardDetail(commander)}
-                      className="text-[10px] font-bold text-stone-400 hover:text-amber-300 transition flex items-center gap-1 hover:underline"
-                      title="View Full Card Details in Modal"
+                      className="text-[11px] font-medium text-stone-400 hover:text-amber-300 transition flex items-center gap-1"
+                      title="Inspect full card artwork and printings"
                     >
-                      Inspect Full Card ↗
+                      Inspect Card ↗
                     </button>
                   )}
                 </div>
 
-                {/* Face Toggle Tabs for Transforming / Multi-Face Cards */}
-                {isMultiFace && (
-                  <div className="flex items-center gap-1.5 mb-2.5 bg-[#0d1017]/90 p-1 rounded-lg border border-white/5 w-fit">
-                    <button
-                      type="button"
-                      onClick={() => setIsFlipped(false)}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1.5 ${
-                        !isFlipped
-                          ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
-                          : 'text-stone-400 hover:text-stone-200'
-                      }`}
-                    >
-                      <span>✦ {commander.cardFaces?.[0]?.name || commander.name.split(' // ')[0]}</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsFlipped(true)}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-bold transition flex items-center gap-1.5 ${
-                        isFlipped
-                          ? 'bg-amber-500/25 text-amber-300 border border-amber-500/40 shadow-sm'
-                          : 'text-stone-400 hover:text-stone-200'
-                      }`}
-                    >
-                      <RefreshCw className="w-3 h-3" />
-                      <span>✦ {commander.cardFaces?.[1]?.name || commander.name.split(' // ')[1]}</span>
-                    </button>
+                {isRulesExpanded && (
+                  <div className="mt-2.5 pt-2.5 border-t border-white/5 text-xs text-stone-200 leading-relaxed max-h-48 overflow-y-auto pr-1 animate-in fade-in duration-150">
+                    <FormattedOracleText text={activeOracleText} />
                   </div>
                 )}
-
-                {/* Formatted Oracle text with mana symbol support & loyalty badges */}
-                <div className="text-xs sm:text-sm text-stone-200 leading-relaxed font-sans max-h-56 overflow-y-auto pr-1">
-                  <FormattedOracleText text={activeOracleText} />
-                </div>
               </div>
 
               {/* Status Bar: Deck Size, Wildcard Deficiencies, Clean Deck */}
-              <div className="flex flex-wrap items-center justify-between pt-2.5 border-t border-white/10 text-xs">
+              <div className="flex flex-wrap items-center justify-between pt-2 border-t border-white/5 text-xs gap-3">
                 <div className="flex items-center gap-4">
                   <div className="flex items-center gap-1.5">
                     <span className="text-stone-400">Deck:</span>
@@ -519,16 +528,16 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2.5">
+                <div className="flex items-center gap-2">
                   {onOpenManaOptimizer && (
                     <button
                       type="button"
                       onClick={onOpenManaOptimizer}
-                      className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white transition shadow-sm hover:scale-105"
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-teal-950/60 hover:bg-teal-900/80 text-teal-300 border border-teal-500/30 transition shadow-sm"
                       title="Optimize mana base with 100% MTG Arena verified lands"
                     >
-                      <Mountain className="w-3.5 h-3.5" />
-                      <span>⚡ Auto-Build Mana Base</span>
+                      <Mountain className="w-3.5 h-3.5 text-teal-400" />
+                      <span>Mana Base</span>
                     </button>
                   )}
 
@@ -536,38 +545,37 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                     <button
                       type="button"
                       onClick={onOpenImport}
-                      className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-[#141926] hover:bg-[#1e2538] text-amber-300 border border-amber-500/30 hover:border-amber-400/60 transition shadow-sm"
+                      className="flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-[#141926] hover:bg-[#1e2538] text-stone-200 border border-white/10 hover:border-amber-400/40 transition shadow-sm"
                       title="Import MTG Arena formatted decklist"
                     >
-                      <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
-                      <span>Import Deck</span>
+                      <UploadCloud className="w-3.5 h-3.5 text-stone-400" />
+                      <span>Import</span>
                     </button>
                   )}
 
                   {onSaveDeck && (
                     <button
                       onClick={onSaveDeck}
-                      className="btn-mythic-spark flex items-center gap-1.5 text-xs font-extrabold px-3.5 py-1.5 rounded-xl transition shadow-md"
+                      className="btn-mythic-spark flex items-center gap-1.5 text-xs font-bold px-3.5 py-1.5 rounded-xl transition shadow-md"
                       title="Save this deck to My Decks"
                     >
                       <Save className="w-3.5 h-3.5" />
-                      <span>Save to My Decks</span>
+                      <span>Save Deck</span>
                     </button>
                   )}
 
                   <button
                     onClick={onClearDeck}
-                    className="flex items-center gap-1 text-[11px] text-stone-400 hover:text-rose-400 transition"
+                    className="flex items-center gap-1 text-[11px] text-stone-400 hover:text-rose-400 transition p-1.5 rounded-lg hover:bg-white/5"
                     title="Clear current deck and start fresh singleton list"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
-                    <span>Clear Deck</span>
                   </button>
                 </div>
               </div>
 
-              {/* 6 Deck Skeleton Health Progress Meters (Mana Crystal Vials) */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5 pt-1">
+              {/* Minimalist Deck Skeleton Health Progress Meters */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2 pt-1">
                 {roles.map(r => {
                   const Icon = r.icon;
                   const pct = Math.min(100, Math.round((r.current / r.target) * 100));
@@ -578,35 +586,31 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                       key={r.id}
                       type="button"
                       onClick={() => onSelectRoleFilter?.(r.id)}
-                      className={`p-2.5 rounded-2xl text-left transition flex flex-col justify-between group border relative shadow-sm ${
+                      title={`${r.label}: ${r.current}/${r.target} • ${r.tag} (Click to filter synergies)`}
+                      className={`p-2 rounded-xl text-left transition flex flex-col justify-between group border relative ${
                         isSelected
-                          ? 'bg-[#1e2538] border-amber-500 ring-2 ring-amber-400/50 shadow-md'
-                          : 'bg-[#121622]/90 hover:bg-[#171c28] border-white/5 hover:border-white/15'
+                          ? 'bg-[#182030] border-amber-500/60 ring-1 ring-amber-400/40 shadow-sm'
+                          : 'bg-[#0f131d]/80 hover:bg-[#141a27] border-white/5 hover:border-white/15'
                       }`}
                     >
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-1.5 text-stone-200 group-hover:text-amber-300 transition">
-                            <Icon className={`w-3.5 h-3.5 ${r.color}`} />
-                            <span className="text-xs font-bold">{r.label}</span>
-                          </div>
-                          <span className="text-[11px] font-mono font-bold text-stone-300">
-                            {r.current}/{r.target}
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <Icon className={`w-3.5 h-3.5 shrink-0 ${r.color}`} />
+                          <span className="text-[11px] font-bold text-stone-200 group-hover:text-amber-300 transition truncate">
+                            {r.label}
                           </span>
                         </div>
-
-                        {/* Mana Crystal Tube Progress Bar */}
-                        <div className="w-full h-2 mana-vial-track rounded-full overflow-hidden p-0.5">
-                          <div
-                            style={{ width: `${pct}%` }}
-                            className={`h-full rounded-full transition-all duration-300 ${r.vialClass}`}
-                          />
-                        </div>
+                        <span className="text-[10px] font-mono font-bold text-stone-400 shrink-0 ml-1">
+                          {r.current}/{r.target}
+                        </span>
                       </div>
 
-                      <div className="mt-2 flex items-center justify-between text-[10px] text-stone-400 font-medium">
-                        <span className="truncate">{r.tag}</span>
-                        <ChevronRight className="w-3 h-3 opacity-0 group-hover:opacity-100 transition text-amber-400" />
+                      {/* Micro Progress Bar */}
+                      <div className="w-full h-1.5 bg-black/40 rounded-full overflow-hidden p-0.5">
+                        <div
+                          style={{ width: `${pct}%` }}
+                          className={`h-full rounded-full transition-all duration-300 ${r.vialClass}`}
+                        />
                       </div>
                     </button>
                   );

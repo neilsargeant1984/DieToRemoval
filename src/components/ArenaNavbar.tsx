@@ -140,53 +140,45 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
           <button
             type="button"
             onClick={onOpenWildcards}
-            className="hidden sm:flex items-center gap-3 bg-[#0d1017]/90 hover:bg-[#151a26] px-3.5 py-1.5 rounded-xl border border-white/5 hover:border-amber-500/40 text-xs shadow-inner transition cursor-pointer group"
+            className="hidden sm:flex items-center gap-2.5 bg-[#0d1017]/80 hover:bg-[#151a26] px-3 py-1.5 rounded-xl border border-white/5 hover:border-amber-500/30 text-xs shadow-inner transition cursor-pointer group"
             title="Click to view & edit your Wildcard Stash"
           >
+            <Sparkles className="w-3 h-3 text-amber-400/80 group-hover:text-amber-400 transition" />
             <div className="flex items-center gap-1 text-[11px]" title="Common Wildcards">
-              <div className="w-2.5 h-2.5 rounded-full bg-stone-400 shadow-sm" />
+              <div className="w-2 h-2 rounded-full bg-stone-400" />
               <span className="font-bold text-stone-300 font-mono group-hover:text-white transition">{inventory.common}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Uncommon Wildcards">
-              <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" />
+              <div className="w-2 h-2 rounded-full bg-cyan-400 shadow-sm shadow-cyan-400/50" />
               <span className="font-bold text-cyan-200 font-mono group-hover:text-cyan-100 transition">{inventory.uncommon}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Rare Wildcards">
-              <div className="w-2.5 h-2.5 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
+              <div className="w-2 h-2 rounded-full bg-amber-400 shadow-sm shadow-amber-400/50" />
               <span className="font-bold text-amber-200 font-mono group-hover:text-amber-100 transition">{inventory.rare}</span>
             </div>
             <div className="flex items-center gap-1 text-[11px]" title="Mythic Wildcards">
-              <div className="w-2.5 h-2.5 rounded-full bg-orange-500 shadow-sm shadow-orange-500/60 animate-pulse" />
+              <div className="w-2 h-2 rounded-full bg-orange-500 shadow-sm shadow-orange-500/60" />
               <span className="font-bold text-orange-300 font-mono group-hover:text-orange-100 transition">{inventory.mythic}</span>
             </div>
-          </button>
-
-          {/* Wildcard Vault Manager CTA */}
-          <button
-            onClick={onOpenWildcards}
-            className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-[#1c2335] text-amber-300 hover:text-amber-200 text-xs font-bold rounded-xl border border-amber-500/30 shadow-sm transition"
-            title="Set your in-game wildcards for instant deck crafting calculations"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-            <span>Wildcard Vault</span>
           </button>
 
           {/* Import Deck */}
           {onOpenImport && (
             <button
               onClick={onOpenImport}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-[#1c2335] text-amber-300 hover:text-amber-200 text-xs font-bold rounded-xl border border-amber-500/30 hover:border-amber-400/60 shadow-sm transition"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-[#1c2335] text-stone-200 hover:text-white text-xs font-semibold rounded-xl border border-white/10 hover:border-amber-400/40 shadow-sm transition"
               title="Import MTG Arena formatted decklist"
             >
-              <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
-              <span>Import Deck</span>
+              <UploadCloud className="w-3.5 h-3.5 text-stone-400" />
+              <span>Import</span>
             </button>
           )}
 
           {/* Export to Arena */}
           <button
             onClick={onOpenExport}
-            className="btn-mythic-spark flex items-center gap-1.5 px-4 py-1.5 text-xs font-extrabold rounded-xl transition shadow-md"
+            className="btn-mythic-spark flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-bold rounded-xl transition shadow-md"
+            title="Export deck to MTG Arena format"
           >
             <Download className="w-3.5 h-3.5" />
             <span>Export to Arena</span>
@@ -210,9 +202,9 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
           ) : (
             <button
               onClick={onOpenAuth}
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-rose-500/20 hover:from-amber-500/30 hover:to-rose-500/30 text-amber-300 text-xs font-bold rounded-xl border border-amber-500/40 transition shadow-sm"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 hover:bg-white/10 text-stone-300 hover:text-white text-xs font-semibold rounded-xl border border-white/10 transition"
             >
-              <User className="w-3.5 h-3.5" />
+              <User className="w-3.5 h-3.5 text-stone-400" />
               <span>Sign In</span>
             </button>
           )}
@@ -221,57 +213,45 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
 
       {/* Sub-Pill Menu for Deck Builder Formats */}
       {currentTab === 'deck_builder' && (
-        <div className="max-w-7xl mx-auto pt-2 mt-2 border-t border-white/10 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] font-fantasy font-bold uppercase tracking-wider text-stone-400">
+        <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto pt-2 mt-2 border-t border-white/5 flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
               Format:
             </span>
-            <div className="flex items-center gap-1.5">
+            <div className="flex items-center gap-1 bg-[#0d1017]/80 p-0.5 rounded-xl border border-white/5">
               {[
-                { id: 'brawl' as FormatType, label: 'Brawl', badge: '100 Cards' },
-                { id: 'standard' as FormatType, label: 'Standard', badge: '60 Cards' },
-                { id: 'explorer' as FormatType, label: 'Pioneer', badge: '60 Cards' }
+                { id: 'brawl' as FormatType, label: 'Brawl' },
+                { id: 'standard' as FormatType, label: 'Standard' },
+                { id: 'explorer' as FormatType, label: 'Pioneer' }
               ].map(fmt => {
                 const isActive = currentFormat === fmt.id;
                 return (
                   <button
                     key={fmt.id}
                     onClick={() => onSelectFormat(fmt.id)}
-                    className={`flex items-center gap-1.5 px-3.5 py-1 rounded-xl text-xs font-bold transition ${
+                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
                       isActive
-                        ? 'bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-500/50 shadow-sm'
-                        : 'bg-[#121622] text-stone-400 hover:text-stone-200 border border-white/5 hover:bg-[#171c28]'
+                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                        : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
                     }`}
                   >
                     <span>{fmt.label}</span>
-                    <span className={`text-[9px] px-1 py-0.2 rounded font-normal ${
-                      isActive ? 'bg-amber-400 text-slate-950 font-bold' : 'bg-stone-800 text-stone-400'
-                    }`}>
-                      {fmt.badge}
-                    </span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          {currentFormat === 'brawl' && (
-            <div className="flex items-center gap-3">
-              {onOpenCommanderFinder && (
-                <button
-                  type="button"
-                  onClick={onOpenCommanderFinder}
-                  className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/50 text-xs font-bold transition shadow-sm hover:scale-105"
-                  title="Discover Brawl commanders by color identity and playstyle archetypes"
-                >
-                  <Crown className="w-3.5 h-3.5 text-amber-400" />
-                  <span>⚡ Find a Commander</span>
-                </button>
-              )}
-              <span className="hidden md:inline text-[11px] text-amber-400/90 font-semibold">
-                ⚔️ 100-Card Singleton • Commander Color Identity Locked
-              </span>
-            </div>
+          {currentFormat === 'brawl' && onOpenCommanderFinder && (
+            <button
+              type="button"
+              onClick={onOpenCommanderFinder}
+              className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold transition shadow-sm"
+              title="Discover Brawl commanders by color identity and playstyle archetypes"
+            >
+              <Crown className="w-3.5 h-3.5 text-amber-400" />
+              <span>Find a Commander</span>
+            </button>
           )}
         </div>
       )}
