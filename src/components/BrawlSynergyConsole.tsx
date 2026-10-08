@@ -203,6 +203,13 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
 
   const triggerConfig = getCommanderTriggerConfig(commander);
 
+  // Reset category filters whenever commander changes to ensure fresh start
+  useEffect(() => {
+    setMetaSubCategory('high_synergy');
+    setTabSearchQuery('');
+    setMultiRoleOnly(false);
+  }, [commander?.id]);
+
   // Fetch candidate cards for the Commander's Color Identity across all functional archetypes
   useEffect(() => {
     if (!commander) {
@@ -1046,6 +1053,20 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                 onChange={(e) => setMetaSubCategory(e.target.value as MetaSubCategory)}
                 className="appearance-none bg-[#141926] hover:bg-[#1a2133] border border-amber-500/40 hover:border-amber-400 text-stone-100 font-bold text-xs py-1.5 pl-8 pr-8 rounded-xl focus:outline-none focus:ring-1 focus:ring-amber-400 cursor-pointer shadow transition"
               >
+                <optgroup label="Curated Synergy" className="bg-[#121622] text-stone-300 font-semibold">
+                  {META_SUB_CATEGORIES.filter(c => c.group === 'curated').map(cat => (
+                    <option key={cat.id} value={cat.id} className="bg-[#121622] text-stone-100 font-bold">
+                      {cat.icon} {cat.label} ({metaCategoryCounts[cat.id] ?? 0})
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label="Overview" className="bg-[#121622] text-stone-300 font-semibold">
+                  {META_SUB_CATEGORIES.filter(c => c.group === 'all').map(cat => (
+                    <option key={cat.id} value={cat.id} className="bg-[#121622] text-stone-100 font-bold">
+                      {cat.icon} {cat.label} ({metaCategoryCounts[cat.id] ?? 0})
+                    </option>
+                  ))}
+                </optgroup>
                 <optgroup label="Card Types" className="bg-[#121622] text-stone-300 font-semibold">
                   {META_SUB_CATEGORIES.filter(c => c.group === 'types').map(cat => (
                     <option key={cat.id} value={cat.id} className="bg-[#121622] text-stone-100">
@@ -1060,16 +1081,9 @@ export const BrawlSynergyConsole: React.FC<BrawlSynergyConsoleProps> = ({
                     </option>
                   ))}
                 </optgroup>
-                <optgroup label="Overview" className="bg-[#121622] text-stone-300 font-semibold">
-                  {META_SUB_CATEGORIES.filter(c => c.group === 'all').map(cat => (
-                    <option key={cat.id} value={cat.id} className="bg-[#121622] text-stone-100">
-                      {cat.icon} {cat.label} ({metaCategoryCounts[cat.id] ?? 0})
-                    </option>
-                  ))}
-                </optgroup>
               </select>
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 pointer-events-none text-xs">
-                {currentSubCatObj?.icon || '🗡️'}
+                {currentSubCatObj?.icon || '✨'}
               </span>
               <ChevronDown className="w-3.5 h-3.5 text-amber-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>

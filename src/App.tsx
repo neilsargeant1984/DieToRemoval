@@ -396,16 +396,32 @@ export const App: React.FC = () => {
   };
 
   const handleChangeFormat = (format: FormatType) => {
-    // Prevent format switching from altering a populated active deck
-    if (activeDeck.format !== format && (activeDeck.mainboard.length > 0 || activeDeck.sideboard?.length > 0)) {
-      setIsNewDeckModalOpen(true);
+    if (activeDeck.format === format) {
+      if (format === 'brawl' && !activeDeck.commander) {
+        setIsCommanderPickerOpen(true);
+      }
       return;
     }
+
+    // When switching format on a populated deck, seamlessly create a new deck in the selected format
+    if (activeDeck.mainboard.length > 0 || (activeDeck.sideboard && activeDeck.sideboard.length > 0) || activeDeck.commander) {
+      handleCreateNewDeck(format);
+      if (format === 'brawl') {
+        setSynergyTab('meta_consensus');
+        setIsCommanderPickerOpen(true);
+      }
+      return;
+    }
+
     setActiveDeck(prev => ({
       ...prev,
       format,
       updatedAt: new Date().toISOString()
     }));
+    if (format === 'brawl') {
+      setSynergyTab('meta_consensus');
+      setIsCommanderPickerOpen(true);
+    }
   };
 
   const handleClearDeck = () => {
@@ -446,6 +462,7 @@ export const App: React.FC = () => {
     });
     setPendingCommanderChange(null);
     setIsCommanderPickerOpen(false);
+    setSynergyTab('meta_consensus');
   };
 
   // Auto-Clean on Commander Pick with Save Prompt if Deck has Cards
@@ -533,6 +550,9 @@ export const App: React.FC = () => {
     }
     setActiveDeck(deckToLoad);
     setNavTab('deck_builder');
+    if (deckToLoad.format === 'brawl') {
+      setSynergyTab('meta_consensus');
+    }
   };
 
   const handleCreateNewDeck = (format: FormatType) => {
@@ -547,6 +567,7 @@ export const App: React.FC = () => {
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString()
       };
+      setSynergyTab('meta_consensus');
     } else {
       newDeck = {
         id: `deck-${format}-${Date.now()}`,
