@@ -22,6 +22,7 @@ export const HELL_QUEUE_COMMANDERS = new Set<string>([
   'Golos, Tireless Pilgrim',
   'Rusko, Clockmaker',
   'Atraxa, Grand Unifier',
+  'Atraxa, Praetors\' Voice',
   'Ragavan, Nimble Pilferer',
   'Nadu, Winged Wisdom',
   'Poq, Villageless',
@@ -35,7 +36,16 @@ export const HELL_QUEUE_COMMANDERS = new Set<string>([
   'Jodah, the Unifier',
   'Winota, Joiner of Forces',
   'Sythis, Harvest\'s Hand',
-  'Malcolm, Alluring Scoundrel'
+  'Malcolm, Alluring Scoundrel',
+  'Esika, God of the Tree',
+  'Omnath, Locus of Creation',
+  'Korvold, Fae-Cursed King',
+  'Chulane, Teller of Tales',
+  'Urza, Lord High Artificer',
+  'Etali, Primal Conqueror',
+  'Heliod, Sun-Crowned',
+  'Yawgmoth, Thran Physician',
+  'Emry, Lurker of the Loch'
 ]);
 
 /**

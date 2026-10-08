@@ -23,11 +23,16 @@ import {
   CommanderStrategyId, 
   classifyCommanderStrategies 
 } from '../utils/commanderStrategyClassifier';
+import { HELL_QUEUE_COMMANDERS, isHellQueueCommander } from '../data/arenaCardWeights';
+import { PowerTier } from '../utils/bracketEvaluator';
+
+export type CommanderPowerFilter = 'all' | 'casual' | 'focused' | 'max_power';
 
 interface CommanderFinderModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectCommander: (card: Card) => void;
+  onSelectCommander: (card: Card, powerTier?: PowerTier) => void;
+  initialPowerTier?: PowerTier;
 }
 
 export type ColorFilterMode = 'exact' | 'include' | 'at_most';
@@ -36,7 +41,8 @@ export type SortOption = 'edhrec' | 'name' | 'cmc_asc' | 'cmc_desc';
 export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
   isOpen,
   onClose,
-  onSelectCommander
+  onSelectCommander,
+  initialPowerTier
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedColors, setSelectedColors] = useState<ManaColor[]>([]);
@@ -44,10 +50,17 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
   const [selectedStrategy, setSelectedStrategy] = useState<CommanderStrategyId | null>(null);
   const [sortOption, setSortOption] = useState<SortOption>('edhrec');
   const [brawlFormat, setBrawlFormat] = useState<'brawl' | 'standardbrawl'>('brawl');
+  const [powerFilter, setPowerFilter] = useState<CommanderPowerFilter>(initialPowerTier || 'all');
 
   const [commanders, setCommanders] = useState<Card[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [previewCommander, setPreviewCommander] = useState<Card | null>(null);
+
+  useEffect(() => {
+    if (isOpen && initialPowerTier) {
+      setPowerFilter(initialPowerTier);
+    }
+  }, [isOpen, initialPowerTier]);
 
   // Quick Guild / Shard Presets
   const GUILD_PRESETS: { label: string; colors: ManaColor[] }[] = [
@@ -102,6 +115,7 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
     setSelectedStrategy(null);
     setSortOption('edhrec');
     setBrawlFormat('brawl');
+    setPowerFilter('all');
   };
 
   const handleSurpriseMe = () => {
@@ -115,7 +129,8 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
     selectedColors.length > 0 || 
     selectedStrategy !== null || 
     sortOption !== 'edhrec' ||
-    brawlFormat !== 'brawl'
+    brawlFormat !== 'brawl' ||
+    powerFilter !== 'all'
   );
 
   const activeStrategyMeta = useMemo(() => {
@@ -144,6 +159,12 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
           queryParts.push(activeStrategyMeta.scryfallQuery);
         }
 
+        // If Max Power filter is active and no specific search term, explicitly query the infamous Hell-Queue commanders!
+        if (powerFilter === 'max_power' && !searchTerm.trim()) {
+          const namesQuery = Array.from(HELL_QUEUE_COMMANDERS).map(n => `!"${n}"`).join(' or ');
+          queryParts.push(`(${namesQuery})`);
+        }
+
         const scryfallQuery = queryParts.length > 0 ? queryParts.join(' ') : undefined;
 
         const order = sortOption === 'cmc_asc' || sortOption === 'cmc_desc' 
@@ -166,11 +187,20 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
         if (isCancelled) return;
 
         // Strict MTG Arena Verification via official local database
-        const arenaStrict = result.cards.filter(c => isCardOnArena(c.name));
+        let arenaStrict = result.cards.filter(c => isCardOnArena(c.name));
+
+        if (powerFilter === 'max_power') {
+          arenaStrict = arenaStrict.filter(c => isHellQueueCommander(c.name));
+        } else if (powerFilter === 'casual') {
+          arenaStrict = arenaStrict.filter(c => !isHellQueueCommander(c.name));
+        }
 
         setCommanders(arenaStrict);
-        if (arenaStrict.length > 0 && !previewCommander) {
-          setPreviewCommander(arenaStrict[0]);
+        if (arenaStrict.length > 0) {
+          setPreviewCommander(prev => {
+            if (prev && arenaStrict.some(c => c.id === prev.id)) return prev;
+            return arenaStrict[0];
+          });
         }
       } catch (err) {
         console.error('Failed to discover commanders:', err);
@@ -185,7 +215,7 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
       isCancelled = true;
       clearTimeout(timer);
     };
-  }, [isOpen, searchTerm, selectedColors, colorMode, selectedStrategy, sortOption, brawlFormat]);
+  }, [isOpen, searchTerm, selectedColors, colorMode, selectedStrategy, sortOption, brawlFormat, powerFilter]);
 
   if (!isOpen) return null;
 
@@ -322,7 +352,74 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
 
           </div>
 
-          {/* Row 2: Color Identity Selector & Modes */}
+          {/* Row 2: Target Power Tier Selector */}
+          <div className="flex flex-wrap items-center justify-between gap-2.5 pt-1">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-xs font-bold text-stone-400 uppercase tracking-wider flex items-center gap-1 mr-1">
+                <Flame className="w-3.5 h-3.5 text-amber-400" />
+                Power Level:
+              </span>
+              <button
+                onClick={() => setPowerFilter('all')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  powerFilter === 'all'
+                    ? 'bg-[#1b2234] text-white border border-amber-500/40 shadow-sm'
+                    : 'bg-[#0d1017] text-stone-400 hover:text-stone-200 border border-white/5'
+                }`}
+              >
+                <span>🌐 All Tiers</span>
+              </button>
+              <button
+                onClick={() => setPowerFilter('casual')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  powerFilter === 'casual'
+                    ? 'bg-emerald-950/80 text-emerald-300 border border-emerald-500/60 shadow-md font-black'
+                    : 'bg-[#0d1017] text-stone-400 hover:text-stone-200 border border-white/5'
+                }`}
+                title="Bracket 1-2: Exhibition, casual & flavor-first commanders (excludes Hell-Queue)"
+              >
+                <span>🌿 Casual</span>
+                <span className="text-[10px] text-stone-400 font-normal">Bracket 1-2</span>
+              </button>
+              <button
+                onClick={() => setPowerFilter('focused')}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  powerFilter === 'focused'
+                    ? 'bg-amber-950/80 text-amber-300 border border-amber-500/60 shadow-md font-black'
+                    : 'bg-[#0d1017] text-stone-400 hover:text-stone-200 border border-white/5'
+                }`}
+                title="Bracket 3: Synergistic & optimized commanders"
+              >
+                <span>⚡ Focused</span>
+                <span className="text-[10px] text-stone-400 font-normal">Bracket 3</span>
+              </button>
+              <button
+                onClick={() => setPowerFilter('max_power')}
+                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                  powerFilter === 'max_power'
+                    ? 'bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 text-white border border-amber-400 shadow-lg font-black scale-105'
+                    : 'bg-[#0d1017] text-orange-400/90 hover:text-orange-300 border border-orange-500/30'
+                }`}
+                title="Bracket 4: Infamous Hell-Queue commanders on MTG Arena (~1,800+ base matchmaking weight)"
+              >
+                <span>🔥 Max Power</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-black ${
+                  powerFilter === 'max_power' ? 'bg-black/40 text-amber-200' : 'bg-red-950/80 text-red-300 border border-red-500/30'
+                }`}>
+                  Hell-Queue
+                </span>
+              </button>
+            </div>
+
+            {powerFilter === 'max_power' && (
+              <span className="text-[11px] text-orange-400 font-extrabold flex items-center gap-1.5 bg-red-950/40 px-2.5 py-1 rounded-xl border border-red-500/30">
+                <Flame className="w-3.5 h-3.5 text-orange-400 animate-pulse" />
+                <span>Infamous Hell-Queue Commanders (~1,800 pts)</span>
+              </span>
+            )}
+          </div>
+
+          {/* Row 3: Color Identity Selector & Modes */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
             <div className="flex items-center flex-wrap gap-2">
               <span className="text-xs font-bold text-stone-400 uppercase tracking-wider mr-1">
@@ -488,7 +585,12 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
                       key={cmd.id}
                       onClick={() => setPreviewCommander(cmd)}
                       onDoubleClick={() => {
-                        onSelectCommander(cmd);
+                        const targetTier: PowerTier = isHellQueueCommander(cmd.name) || powerFilter === 'max_power'
+                          ? 'max_power'
+                          : powerFilter === 'casual'
+                          ? 'casual'
+                          : 'focused';
+                        onSelectCommander(cmd, targetTier);
                         onClose();
                       }}
                       className={`card-tile group rounded-2xl overflow-hidden p-2 transition cursor-pointer flex flex-col justify-between border ${
@@ -507,6 +609,12 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
                         <div className="absolute top-1.5 right-1.5 flex items-center gap-0.5 bg-black/80 backdrop-blur-md px-1.5 py-0.5 rounded-full border border-white/20 text-[9px] font-bold text-amber-300">
                           {cmd.colorIdentity.length > 0 ? cmd.colorIdentity.join('') : 'C'}
                         </div>
+                        {isHellQueueCommander(cmd.name) && (
+                          <div className="absolute bottom-1.5 left-1.5 flex items-center gap-1 bg-gradient-to-r from-red-950/90 to-orange-950/90 backdrop-blur-md px-2 py-0.5 rounded-full border border-orange-500/60 text-[9px] font-black text-amber-300 shadow-md">
+                            <Flame className="w-2.5 h-2.5 text-orange-400 animate-pulse" />
+                            <span>Hell-Queue</span>
+                          </div>
+                        )}
                       </div>
 
                       <div className="pt-2 space-y-1">
@@ -567,6 +675,30 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
                   </div>
                 </div>
 
+                {/* Matchmaking Bracket Callout */}
+                {isHellQueueCommander(previewCommander.name) ? (
+                  <div className="p-3 rounded-2xl bg-gradient-to-r from-red-950/70 via-orange-950/50 to-[#121622] border border-orange-500/50 shadow-inner space-y-1">
+                    <div className="flex items-center gap-1.5 text-xs font-black text-orange-300">
+                      <Flame className="w-4 h-4 text-orange-400 animate-pulse" />
+                      <span>Infamous Hell-Queue Commander</span>
+                      <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-red-900/80 text-amber-200 border border-red-500/50 font-bold ml-auto">
+                        ~1,800 pts
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-stone-300 leading-relaxed">
+                      Assigned ~1,800 base matchmaking weight on MTG Arena. Running {previewCommander.name} automatically enters Arena's competitive Bracket 4 / Hell-Queue.
+                    </p>
+                  </div>
+                ) : (
+                  <div className="p-2.5 rounded-xl bg-slate-900/80 border border-slate-700/60 text-xs text-stone-300 flex items-center justify-between">
+                    <span className="font-semibold text-stone-400">Matchmaking Bracket:</span>
+                    <span className="font-bold text-emerald-400 flex items-center gap-1">
+                      <span>🌿</span>
+                      <span>Casual & Focused Friendly</span>
+                    </span>
+                  </div>
+                )}
+
                 {/* Detected Strategies */}
                 <div className="space-y-1.5">
                   <span className="text-[11px] font-bold text-stone-400 uppercase tracking-wider block">
@@ -601,10 +733,19 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
               {/* One-Click Select & Build Button */}
               <button
                 onClick={() => {
-                  onSelectCommander(previewCommander);
+                  const targetTier: PowerTier = isHellQueueCommander(previewCommander.name) || powerFilter === 'max_power'
+                    ? 'max_power'
+                    : powerFilter === 'casual'
+                    ? 'casual'
+                    : 'focused';
+                  onSelectCommander(previewCommander, targetTier);
                   onClose();
                 }}
-                className="w-full btn-mythic-spark py-3 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition shadow-xl hover:scale-[1.02] flex-shrink-0"
+                className={`w-full py-3 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition shadow-xl hover:scale-[1.02] flex-shrink-0 ${
+                  isHellQueueCommander(previewCommander.name)
+                    ? 'bg-gradient-to-r from-red-600 via-orange-600 to-amber-600 text-white hover:brightness-110 shadow-orange-500/20'
+                    : 'btn-mythic-spark'
+                }`}
               >
                 <Crown className="w-4 h-4 text-slate-950" />
                 <span>Build Deck With {previewCommander.name}</span>

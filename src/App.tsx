@@ -5,6 +5,7 @@ import { UserCollection, WildcardInventory } from './types/collection';
 import { ArenaNavbar, MainNavTab } from './components/ArenaNavbar';
 import { BrawlCommandZone } from './components/BrawlCommandZone';
 import { PowerTier } from './utils/bracketEvaluator';
+import { isHellQueueCommander } from './data/arenaCardWeights';
 import { BrawlSynergyConsole, SynergyCategoryTab } from './components/BrawlSynergyConsole';
 import { DeckDrawer } from './components/DeckDrawer';
 import { CardLibraryView } from './components/CardLibraryView';
@@ -507,7 +508,10 @@ export const App: React.FC = () => {
     setTimeout(() => setSaveNotification(null), 3500);
   };
 
-  const applyNewCommander = (card: Card) => {
+  const applyNewCommander = (card: Card, targetTier?: PowerTier) => {
+    const isHellQueue = isHellQueueCommander(card.name);
+    const finalTier = targetTier || (isHellQueue ? 'max_power' : brawlPowerTier);
+
     setActiveDeck({
       id: `brawl-${card.id}-${Date.now()}`,
       name: `${card.name} Brawl`,
@@ -520,19 +524,25 @@ export const App: React.FC = () => {
     });
     setPendingCommanderChange(null);
     setIsCommanderPickerOpen(false);
-    setSynergyTab('meta_consensus');
+    handleSelectBrawlPowerTier(finalTier);
   };
 
   // Auto-Clean on Commander Pick with Save Prompt if Deck has Cards
-  const handleSelectCommander = (card: Card) => {
+  const handleSelectCommander = (card: Card, chosenTier?: PowerTier) => {
+    const isHellQueue = isHellQueueCommander(card.name);
+    const targetTier: PowerTier = chosenTier || (isHellQueue ? 'max_power' : brawlPowerTier);
+
     if (activeDeck.commander?.card.id === card.id) {
+      if (chosenTier) {
+        handleSelectBrawlPowerTier(targetTier);
+      }
       setIsCommanderPickerOpen(false);
       return;
     }
 
     // If deck is empty (no cards added yet), switch commander without prompting
     if (activeDeck.mainboard.length === 0) {
-      applyNewCommander(card);
+      applyNewCommander(card, targetTier);
       return;
     }
 
@@ -1114,6 +1124,7 @@ export const App: React.FC = () => {
         isOpen={isCommanderPickerOpen}
         onClose={() => setIsCommanderPickerOpen(false)}
         onSelectCommander={handleSelectCommander}
+        initialPowerTier={brawlPowerTier}
       />
 
       <StandardMetaModal
