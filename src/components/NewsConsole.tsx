@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { 
   NewsCategory, 
   NewsArticle, 
-  fetchNewsArticles 
+  fetchNewsArticles,
+  KNOWN_STREAMERS
 } from '../services/newsService';
 import { 
   Newspaper, 
@@ -18,7 +19,8 @@ import {
   Play, 
   X, 
   Building2,
-  Check
+  Check,
+  BadgeCheck
 } from 'lucide-react';
 
 interface NewsConsoleProps {
@@ -258,17 +260,27 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
             </button>
             {availableTags.map(tag => {
               const isSelected = selectedTag === tag;
+              const streamerMatch = KNOWN_STREAMERS.find(
+                s => s.name.toLowerCase() === tag.toLowerCase() || s.id.toLowerCase() === tag.toLowerCase()
+              );
               return (
                 <button
                   key={tag}
                   onClick={() => setSelectedTag(isSelected ? null : tag)}
-                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap border ${
+                  className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition whitespace-nowrap border flex items-center gap-1.5 ${
                     isSelected
                       ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-sm'
                       : 'bg-[#121623] text-stone-400 hover:text-white border-white/5'
                   }`}
                 >
-                  {tag}
+                  {streamerMatch && (
+                    <img
+                      src={streamerMatch.avatarUrl}
+                      alt={streamerMatch.name}
+                      className="w-3.5 h-3.5 rounded-full object-cover border border-amber-400/50 shrink-0"
+                    />
+                  )}
+                  <span>{tag}</span>
                 </button>
               );
             })}
@@ -307,19 +319,34 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
             <div className="relative overflow-hidden rounded-3xl border border-amber-500/40 bg-[#0e121b] shadow-2xl group transition">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-0 items-stretch">
                 {/* Hero Media Preview */}
-                <div className="lg:col-span-5 relative overflow-hidden bg-black min-h-[220px] lg:min-h-[300px]">
+                <div className="lg:col-span-5 relative overflow-hidden bg-black min-h-[220px] lg:min-h-[300px] flex items-center justify-center">
+                  {/* Ambient Backdrop if streamer avatar */}
+                  {heroArticle.streamer && (
+                    <img
+                      src={heroArticle.streamer.avatarUrl}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover blur-2xl opacity-35 scale-125 pointer-events-none"
+                    />
+                  )}
                   <img
-                    src={heroArticle.imageUrl}
+                    src={heroArticle.imageUrl || heroArticle.streamer?.avatarUrl}
                     alt={heroArticle.title}
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+                      (e.currentTarget as HTMLImageElement).src =
+                        heroArticle.streamer?.avatarUrl ||
+                        'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
                     }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-90 group-hover:opacity-100"
+                    className={`w-full h-full ${
+                      heroArticle.streamer && (heroArticle.imageUrl === heroArticle.streamer.avatarUrl || !heroArticle.imageUrl)
+                        ? 'object-contain p-6 relative z-10 group-hover:scale-105 transition duration-500 drop-shadow-2xl'
+                        : 'object-cover group-hover:scale-105 transition duration-500 opacity-90 group-hover:opacity-100'
+                    }`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#0e121b] via-transparent to-transparent lg:hidden" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#0e121b] via-transparent to-transparent lg:hidden z-10" />
                   
                   {activeTab === 'video' && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                       <div className="w-14 h-14 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-2xl group-hover:scale-110 transition">
                         <Play className="w-6 h-6 fill-current translate-x-0.5" />
                       </div>
@@ -327,10 +354,24 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                   )}
 
                   {/* Top Badges */}
-                  <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-black/80 backdrop-blur-md text-amber-300 border border-amber-400/50 shadow">
-                      ⭐ Breaking Story
-                    </span>
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-20">
+                    {heroArticle.streamer ? (
+                      <div className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-black/85 backdrop-blur-md text-amber-300 border border-amber-400/60 shadow flex items-center gap-1.5">
+                        <img
+                          src={heroArticle.streamer.avatarUrl}
+                          alt={heroArticle.streamer.name}
+                          className="w-4 h-4 rounded-full object-cover border border-amber-400/80"
+                        />
+                        <span>{heroArticle.streamer.name}</span>
+                        {heroArticle.streamer.verified && (
+                          <BadgeCheck className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
+                        )}
+                      </div>
+                    ) : (
+                      <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-black/80 backdrop-blur-md text-amber-300 border border-amber-400/50 shadow">
+                        ⭐ Breaking Story
+                      </span>
+                    )}
                     {heroArticle.isArenaOnly && (
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-cyan-950/90 backdrop-blur-md text-cyan-300 border border-cyan-400/60 shadow flex items-center gap-1">
                         <Sparkles className="w-3 h-3 text-cyan-300" />
@@ -342,21 +383,92 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
 
                 {/* Hero Content */}
                 <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-between space-y-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-xs text-stone-400">
-                      <span className="font-extrabold text-amber-400">{heroArticle.source}</span>
-                      <span>•</span>
-                      <span className="flex items-center gap-1 font-mono">
-                        <Clock className="w-3.5 h-3.5 text-stone-500" />
-                        {heroArticle.relativeTime}
-                      </span>
-                      {heroArticle.duration && (
-                        <>
-                          <span>•</span>
-                          <span className="text-red-400 font-bold font-mono">▶ {heroArticle.duration}</span>
-                        </>
-                      )}
-                    </div>
+                  <div className="space-y-3.5">
+                    {/* Dedicated Streamer Attribution Card */}
+                    {heroArticle.streamer ? (
+                      <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 flex items-center justify-between gap-3 shadow-inner">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <a
+                            href={heroArticle.streamer.channelUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="relative shrink-0 group/streamer-avatar"
+                            title={`Visit official channel: ${heroArticle.streamer.name}`}
+                          >
+                            <img
+                              src={heroArticle.streamer.avatarUrl}
+                              alt={heroArticle.streamer.name}
+                              className="w-12 h-12 rounded-2xl object-cover border-2 border-amber-400/70 shadow-lg group-hover/streamer-avatar:scale-105 group-hover/streamer-avatar:border-amber-300 transition duration-300"
+                            />
+                            {heroArticle.streamer.verified && (
+                              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[9px] font-black shadow ring-1 ring-black">
+                                ✓
+                              </span>
+                            )}
+                          </a>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <a
+                                href={heroArticle.streamer.channelUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-black text-white hover:text-amber-300 transition truncate"
+                              >
+                                {heroArticle.streamer.name}
+                              </a>
+                              <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 shrink-0">
+                                Official Streamer
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2 text-xs text-stone-400 mt-0.5">
+                              <a
+                                href={heroArticle.streamer.channelUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-stone-300 hover:text-amber-400 font-mono text-[11px] transition flex items-center gap-1"
+                              >
+                                <span>{heroArticle.streamer.handle}</span>
+                                <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                              </a>
+                              {heroArticle.streamer.role && (
+                                <>
+                                  <span>•</span>
+                                  <span className="text-stone-400 text-[11px] truncate hidden sm:inline">
+                                    {heroArticle.streamer.role}
+                                  </span>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="text-right shrink-0">
+                          <span className="text-[11px] text-stone-400 font-mono block">
+                            {heroArticle.relativeTime}
+                          </span>
+                          {heroArticle.duration && (
+                            <span className="text-red-400 font-bold font-mono text-xs block">
+                              ▶ {heroArticle.duration}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-3 text-xs text-stone-400">
+                        <span className="font-extrabold text-amber-400">{heroArticle.source}</span>
+                        <span>•</span>
+                        <span className="flex items-center gap-1 font-mono">
+                          <Clock className="w-3.5 h-3.5 text-stone-500" />
+                          {heroArticle.relativeTime}
+                        </span>
+                        {heroArticle.duration && (
+                          <>
+                            <span>•</span>
+                            <span className="text-red-400 font-bold font-mono">▶ {heroArticle.duration}</span>
+                          </>
+                        )}
+                      </div>
+                    )}
 
                     <a
                       href={heroArticle.url}
@@ -391,15 +503,34 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                       ))}
                     </div>
 
-                    <a
-                      href={heroArticle.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn-mythic-spark px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition"
-                    >
-                      <span>{activeTab === 'video' ? 'Watch Stream' : 'Read Full Coverage'}</span>
-                      <ExternalLink className="w-3.5 h-3.5" />
-                    </a>
+                    <div className="flex items-center gap-2">
+                      {heroArticle.streamer && (
+                        <a
+                          href={heroArticle.streamer.channelUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#141a29] hover:bg-[#1f283f] text-stone-200 hover:text-amber-300 border border-white/10 hover:border-amber-400/50 flex items-center gap-1.5 transition shadow"
+                          title={`Visit ${heroArticle.streamer.name}'s official channel`}
+                        >
+                          <img
+                            src={heroArticle.streamer.avatarUrl}
+                            alt=""
+                            className="w-3.5 h-3.5 rounded-full object-cover"
+                          />
+                          <span>Official Channel</span>
+                          <ExternalLink className="w-3 h-3 text-stone-400" />
+                        </a>
+                      )}
+                      <a
+                        href={heroArticle.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-mythic-spark px-4 py-2 rounded-xl text-xs font-black flex items-center gap-1.5 shadow-md hover:scale-105 transition"
+                      >
+                        <span>{activeTab === 'video' ? 'Watch Stream' : 'Read Full Coverage'}</span>
+                        <ExternalLink className="w-3.5 h-3.5" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -414,19 +545,34 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                 className="bg-[#0f131d]/90 border border-white/10 hover:border-amber-400/40 rounded-2xl overflow-hidden flex flex-col justify-between transition group shadow-lg hover:shadow-2xl"
               >
                 {/* Card Media Preview */}
-                <div className="relative aspect-video bg-black overflow-hidden">
+                <div className="relative aspect-video bg-black overflow-hidden flex items-center justify-center">
+                  {/* Ambient Backdrop if streamer avatar */}
+                  {article.streamer && (
+                    <img
+                      src={article.streamer.avatarUrl}
+                      alt=""
+                      aria-hidden="true"
+                      className="absolute inset-0 w-full h-full object-cover blur-xl opacity-30 scale-125 pointer-events-none"
+                    />
+                  )}
                   <img
-                    src={article.imageUrl}
+                    src={article.imageUrl || article.streamer?.avatarUrl}
                     alt={article.title}
                     onError={(e) => {
-                      (e.currentTarget as HTMLImageElement).src = 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+                      (e.currentTarget as HTMLImageElement).src =
+                        article.streamer?.avatarUrl ||
+                        'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
                     }}
-                    className="w-full h-full object-cover group-hover:scale-105 transition duration-300 opacity-90 group-hover:opacity-100"
+                    className={`w-full h-full ${
+                      article.streamer && (article.imageUrl === article.streamer.avatarUrl || !article.imageUrl)
+                        ? 'object-contain p-4 relative z-10 group-hover:scale-105 transition duration-300 drop-shadow-xl'
+                        : 'object-cover group-hover:scale-105 transition duration-300 opacity-90 group-hover:opacity-100'
+                    }`}
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent pointer-events-none z-10" />
 
                   {activeTab === 'video' && (
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-20">
                       <div className="w-10 h-10 rounded-full bg-red-600/90 text-white flex items-center justify-center shadow-xl group-hover:scale-110 transition">
                         <Play className="w-4 h-4 fill-current translate-x-0.5" />
                       </div>
@@ -434,10 +580,24 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                   )}
 
                   {/* Top Badges */}
-                  <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5">
-                    <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-black/80 backdrop-blur-md text-amber-300 border border-white/15">
-                      {article.source}
-                    </span>
+                  <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5 z-20">
+                    {article.streamer ? (
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-black/85 backdrop-blur-md text-amber-300 border border-amber-400/50 shadow">
+                        <img
+                          src={article.streamer.avatarUrl}
+                          alt={article.streamer.name}
+                          className="w-3.5 h-3.5 rounded-full object-cover border border-amber-400/80"
+                        />
+                        <span className="truncate max-w-[90px]">{article.streamer.name}</span>
+                        {article.streamer.verified && (
+                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[7px] font-black">✓</span>
+                        )}
+                      </div>
+                    ) : (
+                      <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-black/80 backdrop-blur-md text-amber-300 border border-white/15">
+                        {article.source}
+                      </span>
+                    )}
 
                     {/* Arena Only Badge */}
                     {article.isArenaOnly && (
@@ -450,7 +610,7 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
 
                   {/* Video duration badge */}
                   {article.duration && (
-                    <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/90 font-mono text-[10px] font-bold text-white border border-white/20">
+                    <div className="absolute bottom-2 right-2 px-1.5 py-0.5 rounded bg-black/90 font-mono text-[10px] font-bold text-white border border-white/20 z-20">
                       {article.duration}
                     </div>
                   )}
@@ -458,18 +618,71 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
 
                 {/* Card Body */}
                 <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between text-[11px] text-stone-400">
-                      <span className="font-medium text-stone-400 flex items-center gap-1 font-mono">
-                        <Clock className="w-3 h-3 text-stone-500" />
-                        {article.relativeTime}
-                      </span>
-                      {article.channelName && (
-                        <span className="font-bold text-amber-400 truncate max-w-[140px]">
-                          {article.channelName}
+                  <div className="space-y-2.5">
+                    {/* Creator Attribution Section */}
+                    {article.streamer ? (
+                      <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <a
+                            href={article.streamer.channelUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="relative shrink-0 group/avatar"
+                            title={`Visit ${article.streamer.name}'s official channel`}
+                          >
+                            <img
+                              src={article.streamer.avatarUrl}
+                              alt={article.streamer.name}
+                              className="w-7 h-7 rounded-lg object-cover border border-amber-400/60 group-hover/avatar:scale-105 transition shadow-sm"
+                            />
+                            {article.streamer.verified && (
+                              <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[7px] font-black shadow">
+                                ✓
+                              </span>
+                            )}
+                          </a>
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              <a
+                                href={article.streamer.channelUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-xs font-bold text-amber-300 hover:text-amber-200 truncate transition"
+                              >
+                                {article.streamer.name}
+                              </a>
+                              <span className="text-[9px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-semibold shrink-0">
+                                Creator
+                              </span>
+                            </div>
+                            <a
+                              href={article.streamer.channelUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-[10px] text-stone-400 hover:text-amber-300 flex items-center gap-1 truncate transition"
+                            >
+                              <span>{article.streamer.handle}</span>
+                              <ExternalLink className="w-2.5 h-2.5 opacity-60" />
+                            </a>
+                          </div>
+                        </div>
+                        <span className="text-[10px] font-mono text-stone-400 shrink-0">
+                          {article.relativeTime}
                         </span>
-                      )}
-                    </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-between text-[11px] text-stone-400">
+                        <span className="font-medium text-stone-400 flex items-center gap-1 font-mono">
+                          <Clock className="w-3 h-3 text-stone-500" />
+                          {article.relativeTime}
+                        </span>
+                        {article.channelName && (
+                          <span className="font-bold text-amber-400 truncate max-w-[140px]">
+                            {article.channelName}
+                          </span>
+                        )}
+                      </div>
+                    )}
 
                     <a
                       href={article.url}
@@ -504,15 +717,29 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                       ))}
                     </div>
 
-                    <a
-                      href={article.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition"
-                    >
-                      <span>{activeTab === 'video' ? 'Watch' : 'Read'}</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {article.streamer && (
+                        <a
+                          href={article.streamer.channelUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-[11px] font-bold text-stone-400 hover:text-amber-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 transition"
+                          title={`Visit ${article.streamer.name}'s channel`}
+                        >
+                          <span>Channel</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      )}
+                      <a
+                        href={article.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs font-bold text-amber-400 hover:text-amber-300 flex items-center gap-1 transition"
+                      >
+                        <span>{activeTab === 'video' ? 'Watch' : 'Read'}</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </a>
+                    </div>
                   </div>
                 </div>
               </div>

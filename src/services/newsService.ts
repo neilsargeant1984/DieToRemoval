@@ -10,6 +10,19 @@
 
 export type NewsCategory = 'official' | 'web' | 'video';
 
+export interface StreamerProfile {
+  id: string;
+  name: string;
+  handle: string;
+  channelName: string;
+  channelUrl: string;
+  avatarUrl: string;
+  verified?: boolean;
+  role?: string;
+  description?: string;
+  keywords: string[];
+}
+
 export interface NewsArticle {
   id: string;
   title: string;
@@ -23,8 +36,11 @@ export interface NewsArticle {
   isArenaOnly: boolean;
   tags: string[];
   author?: string;
-  // Video specific properties
+  // Video & Streamer specific properties
   channelName?: string;
+  channelAvatarUrl?: string;
+  channelUrl?: string;
+  streamer?: StreamerProfile;
   duration?: string;
   videoId?: string;
   views?: string;
@@ -240,20 +256,209 @@ export const CURATED_WEB_NEWS: NewsArticle[] = [
   }
 ];
 
+/**
+ * Registry of top MTG & MTG Arena streamers and creators with their
+ * verified official YouTube channel avatars, handles, and profile metadata.
+ */
+export const KNOWN_STREAMERS: StreamerProfile[] = [
+  {
+    id: 'covertgoblue',
+    name: 'CovertGoBlue',
+    handle: '@CovertGoBlue',
+    channelName: 'CovertGoBlue',
+    channelUrl: 'https://www.youtube.com/@CovertGoBlue',
+    avatarUrl: 'https://yt3.googleusercontent.com/xyknadb1_VFmEmTgyVlewi5ouvx2GQNe-6wUmErlgGDKo6GejIMXAs7MCx4zV6f6YN0ggEhfDA=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Mythic Ranked Standard Brewer',
+    description: 'Premier MTG Arena competitor famous for Best-of-One meta mastery, Standard brews, and deep deck guides.',
+    keywords: ['covertgoblue', 'cgb', '@covertgoblue']
+  },
+  {
+    id: 'legenvd',
+    name: 'LegenVD',
+    handle: '@LegenVD',
+    channelName: 'LegenVD',
+    channelUrl: 'https://www.youtube.com/@LegenVD',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_lKGjV19jGiHbZ6ZI-FfD6K1Qbcb7nt3a4vEtc5DqHhXzI=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Historic Brawl & Synergy Specialist',
+    description: 'Master of synergies, intricate combos, Historic Brawl Commander deck techs, and analytical gameplay commentary.',
+    keywords: ['legenvd', 'lvd', '@legenvd']
+  },
+  {
+    id: 'tolarian',
+    name: 'Tolarian Community College',
+    handle: '@TolarianCommunityCollege',
+    channelName: 'Tolarian Community College',
+    channelUrl: 'https://www.youtube.com/@TolarianCommunityCollege',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_k1S7f1C2weTXJyZZO-SykHaEoWeWblN_cu0szVe6cpPw=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'The Professor • Commander & Magic Hub',
+    description: 'Magic\'s largest educational channel, host of Shuffle Up & Play, card reviews, and community advocacy.',
+    keywords: ['tolarian', 'the professor', 'professor', 'shuffle up & play', '@tolariancommunitycollege']
+  },
+  {
+    id: 'amazonian',
+    name: 'Amy the Amazonian',
+    handle: '@Amazonian',
+    channelName: 'Amy the Amazonian',
+    channelUrl: 'https://www.youtube.com/@Amazonian',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_n67jyJGkd6PZxxolx1MHbAelYOyULa0b1_PG_jxlFlFes=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Brawl Queen & Arena Streamer',
+    description: 'Top MTG Arena content creator known for high-power Historic Brawl, Hell-Queue clashes, and engaging live streams.',
+    keywords: ['amazonian', 'amy the amazonian', '@amazonian']
+  },
+  {
+    id: 'mtggoldfish',
+    name: 'MTGGoldfish',
+    handle: '@MTGGoldfish',
+    channelName: 'MTGGoldfish',
+    channelUrl: 'https://www.youtube.com/@MTGGoldfish',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_lPUFQn84lDHcw2D_BoZAOSi2YjEC1hJ4HaPue3JfYX0A=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'SaffronOlive • Against the Odds & Timeless',
+    description: 'Hilarious rogue brews, Against the Odds, Commander Clash, and MTG metagame analysis.',
+    keywords: ['mtggoldfish', 'saffronolive', '@mtggoldfish']
+  },
+  {
+    id: 'crokeyz',
+    name: 'Crokeyz',
+    handle: '@Crokeyz',
+    channelName: 'Crokeyz',
+    channelUrl: 'https://www.youtube.com/@Crokeyz',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_maUXnZyNBT6iXdLUVDyyI0CjkufezAVLn8rAd_UVanF1E=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: '#1 Mythic Arena Grinder & Competitor',
+    description: 'Elite competitive MTG Arena streamer dominating Mythic ladders with control decks, meta tuning, and pro insights.',
+    keywords: ['crokeyz', '@crokeyz']
+  },
+  {
+    id: 'jimdavis',
+    name: 'Jim Davis',
+    handle: '@JimDavisMTG',
+    channelName: 'Jim Davis MTG',
+    channelUrl: 'https://www.youtube.com/@JimDavisMTG',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kfkppHPotknDxkF3_31-ptvEFml7g9UptS_ptYL4t7NmE=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Pro Tour Champion • Bronze to Mythic',
+    description: 'Pro Tour champion and competitive educator, creator of the Bronze to Mythic series.',
+    keywords: ['jim davis', 'jimdavis', '@jimdavismtg', 'bronze to mythic']
+  },
+  {
+    id: 'numot',
+    name: 'NumotTheNummy',
+    handle: '@NumotTheNummy',
+    channelName: 'NumotTheNummy',
+    channelUrl: 'https://www.youtube.com/@NumotTheNummy',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kBjOQmOj1ipNP3HDXGIe6m3LlQ95rCGRbWFE8VrVETcM0=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Kenji Egashira • Limited & Draft Master',
+    description: 'MTG Arena Limited authority streaming daily Premier Draft 7-0 trophies and set tier reviews.',
+    keywords: ['numot', 'numotthenummy', 'kenji egashira', '@numotthenummy']
+  },
+  {
+    id: 'ashlizzlle',
+    name: 'Ashlizzlle',
+    handle: '@Ashlizzlle',
+    channelName: 'Ashlizzlle',
+    channelUrl: 'https://www.youtube.com/@Ashlizzlle',
+    avatarUrl: 'https://yt3.googleusercontent.com/B5rPnYansimkWC_qcLJ4XJF1EbtZ8IiJUcpTjUixmd_PHNB2Kt_J091F1JJApqKuRsrz6rJ25g=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Competitive Standard & Explorer Pro',
+    description: 'Fast-paced MTG Arena competitive gameplay, tournament prep, and metagame breakdowns.',
+    keywords: ['ashlizzlle', '@ashlizzlle']
+  },
+  {
+    id: 'monoblackmagic',
+    name: 'Mono Black Magic',
+    handle: '@monoblackmagic',
+    channelName: 'Mono Black Magic',
+    channelUrl: 'https://www.youtube.com/@monoblackmagic',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_nsKxCbHTwOX-cqv5tqwAs78E2AKUbLgRVTBt4QXIYTkAk=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Jank Combo Master & Arena Rogue Decks',
+    description: 'Explosive combo finishes, hilarious rogue decks, and unpredictable MTG Arena gameplay.',
+    keywords: ['mono black magic', 'monoblackmagic', '@monoblackmagic']
+  },
+  {
+    id: 'commandzone',
+    name: 'The Command Zone',
+    handle: '@TheCommandZone',
+    channelName: 'The Command Zone',
+    channelUrl: 'https://www.youtube.com/@TheCommandZone',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kv4z-V6KwAGSn3SWfb4FJ7z7aqLz6p9-efd0xTy-0wiw=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Game Knights & Commander Showcases',
+    description: 'The definitive Commander video podcast and Game Knights production team.',
+    keywords: ['command zone', 'the command zone', 'game knights', '@thecommandzone']
+  },
+  {
+    id: 'hellogoodgame',
+    name: 'Hello Good Game',
+    handle: '@HelloGoodGame',
+    channelName: 'Hello Good Game',
+    channelUrl: 'https://www.youtube.com/@HelloGoodGame',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_nFNvNuG7aMJHCjEoKdUU5B7ItqeipOb__mBieeBo536ko=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Daily F2P Deck Guides & Budget Builds',
+    description: 'Daily MTG Arena deck guides focusing on budget wildcards and F2P ladder progression.',
+    keywords: ['hello good game', 'hellogoodgame', 'hgg', '@hellogoodgame']
+  },
+  {
+    id: 'slothmtg',
+    name: 'Sloth MTG',
+    handle: '@SlothMtg',
+    channelName: 'Sloth MTG',
+    channelUrl: 'https://www.youtube.com/@SlothMtg',
+    avatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_nWiTPQV_b_kjwmRZ6b4uwViBHays2odCr3Ui2Jy4nbyw=s900-c-k-c0x00ffffff-no-rj',
+    verified: true,
+    role: 'Historic & Timeless Synergy Brewer',
+    description: 'Clever non-meta interactions, intricate engines, and deep-dive MTG Arena deck techs.',
+    keywords: ['sloth', 'slothmtg', '@slothmtg']
+  }
+];
+
+/**
+ * Searches and returns the matching streamer profile based on title, source,
+ * channel name, author, or video URL.
+ */
+export function findStreamerForArticle(
+  title: string = '',
+  source: string = '',
+  channelName: string = '',
+  author: string = '',
+  url: string = ''
+): StreamerProfile | undefined {
+  const combined = `${title} ${source} ${channelName} ${author} ${url}`.toLowerCase();
+  for (const streamer of KNOWN_STREAMERS) {
+    if (streamer.keywords.some(kw => combined.includes(kw.toLowerCase()))) {
+      return streamer;
+    }
+  }
+  return undefined;
+}
+
+const getStreamerById = (id: string): StreamerProfile | undefined =>
+  KNOWN_STREAMERS.find(s => s.id === id);
+
 export const CURATED_VIDEO_NEWS: NewsArticle[] = [
   {
     id: 'vid-1',
     title: 'CovertGoBlue: REALITY FRACTURE BROKE STANDARD! Mono-White Midrange is UNSTOPPABLE',
     description: 'Testing the most explosive new spells in Mythic Ranked MTG Arena. See how the new interaction and token engines dominate the field.',
     url: 'https://www.youtube.com/watch?v=covertgoblue-latest',
-    source: 'YouTube',
+    source: 'CovertGoBlue',
     category: 'video',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 3).toISOString(),
     relativeTime: '3h ago',
-    imageUrl: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://yt3.googleusercontent.com/xyknadb1_VFmEmTgyVlewi5ouvx2GQNe-6wUmErlgGDKo6GejIMXAs7MCx4zV6f6YN0ggEhfDA=s900-c-k-c0x00ffffff-no-rj',
     isArenaOnly: true,
-    tags: ['Arena Only', 'Standard', 'Ranked', 'Mythic Gameplay'],
+    tags: ['Arena Only', 'Standard', 'Ranked', 'Mythic Gameplay', 'CovertGoBlue'],
     channelName: 'CovertGoBlue',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/xyknadb1_VFmEmTgyVlewi5ouvx2GQNe-6wUmErlgGDKo6GejIMXAs7MCx4zV6f6YN0ggEhfDA=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@CovertGoBlue',
+    streamer: getStreamerById('covertgoblue'),
     duration: '32:15',
     views: '45K views'
   },
@@ -262,14 +467,17 @@ export const CURATED_VIDEO_NEWS: NewsArticle[] = [
     title: 'LegenVD: Terra, Magical Adept Is PURE VALUE! | Historic Brawl Deck Guide',
     description: 'Detailed deck tech, mulligan strategies, and full gameplay matches featuring the new Commander synergy machine on MTG Arena.',
     url: 'https://www.youtube.com/watch?v=legenvd-brawl',
-    source: 'YouTube',
+    source: 'LegenVD',
     category: 'video',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 8).toISOString(),
     relativeTime: '8h ago',
-    imageUrl: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_lKGjV19jGiHbZ6ZI-FfD6K1Qbcb7nt3a4vEtc5DqHhXzI=s900-c-k-c0x00ffffff-no-rj',
     isArenaOnly: true,
-    tags: ['Arena Only', 'Brawl', 'Deck Tech', 'Historic Brawl'],
+    tags: ['Arena Only', 'Brawl', 'Deck Tech', 'Historic Brawl', 'LegenVD'],
     channelName: 'LegenVD',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_lKGjV19jGiHbZ6ZI-FfD6K1Qbcb7nt3a4vEtc5DqHhXzI=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@LegenVD',
+    streamer: getStreamerById('legenvd'),
     duration: '28:40',
     views: '28K views'
   },
@@ -278,14 +486,17 @@ export const CURATED_VIDEO_NEWS: NewsArticle[] = [
     title: 'Tolarian Community College: Shuffle Up & Play 111 – Planar Themed Commander Decks',
     description: 'The Professor is joined by Rhystic Studies for an epic game of paper Commander featuring wild board states and alternate win conditions.',
     url: 'https://www.youtube.com/watch?v=tolarian-shuffle-up',
-    source: 'YouTube',
+    source: 'Tolarian Community College',
     category: 'video',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 16).toISOString(),
     relativeTime: '16h ago',
-    imageUrl: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_k1S7f1C2weTXJyZZO-SykHaEoWeWblN_cu0szVe6cpPw=s900-c-k-c0x00ffffff-no-rj',
     isArenaOnly: false,
-    tags: ['Commander', 'Shuffle Up & Play', 'Tabletop'],
+    tags: ['Commander', 'Shuffle Up & Play', 'Tabletop', 'Tolarian Community College'],
     channelName: 'Tolarian Community College',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_k1S7f1C2weTXJyZZO-SykHaEoWeWblN_cu0szVe6cpPw=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@TolarianCommunityCollege',
+    streamer: getStreamerById('tolarian'),
     duration: '52:10',
     views: '110K views'
   },
@@ -294,14 +505,17 @@ export const CURATED_VIDEO_NEWS: NewsArticle[] = [
     title: 'Amy the Amazonian: Historic Brawl Hell-Queue Grudge Match – Kinnan vs Golos',
     description: 'High power Historic Brawl showdown testing format-defining Game Changers: The One Ring, Mana Drain, and explosive combo finishes.',
     url: 'https://www.youtube.com/watch?v=amazonian-hell-queue',
-    source: 'YouTube',
+    source: 'Amy the Amazonian',
     category: 'video',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 22).toISOString(),
     relativeTime: '22h ago',
-    imageUrl: 'https://images.unsplash.com/photo-1579783902614-a3fb3927b675?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_n67jyJGkd6PZxxolx1MHbAelYOyULa0b1_PG_jxlFlFes=s900-c-k-c0x00ffffff-no-rj',
     isArenaOnly: true,
-    tags: ['Arena Only', 'Brawl', 'Hell-Queue', 'Game Changers'],
+    tags: ['Arena Only', 'Brawl', 'Hell-Queue', 'Game Changers', 'Amazonian'],
     channelName: 'Amy the Amazonian',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_n67jyJGkd6PZxxolx1MHbAelYOyULa0b1_PG_jxlFlFes=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@Amazonian',
+    streamer: getStreamerById('amazonian'),
     duration: '41:10',
     views: '22K views'
   },
@@ -310,14 +524,17 @@ export const CURATED_VIDEO_NEWS: NewsArticle[] = [
     title: 'MTGGoldfish: SaffronOlive "Against the Odds" – Turn 3 Infinite Combo in Timeless',
     description: 'Can we pull off a ridiculous combo in MTG Arena\'s most powerful format with 0 wildcards wasted? Watch the chaos unfold!',
     url: 'https://www.youtube.com/watch?v=saffronolive-timeless',
-    source: 'YouTube',
+    source: 'MTGGoldfish',
     category: 'video',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 36).toISOString(),
     relativeTime: '1d ago',
-    imageUrl: 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_lPUFQn84lDHcw2D_BoZAOSi2YjEC1hJ4HaPue3JfYX0A=s900-c-k-c0x00ffffff-no-rj',
     isArenaOnly: true,
-    tags: ['Arena Only', 'Timeless', 'Against the Odds', 'Combo'],
+    tags: ['Arena Only', 'Timeless', 'Against the Odds', 'Combo', 'MTGGoldfish'],
     channelName: 'MTGGoldfish',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_lPUFQn84lDHcw2D_BoZAOSi2YjEC1hJ4HaPue3JfYX0A=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@MTGGoldfish',
+    streamer: getStreamerById('mtggoldfish'),
     duration: '45:22',
     views: '65K views'
   },
@@ -326,16 +543,76 @@ export const CURATED_VIDEO_NEWS: NewsArticle[] = [
     title: 'Crokeyz: Grinding To Mythic #1 with Reality Fracture Domain Control',
     description: 'Full competitive ladder session with in-depth commentary on sideboarding, curve priorities, and match-up lines in the current Arena metagame.',
     url: 'https://www.youtube.com/watch?v=crokeyz-stream',
-    source: 'YouTube',
+    source: 'Crokeyz',
     category: 'video',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 44).toISOString(),
     relativeTime: '1d ago',
-    imageUrl: 'https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=800&q=80',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_maUXnZyNBT6iXdLUVDyyI0CjkufezAVLn8rAd_UVanF1E=s900-c-k-c0x00ffffff-no-rj',
     isArenaOnly: true,
-    tags: ['Arena Only', 'Ranked', 'Standard', 'Pro Stream'],
+    tags: ['Arena Only', 'Ranked', 'Standard', 'Pro Stream', 'Crokeyz'],
     channelName: 'Crokeyz',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_maUXnZyNBT6iXdLUVDyyI0CjkufezAVLn8rAd_UVanF1E=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@Crokeyz',
+    streamer: getStreamerById('crokeyz'),
     duration: '1:12:00',
     views: '35K views'
+  },
+  {
+    id: 'vid-7',
+    title: 'Jim Davis: Bronze to Mythic – Climbing Ranked Ladder with Mono-Red Burn',
+    description: 'Full draft-to-constructed ladder run with key mulligan tips, match evaluation, and optimal sequencing on MTG Arena.',
+    url: 'https://www.youtube.com/watch?v=jimdavis-bronze-mythic',
+    source: 'Jim Davis MTG',
+    category: 'video',
+    publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 52).toISOString(),
+    relativeTime: '2d ago',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kfkppHPotknDxkF3_31-ptvEFml7g9UptS_ptYL4t7NmE=s900-c-k-c0x00ffffff-no-rj',
+    isArenaOnly: true,
+    tags: ['Arena Only', 'Bronze to Mythic', 'Standard', 'Jim Davis'],
+    channelName: 'Jim Davis MTG',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kfkppHPotknDxkF3_31-ptvEFml7g9UptS_ptYL4t7NmE=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@JimDavisMTG',
+    streamer: getStreamerById('jimdavis'),
+    duration: '38:45',
+    views: '31K views'
+  },
+  {
+    id: 'vid-8',
+    title: 'NumotTheNummy: 7-0 TROPHY RUN! Reality Fracture Premier Draft Archetype Masterclass',
+    description: 'Kenji drafts an undefeated Dimir tempo deck in Arena Premier Draft, demonstrating pick orders and combat math.',
+    url: 'https://www.youtube.com/watch?v=numot-draft-trophy',
+    source: 'NumotTheNummy',
+    category: 'video',
+    publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 60).toISOString(),
+    relativeTime: '2d ago',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kBjOQmOj1ipNP3HDXGIe6m3LlQ95rCGRbWFE8VrVETcM0=s900-c-k-c0x00ffffff-no-rj',
+    isArenaOnly: true,
+    tags: ['Arena Only', 'Limited', 'Draft', 'Trophy', 'NumotTheNummy'],
+    channelName: 'NumotTheNummy',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kBjOQmOj1ipNP3HDXGIe6m3LlQ95rCGRbWFE8VrVETcM0=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@NumotTheNummy',
+    streamer: getStreamerById('numot'),
+    duration: '49:18',
+    views: '25K views'
+  },
+  {
+    id: 'vid-9',
+    title: 'Mono Black Magic: "They NEVER Saw This Coming!" Infinite Combo in Historic MTG Arena',
+    description: 'Cooking the most disrespectful rogue brew imaginable on MTG Arena and watching opponents explode.',
+    url: 'https://www.youtube.com/watch?v=monoblack-infinite',
+    source: 'Mono Black Magic',
+    category: 'video',
+    publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 70).toISOString(),
+    relativeTime: '3d ago',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_nsKxCbHTwOX-cqv5tqwAs78E2AKUbLgRVTBt4QXIYTkAk=s900-c-k-c0x00ffffff-no-rj',
+    isArenaOnly: true,
+    tags: ['Arena Only', 'Historic', 'Jank', 'Combo', 'Mono Black Magic'],
+    channelName: 'Mono Black Magic',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_nsKxCbHTwOX-cqv5tqwAs78E2AKUbLgRVTBt4QXIYTkAk=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@monoblackmagic',
+    streamer: getStreamerById('monoblackmagic'),
+    duration: '34:50',
+    views: '42K views'
   }
 ];
 
@@ -427,6 +704,10 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
         const pubDate = item.pubDate || new Date().toISOString();
         const isArenaOnly = detectIsArenaOnly(title, description, source);
 
+        const detectedStreamer = category === 'video' || item.link?.includes('youtube.com')
+          ? findStreamerForArticle(title, source, category === 'video' ? source : '', item.author, item.link)
+          : undefined;
+
         // Tags generation
         const tags: string[] = [];
         if (isArenaOnly) tags.push('Arena Only');
@@ -437,28 +718,34 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
         if (title.toLowerCase().includes('announcement') || title.toLowerCase().includes('update')) tags.push('Announcement');
         if (title.toLowerCase().includes('commander')) tags.push('Commander');
         if (category === 'video') tags.push('Video');
+        if (detectedStreamer) tags.push(detectedStreamer.name);
 
-        // Extract thumbnail or fallback to placeholder art
+        // Extract thumbnail or fallback to official channel image / baseline art
         let imageUrl = item.thumbnail || item.enclosure?.link || '';
-        if (!imageUrl) {
+        if (detectedStreamer && (!imageUrl || imageUrl.includes('unsplash') || imageUrl.includes('placeholder'))) {
+          imageUrl = detectedStreamer.avatarUrl;
+        } else if (!imageUrl) {
           const baselineMatch = baseline[idx % baseline.length];
-          imageUrl = baselineMatch?.imageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+          imageUrl = detectedStreamer?.avatarUrl || baselineMatch?.imageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
         }
 
         return {
           id: `live-${category}-${idx}-${encodeURIComponent(title.slice(0, 15))}`,
           title,
-          description: description || `Latest coverage from ${source}. Click to read full article.`,
+          description: description || `Latest coverage from ${detectedStreamer?.name || source}. Click to watch.`,
           url: item.link || item.guid || '#',
-          source: source || defaultSource,
+          source: detectedStreamer ? detectedStreamer.name : (source || defaultSource),
           category,
           publishedAt: pubDate,
           relativeTime: formatRelativeTime(pubDate),
           imageUrl,
           isArenaOnly,
           tags: tags.length > 0 ? tags : [isArenaOnly ? 'Arena Only' : 'Magic'],
-          author: item.author || undefined,
-          channelName: category === 'video' ? source : undefined
+          author: item.author || detectedStreamer?.name || undefined,
+          channelName: detectedStreamer ? detectedStreamer.channelName : (category === 'video' ? source : undefined),
+          channelAvatarUrl: detectedStreamer?.avatarUrl,
+          channelUrl: detectedStreamer?.channelUrl,
+          streamer: detectedStreamer
         };
       });
 
