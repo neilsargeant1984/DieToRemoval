@@ -282,36 +282,62 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     parts.push('(is:digital or set_type:alchemy or is:rebalanced)');
   }
 
-  // Color filter (array or single)
-  if (params.colors && params.colors.length > 0) {
-    const normalColors = params.colors.filter(c => ['W', 'U', 'B', 'R', 'G'].includes(c));
-    const hasColorless = params.colors.includes('C');
-    const hasMulti = params.colors.includes('M');
+  // Color filter (array or single) - MTG Arena subset & multicolor rules
+  const rawColors = (params.colors && params.colors.length > 0)
+    ? params.colors
+    : (params.color ? [params.color] : []);
 
-    const colorClauses: string[] = [];
-    if (normalColors.length > 0) {
-      if (params.colorMode === 'exact') {
-        colorClauses.push(`c=${normalColors.join('').toLowerCase()}`);
-      } else {
-        colorClauses.push(`(${normalColors.map(c => `c:${c.toLowerCase()}`).join(' or ')})`);
+  if (rawColors.length > 0) {
+    const normalColors = rawColors.filter(c => ['W', 'U', 'B', 'R', 'G'].includes(c));
+    const hasColorless = rawColors.includes('C');
+    const hasMulti = rawColors.includes('M');
+    const colorLetters = normalColors.join('').toLowerCase();
+
+    if (normalColors.length === 0) {
+      // Only C and/or M selected
+      if (hasColorless && hasMulti) {
+        parts.push('(c:c or c:m)');
+      } else if (hasColorless) {
+        parts.push('c:c');
+      } else if (hasMulti) {
+        parts.push('c:m');
       }
-    }
-    if (hasColorless) {
-      colorClauses.push('c:c');
-    }
-    if (hasMulti) {
-      colorClauses.push('c:m');
-    }
-    if (colorClauses.length > 0) {
-      parts.push(`(${colorClauses.join(' or ')})`);
-    }
-  } else if (params.color) {
-    if (params.color === 'C') {
-      parts.push('c:c');
-    } else if (params.color === 'M') {
-      parts.push('c:m');
+    } else if (params.colorMode === 'exact') {
+      // Explicit exact match (e.g. from CommanderFinderModal exact toggle)
+      parts.push(`c=${colorLetters}`);
+    } else if (params.colorMode === 'include') {
+      // Explicit contains/include mode (e.g. from CommanderFinderModal include toggle)
+      parts.push(`(${normalColors.map(c => `c:${c.toLowerCase()}`).join(' ')})`);
+    } else if (params.colorMode === 'at_most') {
+      // Explicit at-most mode (e.g. from CommanderFinderModal at_most toggle)
+      parts.push(`c<=${colorLetters}`);
+    } else if (normalColors.length === 1) {
+      // Single base color (e.g. 'U')
+      const single = normalColors[0].toLowerCase();
+      if (hasMulti) {
+        // Single color + Multi (e.g. 'U' + 'M'): any multicolor card containing Blue
+        parts.push(`(c:${single} c:m)`);
+      } else if (hasColorless) {
+        // Single color + Colorless (e.g. 'U' + 'C'): mono-blue and colorless
+        parts.push(`c<=${single}`);
+      } else {
+        // Strictly mono-color (e.g. mono-blue)
+        parts.push(`c=${single}`);
+      }
     } else {
-      parts.push(`c:${params.color.toLowerCase()}`);
+      // Multiple base colors (e.g. ['U', 'B'])
+      if (hasMulti) {
+        // Multiple colors + Multi: strictly multicolor within selected colors (e.g. Dimir UB cards)
+        parts.push(`(c<=${colorLetters} c:m)`);
+      } else if (hasColorless) {
+        // Multiple colors + Colorless: mono-colors, multi-colors within selection, and colorless
+        parts.push(`c<=${colorLetters}`);
+      } else {
+        // Multiple colors without Multi or Colorless:
+        // Subset of selected colors, containing at least one selected color (no off-colors, no colorless)
+        const atLeastOne = normalColors.map(c => `c:${c.toLowerCase()}`).join(' or ');
+        parts.push(`(c<=${colorLetters} (${atLeastOne}))`);
+      }
     }
   }
 

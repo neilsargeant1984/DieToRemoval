@@ -5,6 +5,7 @@ import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { ARENA_CARDS } from '../data/arenaCards';
 import { getSetBannerArt, getSetIconSvgUri } from '../data/arenaSetArt';
 import { searchArenaCards } from '../services/scryfallService';
+import { matchesColorFilter } from '../utils/colorFilter';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
 import { NewsConsole } from './NewsConsole';
@@ -31,16 +32,16 @@ interface HomeViewProps {
   userCollection?: UserCollection;
 }
 
-type ConsoleTab = 'latest_set' | 'news';
+type ConsoleTab = 'news' | 'latest_set';
 
-const COLOR_PIPS: { id: string; manaSymbol?: string; label: string; activeColor: string }[] = [
+const COLOR_PIPS: { id: string; manaSymbol?: string; label?: string; activeColor: string }[] = [
   { id: 'W', manaSymbol: '{W}', label: 'White', activeColor: 'ring-amber-300 bg-amber-100/20' },
   { id: 'U', manaSymbol: '{U}', label: 'Blue', activeColor: 'ring-blue-400 bg-blue-900/30' },
   { id: 'B', manaSymbol: '{B}', label: 'Black', activeColor: 'ring-stone-400 bg-stone-900/50' },
   { id: 'R', manaSymbol: '{R}', label: 'Red', activeColor: 'ring-red-400 bg-red-950/40' },
   { id: 'G', manaSymbol: '{G}', label: 'Green', activeColor: 'ring-emerald-400 bg-emerald-950/40' },
   { id: 'C', manaSymbol: '{C}', label: 'Colorless', activeColor: 'ring-slate-400 bg-slate-800/40' },
-  { id: 'M', label: 'Multi', activeColor: 'ring-amber-400 bg-gradient-to-r from-amber-500/20 to-rose-500/20' }
+  { id: 'M', activeColor: 'ring-amber-400 bg-gradient-to-r from-amber-500/20 to-rose-500/20' }
 ];
 
 const CARD_TYPES: CardTypeCategory[] = [
@@ -68,8 +69,8 @@ export const HomeView: React.FC<HomeViewProps> = ({
   onAddCardToDeck,
   userCollection = {}
 }) => {
-  // Console Tab State
-  const [consoleTab, setConsoleTab] = useState<ConsoleTab>('latest_set');
+  // Console Tab State (Default to News & Updates Hub)
+  const [consoleTab, setConsoleTab] = useState<ConsoleTab>('news');
 
   // Latest Set (Reality Fracture)
   const latestSet: ArenaSet = ARENA_SETS[0] || {
@@ -233,36 +234,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
         if (!matchesName && !matchesText && !matchesType) return false;
       }
 
-      // 2. Color Identity Filter
-      if (selectedColors.length > 0) {
-        const cardColors = card.colorIdentity || card.colors || [];
-        const normalSelected = selectedColors.filter(
-          (c): c is 'W' | 'U' | 'B' | 'R' | 'G' => ['W', 'U', 'B', 'R', 'G'].includes(c)
-        );
-        const hasColorless = selectedColors.includes('C');
-        const hasMulti = selectedColors.includes('M');
-
-        let match = false;
-
-        // Colorless match (0 colors)
-        if (hasColorless && cardColors.length === 0) {
-          match = true;
-        }
-
-        // Multicolor match (2+ colors)
-        if (hasMulti && cardColors.length >= 2) {
-          match = true;
-        }
-
-        // Specific color match: card must contain at least one of the selected colors
-        if (normalSelected.length > 0) {
-          const hasSelectedColor = normalSelected.some(sc => cardColors.includes(sc));
-          if (hasSelectedColor) {
-            match = true;
-          }
-        }
-
-        if (!match) return false;
+      // 2. Color Filter (MTG Arena rules)
+      if (selectedColors.length > 0 && !matchesColorFilter(card, selectedColors)) {
+        return false;
       }
 
       // 3. Card Type Filter
@@ -389,7 +363,21 @@ export const HomeView: React.FC<HomeViewProps> = ({
           ======================================================== */}
       <div className="bg-[#10141e]/90 border border-[#c5a059]/25 rounded-2xl p-2 backdrop-blur-xl shadow-2xl flex flex-col sm:flex-row items-center justify-between gap-3">
         {/* Left: Console Tab Switcher */}
+        {/* Left: Console Tab Switcher (News Hub First, Latest Set Second) */}
         <div className="flex items-center gap-2 w-full sm:w-auto">
+          <button
+            onClick={() => setConsoleTab('news')}
+            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-wider uppercase transition shadow-md ${
+              consoleTab === 'news'
+                ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 text-stone-950 font-black shadow-amber-500/25 ring-1 ring-amber-300'
+                : 'bg-[#141824] text-stone-400 hover:text-stone-200 hover:bg-white/5 border border-white/5'
+            }`}
+          >
+            <Newspaper className="w-4 h-4" />
+            <span>News & Updates</span>
+            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse ml-0.5" />
+          </button>
+
           <button
             onClick={() => setConsoleTab('latest_set')}
             className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-wider uppercase transition shadow-md ${
@@ -403,19 +391,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
             <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-md bg-black/40 text-white font-mono uppercase">
               {latestSet.code}
             </span>
-          </button>
-
-          <button
-            onClick={() => setConsoleTab('news')}
-            className={`flex-1 sm:flex-initial flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl text-xs font-black tracking-wider uppercase transition shadow-md ${
-              consoleTab === 'news'
-                ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-rose-600 text-stone-950 font-black shadow-amber-500/25 ring-1 ring-amber-300'
-                : 'bg-[#141824] text-stone-400 hover:text-stone-200 hover:bg-white/5 border border-white/5'
-            }`}
-          >
-            <Newspaper className="w-4 h-4" />
-            <span>News & Updates</span>
-            <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse ml-0.5" />
           </button>
         </div>
 
@@ -433,9 +408,14 @@ export const HomeView: React.FC<HomeViewProps> = ({
       </div>
 
       {/* ========================================================
-          TAB 1: LATEST SET RELEASE & HISTORICAL ARCHIVE
+          TAB 1: NEWS & ANNOUNCEMENTS HUB (DEFAULT HOME)
           ======================================================== */}
-      {consoleTab === 'latest_set' ? (
+      {consoleTab === 'news' ? (
+        <NewsConsole />
+      ) : (
+        /* ========================================================
+            TAB 2: LATEST SET RELEASE & HISTORICAL ARCHIVE
+            ======================================================== */
         <div className="space-y-6">
           {/* ====================================================
               GLOBAL FILTER SECTION (OUTSIDE OF ANY SPECIFIC SET)
@@ -495,7 +475,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   <button
                     key={pip.id}
                     onClick={() => toggleColor(pip.id)}
-                    title={`Filter by ${pip.label}`}
+                    title={pip.id === 'M' ? 'Filter by Multicolor' : `Filter by ${pip.label}`}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl border text-xs font-bold transition select-none ${
                       isSelected
                         ? `ring-2 ${pip.activeColor} text-amber-200 border-amber-400/80 shadow-md`
@@ -505,9 +485,9 @@ export const HomeView: React.FC<HomeViewProps> = ({
                     {pip.manaSymbol ? (
                       <ManaCost manaCost={pip.manaSymbol} size="sm" />
                     ) : pip.id === 'M' ? (
-                      <span className="text-amber-400 font-bold">★</span>
+                      <span className="text-amber-400 font-black text-sm">★</span>
                     ) : null}
-                    <span>{pip.label}</span>
+                    {pip.label && <span>{pip.label}</span>}
                     {isSelected && <Check className="w-3 h-3 text-amber-300 ml-0.5" />}
                   </button>
                 );
@@ -906,11 +886,6 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </div>
           </div>
         </div>
-      ) : (
-        /* ========================================================
-            TAB 2: NEWS & ANNOUNCEMENTS HUB
-            ======================================================== */
-        <NewsConsole />
       )}
     </div>
   );

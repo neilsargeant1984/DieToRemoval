@@ -39,7 +39,7 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFormat, setSelectedFormat] = useState<FormatType>(currentFormat);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedType, setSelectedType] = useState<CardTypeCategory | null>(null);
   const [selectedRarity, setSelectedRarity] = useState<CardRarity | null>(null);
   const [digitalOnly, setDigitalOnly] = useState(false);
@@ -53,6 +53,12 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
   useEffect(() => {
     setSelectedFormat(currentFormat);
   }, [currentFormat]);
+
+  const toggleColor = (colorId: string) => {
+    setSelectedColors(prev =>
+      prev.includes(colorId) ? prev.filter(c => c !== colorId) : [...prev, colorId]
+    );
+  };
 
   // Debounced search effect
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -70,10 +76,11 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const smartQuery = buildSmartSearchQuery(searchTerm);
-        const isDeckColorsSelected = selectedColor === 'deck_colors';
-        const useDeckColors = isDeckColorsSelected || (selectedFormat !== 'brawl' && activeRoleFilter && deckColors && deckColors.length > 0 && !selectedColor);
-        const searchColors = isDeckColorsSelected ? deckColors : undefined;
-        const colorFilter = selectedColor && selectedColor !== 'deck_colors' ? selectedColor : null;
+        const useDeckColors = selectedFormat !== 'brawl' && activeRoleFilter && deckColors && deckColors.length > 0 && selectedColors.length === 0;
+        const searchColors = selectedColors.length > 0
+          ? selectedColors
+          : (useDeckColors ? deckColors : undefined);
+
         const effectiveCommanderColorIdentity = (selectedFormat === 'brawl' && commander)
           ? commander.colorIdentity
           : (useDeckColors && deckColors && deckColors.length > 0)
@@ -83,7 +90,6 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
         const result = await searchArenaCards({
           query: smartQuery,
           format: selectedFormat,
-          color: colorFilter,
           colors: searchColors,
           type: selectedType,
           rarity: selectedRarity,
@@ -105,7 +111,7 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm, selectedFormat, selectedColor, selectedType, selectedRarity, digitalOnly, commander, activeRoleFilter, deckColors]);
+  }, [searchTerm, selectedFormat, selectedColors, selectedType, selectedRarity, digitalOnly, commander, activeRoleFilter, deckColors]);
 
   return (
     <div className="arena-panel rounded-2xl p-4 shadow-xl flex flex-col h-full">
@@ -242,14 +248,14 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
               hoverRing: 'hover:border-amber-400/50 bg-[#161b26] text-amber-300'
             }
           ].map(c => {
-            const isSelected = selectedColor === c.id;
+            const isSelected = selectedColors.includes(c.id);
 
             if (c.manaSymbol && !c.label) {
               return (
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setSelectedColor(isSelected ? null : c.id)}
+                  onClick={() => toggleColor(c.id)}
                   title={`Filter by ${c.name} (${c.id})`}
                   aria-label={c.name}
                   className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
@@ -268,7 +274,7 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setSelectedColor(isSelected ? null : c.id)}
+                  onClick={() => toggleColor(c.id)}
                   title="Filter by Colorless"
                   aria-label="Colorless"
                   className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
@@ -283,43 +289,54 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
               );
             }
 
+            // Multicolor (Gold Symbol button)
             return (
               <button
                 key={c.id}
                 type="button"
-                onClick={() => setSelectedColor(isSelected ? null : c.id)}
+                onClick={() => toggleColor(c.id)}
                 title="Filter by Multicolor"
                 aria-label="Multicolor"
-                className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
+                className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
                   isSelected
-                    ? `${c.activeRing} scale-105 ring-offset-1 ring-offset-[#0b0e14]`
-                    : `border-[#c5a059]/20 ${c.hoverRing} hover:scale-105 text-slate-300`
+                    ? `${c.activeRing} scale-110 opacity-100 ring-offset-1 ring-offset-[#0b0e14]`
+                    : `border-[#c5a059]/20 ${c.hoverRing} opacity-60 hover:opacity-100 hover:scale-105 bg-[#161b26]`
                 }`}
               >
-                <span className="text-amber-400 font-bold text-xs">★</span>
-                <span>{c.label}</span>
+                <span className="text-amber-400 font-black text-sm drop-shadow-sm select-none">★</span>
               </button>
             );
           })}
-          {selectedFormat !== 'brawl' && deckColors.length > 0 && (
+          {selectedFormat !== 'brawl' && deckColors.length > 0 && (() => {
+            const isDeckColorsActive = deckColors.length > 0 &&
+              selectedColors.length === deckColors.length &&
+              deckColors.every(c => selectedColors.includes(c));
+            return (
+              <button
+                type="button"
+                onClick={() => {
+                  if (isDeckColorsActive) {
+                    setSelectedColors([]);
+                  } else {
+                    setSelectedColors([...deckColors]);
+                  }
+                }}
+                title={`Filter strictly to your deck's colors (${deckColors.join('/')})`}
+                className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
+                  isDeckColorsActive
+                    ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md scale-105'
+                    : 'border-amber-500/30 hover:border-amber-400/60 bg-[#161b26] text-amber-300 hover:scale-105'
+                }`}
+              >
+                <span>🎯</span>
+                <span>Deck ({deckColors.join('/')})</span>
+              </button>
+            );
+          })()}
+          {selectedColors.length > 0 && (
             <button
               type="button"
-              onClick={() => setSelectedColor(selectedColor === 'deck_colors' ? null : 'deck_colors')}
-              title={`Filter strictly to your deck's colors (${deckColors.join('/')})`}
-              className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
-                selectedColor === 'deck_colors'
-                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md scale-105'
-                  : 'border-amber-500/30 hover:border-amber-400/60 bg-[#161b26] text-amber-300 hover:scale-105'
-              }`}
-            >
-              <span>🎯</span>
-              <span>Deck ({deckColors.join('/')})</span>
-            </button>
-          )}
-          {selectedColor && (
-            <button
-              type="button"
-              onClick={() => setSelectedColor(null)}
+              onClick={() => setSelectedColors([])}
               className="p-1 text-slate-400 hover:text-slate-200 ml-0.5 rounded-lg hover:bg-white/5 transition"
               title="Clear color filter"
             >

@@ -108,20 +108,92 @@ export function formatRelativeTime(dateString: string): string {
 }
 
 /**
+ * Resolves authentic, high-resolution Magic: The Gathering card art from Scryfall
+ * based on the article's topic, title, and keywords.
+ * Eliminates generic stock photos, ensuring 100% MTG-relevant visuals.
+ */
+export function resolveTopicArt(title: string = '', description: string = '', tags: string[] = []): string {
+  const text = `${title} ${description} ${tags.join(' ')}`.toLowerCase();
+
+  // 1. Charity, Fundraising, Community Streams, Lifeline
+  if (text.includes('fundrais') || text.includes('charity') || text.includes('trans lifeline') || text.includes('lifeline') || text.includes('extra life')) {
+    return 'https://cards.scryfall.io/art_crop/front/1/b/1b19f82a-9724-41b1-934d-a8ec1493587b.jpg?1783904160'; // Together Forever
+  }
+
+  // 2. Secret Lair, Festival in a Box, Mystery Booster, Collector Edition
+  if (text.includes('secret lair') || text.includes('festival in a box') || text.includes('mystery booster') || text.includes('drop series')) {
+    return 'https://cards.scryfall.io/art_crop/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446'; // Sol Ring Masterpiece
+  }
+
+  // 3. Boosters, Packs, Collector Packs, Foundations, Opening
+  if (text.includes('booster') || text.includes('pack') || text.includes('play booster') || text.includes('collector booster') || text.includes('foundations')) {
+    return 'https://cards.scryfall.io/art_crop/front/0/a/0a5718db-e67d-468a-95ba-11a08fcf9fea.jpg?1783931339'; // Booster Tutor
+  }
+
+  // 4. Banned & Restricted, Format Health, Ban Announcements
+  if (text.includes('banned') || text.includes('restricted') || text.includes('b&r') || text.includes('ban list')) {
+    return 'https://cards.scryfall.io/art_crop/front/3/4/3462a3d0-5552-49fa-9eb7-100960c55891.jpg?1783932594'; // Oko, Thief of Crowns
+  }
+
+  // 5. Commander, EDH, Brawl, Game Knights
+  if (text.includes('commander') || text.includes('edh') || text.includes('brawl') || text.includes('game knights')) {
+    return 'https://cards.scryfall.io/art_crop/front/1/0/10d42b35-844f-4a64-9981-c6118d45e826.jpg?1783915607'; // The Ur-Dragon
+  }
+
+  // 6. Arena Announcements, State of the Game, Patch Notes, Client Updates
+  if (text.includes('arena announcement') || text.includes('state of the game') || text.includes('patch notes') || text.includes('client update')) {
+    return 'https://cards.scryfall.io/art_crop/front/c/8/c8817585-0d32-4d56-9142-0d29512e86a9.jpg?1783930196'; // Jace, the Mind Sculptor
+  }
+
+  // 7. Arena Midweek Magic, Events, WeeklyMTG
+  if (text.includes('midweek magic') || text.includes('weeklymtg') || text.includes('schedule') || text.includes('event')) {
+    return 'https://cards.scryfall.io/art_crop/front/c/5/c5408607-af8f-48fe-bc40-32828d1976de.jpg?1783913282'; // Nicol Bolas, Dragon-God
+  }
+
+  // 8. Arena Championship, Pro Tour, World Championship, Premier Play, Competitive
+  if (text.includes('championship') || text.includes('pro tour') || text.includes('world championship') || text.includes('qualifier') || text.includes('top 16') || text.includes('tournament')) {
+    return 'https://cards.scryfall.io/art_crop/front/f/a/fab2d8a9-ab4c-4225-a570-22636293c17d.jpg?1783923909'; // The Wandering Emperor
+  }
+
+  // 9. Standard Metagame, Standard Showdown
+  if (text.includes('standard')) {
+    return 'https://cards.scryfall.io/art_crop/front/d/6/d67be074-cdd4-41d9-ac89-0a0456c4e4b2.jpg?1783921327'; // Sheoldred, the Apocalypse
+  }
+
+  // 10. Draft, Limited, Prerelease, Sealed, Cube
+  if (text.includes('draft') || text.includes('limited') || text.includes('prerelease') || text.includes('sealed') || text.includes('cube')) {
+    return 'https://cards.scryfall.io/art_crop/front/7/6/7673784e-db4b-43a1-8d55-1bb9fc1e284f.jpg?1783903008'; // Lightning Bolt
+  }
+
+  // 11. Timeless, Historic, Alchemy
+  if (text.includes('timeless') || text.includes('historic') || text.includes('alchemy')) {
+    return 'https://cards.scryfall.io/art_crop/front/d/3/d33d91d0-1506-45e4-9def-975bf901815e.jpg?1783909079'; // Omniscience
+  }
+
+  // 12. Spells, Counterspells, Previews, Spoilers, Mechanics
+  if (text.includes('preview') || text.includes('spoiler') || text.includes('rule') || text.includes('mechanic') || text.includes('combo')) {
+    return 'https://cards.scryfall.io/art_crop/front/4/f/4f616706-ec97-4923-bb1e-11a69fbaa1f8.jpg?1783909630'; // Counterspell
+  }
+
+  // 13. Default Authentic MTG Artwork: The iconic Black Lotus
+  return 'https://cards.scryfall.io/art_crop/front/b/d/bd8fa327-dd41-4737-8f19-2cf5eb1f7cdd.jpg?1783939332';
+}
+
+/**
  * Curated high-fidelity articles providing a rich, responsive baseline
  * even when offline or before live network responses complete.
  */
 export const CURATED_OFFICIAL_NEWS: NewsArticle[] = [
   {
     id: 'off-1',
-    title: 'MTG Arena Announcements – October 2026 State of the Game & Schedule',
-    description: 'Everything you need to know about current events, Reality Fracture Draft queues, upcoming Midweek Magic formats, and client performance improvements.',
+    title: 'MTG Arena Announcements – State of the Game & Schedule',
+    description: 'Everything you need to know about current events, Draft queues, upcoming Midweek Magic formats, and client performance improvements.',
     url: 'https://magic.wizards.com/en/news/mtg-arena',
     source: 'Wizards of the Coast',
     category: 'official',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 4).toISOString(),
     relativeTime: '4h ago',
-    imageUrl: 'https://images.ctfassets.net/s5n2t79q9icq/5w5r5tS0K1z2q3x4y5z6/reality-fracture-arena-keyart.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/c/8/c8817585-0d32-4d56-9142-0d29512e86a9.jpg?1783930196',
     isArenaOnly: true,
     tags: ['Arena Only', 'Announcement', 'Release Notes', 'Events'],
     author: 'MTG Arena Team'
@@ -135,37 +207,37 @@ export const CURATED_OFFICIAL_NEWS: NewsArticle[] = [
     category: 'official',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 24).toISOString(),
     relativeTime: 'Yesterday',
-    imageUrl: 'https://images.ctfassets.net/s5n2t79q9icq/banned-and-restricted-keyart/magic-banlist.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/3/4/3462a3d0-5552-49fa-9eb7-100960c55891.jpg?1783932594',
     isArenaOnly: false,
     tags: ['B&R', 'Format Health', 'Standard', 'Brawl'],
     author: 'Play Design'
   },
   {
     id: 'off-3',
-    title: 'Arena Championship 8: Top 16 Decklists & Metagame Breakdown',
-    description: 'The world\'s best MTG Arena players battle for \$200,000 in prizes and invitations to the Magic World Championship. Explore the breakout archetypes.',
+    title: 'Arena Championship: Top 16 Decklists & Metagame Breakdown',
+    description: 'The world\'s best MTG Arena players battle for prizes and invitations to the Magic World Championship. Explore the breakout archetypes.',
     url: 'https://magic.wizards.com/en/events',
     source: 'Wizards of the Coast',
     category: 'official',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 48).toISOString(),
     relativeTime: '2d ago',
-    imageUrl: 'https://images.ctfassets.net/s5n2t79q9icq/arena-championship-banner/championship.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/f/a/fab2d8a9-ab4c-4225-a570-22636293c17d.jpg?1783923909',
     isArenaOnly: true,
     tags: ['Arena Only', 'Competitive', 'Decklists', 'Premier Play'],
     author: 'Coverage Team'
   },
   {
     id: 'off-4',
-    title: 'WeeklyMTG Recap: First Look at Foundations 2027 & Upcoming Secret Lairs',
-    description: 'Blake Rasmussen previews upcoming mechanics, artist showcase collaborations, and future set roadmaps coming to both tabletop and MTG Arena.',
+    title: 'Updating Our Boosters: Play Boosters, Foundations & Upcoming Secret Lairs',
+    description: 'Blake Rasmussen previews upcoming mechanics, booster changes, artist showcase collaborations, and future set roadmaps coming to tabletop and MTG Arena.',
     url: 'https://magic.wizards.com/en/news',
     source: 'Wizards of the Coast',
     category: 'official',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 72).toISOString(),
     relativeTime: '3d ago',
-    imageUrl: 'https://images.ctfassets.net/s5n2t79q9icq/weekly-mtg-art/weeklymtg.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/0/a/0a5718db-e67d-468a-95ba-11a08fcf9fea.jpg?1783931339',
     isArenaOnly: false,
-    tags: ['WeeklyMTG', 'Previews', 'Secret Lair'],
+    tags: ['Boosters', 'Previews', 'Secret Lair'],
     author: 'Blake Rasmussen'
   },
   {
@@ -177,7 +249,7 @@ export const CURATED_OFFICIAL_NEWS: NewsArticle[] = [
     category: 'official',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 96).toISOString(),
     relativeTime: '4d ago',
-    imageUrl: 'https://images.ctfassets.net/s5n2t79q9icq/midweek-magic-banner/midweek.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/c/5/c5408607-af8f-48fe-bc40-32828d1976de.jpg?1783913282',
     isArenaOnly: true,
     tags: ['Arena Only', 'Midweek Magic', 'Casual', 'Rewards'],
     author: 'MTG Arena Team'
@@ -187,30 +259,30 @@ export const CURATED_OFFICIAL_NEWS: NewsArticle[] = [
 export const CURATED_WEB_NEWS: NewsArticle[] = [
   {
     id: 'web-1',
-    title: 'MTG Arena Zone: The Complete Guide to Standard Metagame in Reality Fracture',
+    title: 'MTG Arena Zone: The Complete Guide to Standard Metagame & Tier List',
     description: 'Deep dive into tier rankings, win-rates, sideboard guides, and optimal wildcard craft priorities following the latest Arena set release.',
     url: 'https://mtgazone.com',
     source: 'MTG Arena Zone',
     category: 'web',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 6).toISOString(),
     relativeTime: '6h ago',
-    imageUrl: 'https://mtgazone.com/wp-content/uploads/standard-meta-guide.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/d/6/d67be074-cdd4-41d9-ac89-0a0456c4e4b2.jpg?1783921327',
     isArenaOnly: true,
     tags: ['Arena Only', 'Metagame', 'Standard', 'Crafting Guide'],
     author: 'Altheriax'
   },
   {
     id: 'web-2',
-    title: 'IGN: Wizards of the Coast Confirms Reprints for Popular Warhammer 40K Decks',
-    description: 'Wizards of the Coast officially announces additional print runs for high-demand Universes Beyond Commander precons.',
+    title: 'IGN: Wizards of the Coast Confirms Reprints for Popular Commander Decks',
+    description: 'Wizards of the Coast officially announces additional print runs and secret drops for high-demand Commander collections.',
     url: 'https://ign.com/articles',
     source: 'IGN',
     category: 'web',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 12).toISOString(),
     relativeTime: '12h ago',
-    imageUrl: 'https://assets-prd.ignimgs.com/mtg-warhammer-deck.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/8/e/8ee443cc-e17a-493b-9c93-1f9e141a30e4.jpg?1789644446',
     isArenaOnly: false,
-    tags: ['Universes Beyond', 'Commander', 'Reprints']
+    tags: ['Commander', 'Reprints', 'Secret Lair']
   },
   {
     id: 'web-3',
@@ -221,21 +293,21 @@ export const CURATED_WEB_NEWS: NewsArticle[] = [
     category: 'web',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 18).toISOString(),
     relativeTime: '18h ago',
-    imageUrl: 'https://dotesports.com/wp-content/uploads/brawl-commanders-arena.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/1/0/10d42b35-844f-4a64-9981-c6118d45e826.jpg?1783915607',
     isArenaOnly: true,
     tags: ['Arena Only', 'Brawl', 'Hell-Queue', 'Matchmaking'],
     author: 'Cale Michael'
   },
   {
     id: 'web-4',
-    title: 'Draftsim: Reality Fracture Limited Tier List & Draft Archetype Pick Orders',
+    title: 'Draftsim: Limited Tier List & Draft Archetype Pick Orders Guide',
     description: 'Full analysis of all 10 two-color archetypes, top commons in every color, and key combat tricks to prioritize for high-win Premier Draft runs.',
     url: 'https://draftsim.com',
     source: 'Draftsim',
     category: 'web',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 30).toISOString(),
     relativeTime: '1d ago',
-    imageUrl: 'https://draftsim.com/wp-content/uploads/draft-tier-list.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/7/6/7673784e-db4b-43a1-8d55-1bb9fc1e284f.jpg?1783903008',
     isArenaOnly: false,
     tags: ['Draft', 'Limited', 'Tier List'],
     author: 'Bryan Hohns'
@@ -249,7 +321,7 @@ export const CURATED_WEB_NEWS: NewsArticle[] = [
     category: 'web',
     publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 50).toISOString(),
     relativeTime: '2d ago',
-    imageUrl: 'https://images.mtggoldfish.com/artisan-pauper-arena.jpg',
+    imageUrl: 'https://cards.scryfall.io/art_crop/front/c/3/c3f9b454-97e9-4c77-b37a-e974221ae385.jpg?1783903247',
     isArenaOnly: true,
     tags: ['Arena Only', 'Budget', 'Artisan', 'Pauper'],
     author: 'Tomer Abramovici'
@@ -436,6 +508,44 @@ export function findStreamerForArticle(
       return streamer;
     }
   }
+
+  // Extract from title prefix like "Creator Name: Video Title"
+  const titleColonMatch = title.match(/^([A-Za-z0-9\s&]{3,35}):\s+/);
+  if (titleColonMatch && titleColonMatch[1]) {
+    const candidate = titleColonMatch[1].trim();
+    if (!['video', 'watch', 'magic', 'mtg', 'arena', 'new', 'breaking', 'announcement'].includes(candidate.toLowerCase())) {
+      return {
+        id: candidate.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+        name: candidate,
+        handle: `@${candidate.replace(/\s+/g, '')}`,
+        channelName: candidate,
+        channelUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(candidate)}`,
+        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate)}&background=f59e0b&color=0f172a&bold=true&size=256`,
+        verified: true,
+        role: 'Content Creator',
+        description: `Official MTG content creator: ${candidate}`,
+        keywords: [candidate.toLowerCase()]
+      };
+    }
+  }
+
+  // Fallback to explicit channelName, source, or author if valid and not generic
+  const candidateName = (channelName || (source !== 'YouTube' && source !== 'Google News' && source !== 'Web' && source !== 'Magic News' ? source : '') || author).trim();
+  if (candidateName && candidateName.length >= 2) {
+    return {
+      id: candidateName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
+      name: candidateName,
+      handle: `@${candidateName.replace(/\s+/g, '')}`,
+      channelName: candidateName,
+      channelUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(candidateName)}`,
+      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateName)}&background=f59e0b&color=0f172a&bold=true&size=256`,
+      verified: true,
+      role: 'Content Creator',
+      description: `Official MTG content creator: ${candidateName}`,
+      keywords: [candidateName.toLowerCase()]
+    };
+  }
+
   return undefined;
 }
 
@@ -511,13 +621,32 @@ export const CURATED_VIDEO_NEWS: NewsArticle[] = [
     relativeTime: '22h ago',
     imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_n67jyJGkd6PZxxolx1MHbAelYOyULa0b1_PG_jxlFlFes=s900-c-k-c0x00ffffff-no-rj',
     isArenaOnly: true,
-    tags: ['Arena Only', 'Brawl', 'Hell-Queue', 'Game Changers', 'Amazonian'],
+    tags: ['Arena Only', 'Brawl', 'Hell-Queue', 'Game Changers', 'Amy the Amazonian'],
     channelName: 'Amy the Amazonian',
     channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_n67jyJGkd6PZxxolx1MHbAelYOyULa0b1_PG_jxlFlFes=s900-c-k-c0x00ffffff-no-rj',
     channelUrl: 'https://www.youtube.com/@Amazonian',
     streamer: getStreamerById('amazonian'),
     duration: '41:10',
     views: '22K views'
+  },
+  {
+    id: 'vid-4b',
+    title: 'Amy the Amazonian: Ranking EVERY Reality Fracture Commander For Historic Brawl!',
+    description: 'Full tier list evaluation of all new commanders from Reality Fracture, complete with build paths, key synergy staples, and power ranking.',
+    url: 'https://www.youtube.com/watch?v=amazonian-tier-list',
+    source: 'Amy the Amazonian',
+    category: 'video',
+    publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 28).toISOString(),
+    relativeTime: '1d ago',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_n67jyJGkd6PZxxolx1MHbAelYOyULa0b1_PG_jxlFlFes=s900-c-k-c0x00ffffff-no-rj',
+    isArenaOnly: true,
+    tags: ['Arena Only', 'Brawl', 'Tier List', 'Commander', 'Amy the Amazonian'],
+    channelName: 'Amy the Amazonian',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_n67jyJGkd6PZxxolx1MHbAelYOyULa0b1_PG_jxlFlFes=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@Amazonian',
+    streamer: getStreamerById('amazonian'),
+    duration: '48:30',
+    views: '34K views'
   },
   {
     id: 'vid-5',
@@ -568,7 +697,7 @@ export const CURATED_VIDEO_NEWS: NewsArticle[] = [
     relativeTime: '2d ago',
     imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kfkppHPotknDxkF3_31-ptvEFml7g9UptS_ptYL4t7NmE=s900-c-k-c0x00ffffff-no-rj',
     isArenaOnly: true,
-    tags: ['Arena Only', 'Bronze to Mythic', 'Standard', 'Jim Davis'],
+    tags: ['Arena Only', 'Bronze to Mythic', 'Standard', 'Jim Davis MTG'],
     channelName: 'Jim Davis MTG',
     channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kfkppHPotknDxkF3_31-ptvEFml7g9UptS_ptYL4t7NmE=s900-c-k-c0x00ffffff-no-rj',
     channelUrl: 'https://www.youtube.com/@JimDavisMTG',
@@ -613,6 +742,63 @@ export const CURATED_VIDEO_NEWS: NewsArticle[] = [
     streamer: getStreamerById('monoblackmagic'),
     duration: '34:50',
     views: '42K views'
+  },
+  {
+    id: 'vid-10',
+    title: 'Ashlizzlle: Reality Fracture Lifegain Combo Broke Standard! Mythic Gameplay',
+    description: 'Detailed sideboard strategy and rank climbing with the most resilient lifegain engine in the current Standard metagame.',
+    url: 'https://www.youtube.com/watch?v=ashlizzlle-standard',
+    source: 'Ashlizzlle',
+    category: 'video',
+    publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 80).toISOString(),
+    relativeTime: '3d ago',
+    imageUrl: 'https://yt3.googleusercontent.com/B5rPnYansimkWC_qcLJ4XJF1EbtZ8IiJUcpTjUixmd_PHNB2Kt_J091F1JJApqKuRsrz6rJ25g=s900-c-k-c0x00ffffff-no-rj',
+    isArenaOnly: true,
+    tags: ['Arena Only', 'Standard', 'Ranked', 'Competitive', 'Ashlizzlle'],
+    channelName: 'Ashlizzlle',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/B5rPnYansimkWC_qcLJ4XJF1EbtZ8IiJUcpTjUixmd_PHNB2Kt_J091F1JJApqKuRsrz6rJ25g=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@Ashlizzlle',
+    streamer: getStreamerById('ashlizzlle'),
+    duration: '36:12',
+    views: '29K views'
+  },
+  {
+    id: 'vid-11',
+    title: 'The Command Zone: Game Knights 88 – Reality Fracture Commander Showdown',
+    description: 'Josh Lee Kwai and Jimmy Wong battle with new commanders, insane board states, and epic turns in high-budget EDH gameplay.',
+    url: 'https://www.youtube.com/watch?v=commandzone-gameknights',
+    source: 'The Command Zone',
+    category: 'video',
+    publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 90).toISOString(),
+    relativeTime: '4d ago',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kv4z-V6KwAGSn3SWfb4FJ7z7aqLz6p9-efd0xTy-0wiw=s900-c-k-c0x00ffffff-no-rj',
+    isArenaOnly: false,
+    tags: ['Commander', 'Game Knights', 'Tabletop', 'The Command Zone'],
+    channelName: 'The Command Zone',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_kv4z-V6KwAGSn3SWfb4FJ7z7aqLz6p9-efd0xTy-0wiw=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@TheCommandZone',
+    streamer: getStreamerById('commandzone'),
+    duration: '1:04:15',
+    views: '185K views'
+  },
+  {
+    id: 'vid-12',
+    title: 'Hello Good Game: Complete F2P Guide To Reality Fracture – Best Budget Arena Decks',
+    description: 'Zero Rare wildcards required! Grinding the Arena ladder with competitive Common and Uncommon budget brews.',
+    url: 'https://www.youtube.com/watch?v=hellogoodgame-budget',
+    source: 'Hello Good Game',
+    category: 'video',
+    publishedAt: new Date(Date.now() - 1000 * 60 * 60 * 100).toISOString(),
+    relativeTime: '4d ago',
+    imageUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_nFNvNuG7aMJHCjEoKdUU5B7ItqeipOb__mBieeBo536ko=s900-c-k-c0x00ffffff-no-rj',
+    isArenaOnly: true,
+    tags: ['Arena Only', 'Budget', 'F2P', 'Wildcards', 'Hello Good Game'],
+    channelName: 'Hello Good Game',
+    channelAvatarUrl: 'https://yt3.googleusercontent.com/ytc/AIdro_nFNvNuG7aMJHCjEoKdUU5B7ItqeipOb__mBieeBo536ko=s900-c-k-c0x00ffffff-no-rj',
+    channelUrl: 'https://www.youtube.com/@HelloGoodGame',
+    streamer: getStreamerById('hellogoodgame'),
+    duration: '27:40',
+    views: '19K views'
   }
 ];
 
@@ -698,58 +884,86 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
     const data = await response.json();
 
     if (data.status === 'ok' && Array.isArray(data.items) && data.items.length > 0) {
-      const liveArticles: NewsArticle[] = data.items.map((item: any, idx: number) => {
-        const { title, source } = extractSourceFromTitle(item.title || '', defaultSource);
-        const description = cleanHtmlSnippet(item.description || item.content || '');
-        const pubDate = item.pubDate || new Date().toISOString();
-        const isArenaOnly = detectIsArenaOnly(title, description, source);
+      const liveArticles: NewsArticle[] = (data.items
+        .map((item: any, idx: number) => {
+          const { title, source } = extractSourceFromTitle(item.title || '', defaultSource);
+          const description = cleanHtmlSnippet(item.description || item.content || '');
+          const pubDate = item.pubDate || new Date().toISOString();
+          const isArenaOnly = detectIsArenaOnly(title, description, source);
 
-        const detectedStreamer = category === 'video' || item.link?.includes('youtube.com')
-          ? findStreamerForArticle(title, source, category === 'video' ? source : '', item.author, item.link)
-          : undefined;
+          const detectedStreamer = category === 'video' || item.link?.includes('youtube.com')
+            ? findStreamerForArticle(title, source, category === 'video' ? source : '', item.author, item.link)
+            : undefined;
 
-        // Tags generation
-        const tags: string[] = [];
-        if (isArenaOnly) tags.push('Arena Only');
-        if (title.toLowerCase().includes('brawl')) tags.push('Brawl');
-        if (title.toLowerCase().includes('standard')) tags.push('Standard');
-        if (title.toLowerCase().includes('timeless')) tags.push('Timeless');
-        if (title.toLowerCase().includes('draft') || title.toLowerCase().includes('limited')) tags.push('Draft');
-        if (title.toLowerCase().includes('announcement') || title.toLowerCase().includes('update')) tags.push('Announcement');
-        if (title.toLowerCase().includes('commander')) tags.push('Commander');
-        if (category === 'video') tags.push('Video');
-        if (detectedStreamer) tags.push(detectedStreamer.name);
+          // In the video hub, every video MUST belong to an identified streamer/channel
+          if (category === 'video' && !detectedStreamer) {
+            return null;
+          }
 
-        // Extract thumbnail or fallback to official channel image / baseline art
-        let imageUrl = item.thumbnail || item.enclosure?.link || '';
-        if (detectedStreamer && (!imageUrl || imageUrl.includes('unsplash') || imageUrl.includes('placeholder'))) {
-          imageUrl = detectedStreamer.avatarUrl;
-        } else if (!imageUrl) {
-          const baselineMatch = baseline[idx % baseline.length];
-          imageUrl = detectedStreamer?.avatarUrl || baselineMatch?.imageUrl || 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
-        }
+          // Tags generation
+          const tags: string[] = [];
+          if (isArenaOnly) tags.push('Arena Only');
+          if (title.toLowerCase().includes('brawl')) tags.push('Brawl');
+          if (title.toLowerCase().includes('standard')) tags.push('Standard');
+          if (title.toLowerCase().includes('timeless')) tags.push('Timeless');
+          if (title.toLowerCase().includes('draft') || title.toLowerCase().includes('limited')) tags.push('Draft');
+          if (title.toLowerCase().includes('announcement') || title.toLowerCase().includes('update')) tags.push('Announcement');
+          if (title.toLowerCase().includes('commander')) tags.push('Commander');
+          if (category === 'video') tags.push('Video');
+          if (detectedStreamer) tags.push(detectedStreamer.name);
 
-        return {
-          id: `live-${category}-${idx}-${encodeURIComponent(title.slice(0, 15))}`,
-          title,
-          description: description || `Latest coverage from ${detectedStreamer?.name || source}. Click to watch.`,
-          url: item.link || item.guid || '#',
-          source: detectedStreamer ? detectedStreamer.name : (source || defaultSource),
-          category,
-          publishedAt: pubDate,
-          relativeTime: formatRelativeTime(pubDate),
-          imageUrl,
-          isArenaOnly,
-          tags: tags.length > 0 ? tags : [isArenaOnly ? 'Arena Only' : 'Magic'],
-          author: item.author || detectedStreamer?.name || undefined,
-          channelName: detectedStreamer ? detectedStreamer.channelName : (category === 'video' ? source : undefined),
-          channelAvatarUrl: detectedStreamer?.avatarUrl,
-          channelUrl: detectedStreamer?.channelUrl,
-          streamer: detectedStreamer
-        };
-      });
+          // Extract image from article or fallback to authentic MTG topic art
+          let imageUrl = item.thumbnail || item.enclosure?.link || '';
 
-      // Seamlessly combine live articles with curated baseline (prioritizing fresh live items)
+          // 1. Try to extract embedded <img> from description or content
+          if (!imageUrl) {
+            const rawHtml = `${item.description || ''} ${item.content || ''}`;
+            const imgMatch = rawHtml.match(/<img[^>]+src=["']([^"']+)["']/i);
+            if (imgMatch && imgMatch[1] && !imgMatch[1].includes('pixel') && !imgMatch[1].includes('clear.gif') && !imgMatch[1].includes('favicon')) {
+              imageUrl = imgMatch[1];
+            }
+          }
+
+          // 2. Try to extract YouTube thumbnail if link points to YouTube
+          if (!imageUrl && (item.link?.includes('youtube.com') || item.link?.includes('youtu.be'))) {
+            const ytMatch = item.link.match(/(?:v=|youtu\.be\/|embed\/)([^&?\/]+)/);
+            if (ytMatch && ytMatch[1]) {
+              imageUrl = `https://i.ytimg.com/vi/${ytMatch[1]}/hqdefault.jpg`;
+            }
+          }
+
+          // 3. For video articles, use detected streamer avatar
+          if (category === 'video' && detectedStreamer && (!imageUrl || imageUrl.includes('unsplash') || imageUrl.includes('placeholder'))) {
+            imageUrl = detectedStreamer.avatarUrl;
+          }
+
+          // 4. If still missing or generic, resolve authentic MTG card art based on the article's topic & title!
+          if (!imageUrl || imageUrl.includes('unsplash') || imageUrl.includes('placeholder')) {
+            imageUrl = resolveTopicArt(title, description, tags);
+          }
+
+          return {
+            id: `live-${category}-${idx}-${encodeURIComponent(title.slice(0, 15))}`,
+            title,
+            description: description || `Latest coverage from ${detectedStreamer?.name || source}. Click to watch.`,
+            url: item.link || item.guid || '#',
+            source: detectedStreamer ? detectedStreamer.name : (source || defaultSource),
+            category,
+            publishedAt: pubDate,
+            relativeTime: formatRelativeTime(pubDate),
+            imageUrl,
+            isArenaOnly,
+            tags: tags.length > 0 ? tags : [isArenaOnly ? 'Arena Only' : 'Magic'],
+            author: item.author || detectedStreamer?.name || undefined,
+            channelName: detectedStreamer ? detectedStreamer.name : (category === 'video' ? source : undefined),
+            channelAvatarUrl: detectedStreamer?.avatarUrl,
+            channelUrl: detectedStreamer?.channelUrl,
+            streamer: detectedStreamer
+          };
+        })
+        .filter((a: any): a is NewsArticle => a !== null));
+
+      // Seamlessly combine live articles with curated baseline
       const combined = [...liveArticles];
       const seenTitles = new Set(liveArticles.map(a => a.title.toLowerCase().trim()));
 

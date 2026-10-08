@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { UserCollection, WildcardInventory } from '../types/collection';
 import { searchArenaCards, getAllCachedCards } from '../services/scryfallService';
+import { matchesColorFilter } from '../utils/colorFilter';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
 import { 
@@ -59,9 +60,15 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [ownershipFilter, setOwnershipFilter] = useState<'all_owned' | 'playsets' | 'incomplete' | 'unowned'>('all_owned');
   const [selectedFormat, setSelectedFormat] = useState<FormatType | 'all'>('all');
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedColors, setSelectedColors] = useState<string[]>([]);
   const [selectedRarity, setSelectedRarity] = useState<CardRarity | null>(null);
   const [sortOrder, setSortOrder] = useState<SortOrder>('owned_desc');
+
+  const toggleColor = (colorId: string) => {
+    setSelectedColors(prev =>
+      prev.includes(colorId) ? prev.filter(c => c !== colorId) : [...prev, colorId]
+    );
+  };
 
   // API & Data state
   const [scryfallCards, setScryfallCards] = useState<Card[]>([]);
@@ -112,7 +119,7 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
       const res = await searchArenaCards({
         query: searchTerm.trim() || undefined,
         format: selectedFormat === 'all' ? undefined : selectedFormat,
-        color: selectedColor || undefined,
+        colors: selectedColors.length > 0 ? selectedColors : undefined,
         rarity: selectedRarity || undefined,
         page: targetPage,
         order: sortOrder === 'name_asc' ? 'name' : sortOrder.startsWith('cmc') ? 'cmc' : 'edhrec',
@@ -140,7 +147,7 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [searchTerm, selectedFormat, selectedColor, selectedRarity, sortOrder]);
+  }, [searchTerm, selectedFormat, selectedColors, selectedRarity, sortOrder]);
 
   // Trigger debounced search when filters change
   useEffect(() => {
@@ -201,11 +208,7 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
       }
 
       // Color filter
-      if (selectedColor) {
-        if (selectedColor === 'C' && card.colors.length > 0) return false;
-        if (selectedColor === 'M' && card.colors.length < 2) return false;
-        if (!['C', 'M'].includes(selectedColor) && !card.colors.includes(selectedColor as any)) return false;
-      }
+      if (!matchesColorFilter(card, selectedColors)) return false;
 
       // Rarity filter
       if (selectedRarity && card.rarity !== selectedRarity) return false;
@@ -243,18 +246,18 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
       }
       return 0;
     });
-  }, [combinedCards, userCollection, ownershipFilter, selectedFormat, selectedColor, selectedRarity, searchTerm, sortOrder]);
+  }, [combinedCards, userCollection, ownershipFilter, selectedFormat, selectedColors, selectedRarity, searchTerm, sortOrder]);
 
   const handleResetFilters = () => {
     setSearchTerm('');
-    setSelectedColor(null);
+    setSelectedColors([]);
     setSelectedRarity(null);
     setSelectedFormat('all');
     setOwnershipFilter('all_owned');
     setSortOrder('owned_desc');
   };
 
-  const hasActiveFilters = Boolean(searchTerm || selectedColor || selectedRarity || selectedFormat !== 'all' || ownershipFilter !== 'all_owned');
+  const hasActiveFilters = Boolean(searchTerm || selectedColors.length > 0 || selectedRarity || selectedFormat !== 'all' || ownershipFilter !== 'all_owned');
 
   return (
     <div className="space-y-6">
@@ -374,14 +377,14 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
           <div className="flex items-center gap-1.5 flex-wrap">
             <span className="text-[11px] font-fantasy font-bold text-stone-600 uppercase mr-1">Colors:</span>
             {MANA_COLORS.map(c => {
-              const isSelected = selectedColor === c.id;
+              const isSelected = selectedColors.includes(c.id);
 
               if (c.manaSymbol && !c.label) {
                 return (
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => setSelectedColor(isSelected ? null : c.id)}
+                    onClick={() => toggleColor(c.id)}
                     title={`Filter by ${c.name} (${c.id})`}
                     aria-label={c.name}
                     className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
@@ -400,7 +403,7 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
                   <button
                     key={c.id}
                     type="button"
-                    onClick={() => setSelectedColor(isSelected ? null : c.id)}
+                    onClick={() => toggleColor(c.id)}
                     title="Filter by Colorless"
                     aria-label="Colorless"
                     className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
@@ -415,28 +418,28 @@ export const MyCollectionView: React.FC<MyCollectionViewProps> = ({
                 );
               }
 
+              // Multicolor (Gold Symbol button)
               return (
                 <button
                   key={c.id}
                   type="button"
-                  onClick={() => setSelectedColor(isSelected ? null : c.id)}
+                  onClick={() => toggleColor(c.id)}
                   title="Filter by Multicolor"
                   aria-label="Multicolor"
-                  className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
                     isSelected
-                      ? `ring-2 ${c.ring} scale-105 ring-offset-1 ring-offset-white shadow-md`
-                      : `border-[#e5d8b8] bg-white text-stone-700 hover:scale-105`
+                      ? `ring-2 ${c.ring} scale-110 opacity-100 ring-offset-1 ring-offset-white shadow-md`
+                      : `border-[#e5d8b8] opacity-65 hover:opacity-100 hover:scale-105 bg-white`
                   }`}
                 >
-                  <span className="text-amber-500 font-bold text-xs">★</span>
-                  <span>{c.label}</span>
+                  <span className="text-amber-500 font-black text-sm drop-shadow-sm select-none">★</span>
                 </button>
               );
             })}
-            {selectedColor && (
+            {selectedColors.length > 0 && (
               <button
                 type="button"
-                onClick={() => setSelectedColor(null)}
+                onClick={() => setSelectedColors([])}
                 className="p-1 text-stone-400 hover:text-stone-600 ml-0.5 rounded-lg hover:bg-black/5 transition"
                 title="Clear color filter"
               >

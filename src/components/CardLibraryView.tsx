@@ -896,7 +896,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                   );
                 }
 
-                // Multicolor
+                // Multicolor (Gold Symbol button)
                 return (
                   <button
                     key={c.id}
@@ -904,14 +904,13 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                     onClick={() => toggleColor(c.id)}
                     title="Filter by Multicolor"
                     aria-label="Multicolor"
-                    className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
+                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
                       isSelected
-                        ? `${c.activeRing} scale-105 ring-offset-1 ring-offset-[#090b10]`
-                        : `border-white/10 ${c.hoverRing} hover:scale-105 text-stone-300`
+                        ? `${c.activeRing} scale-110 opacity-100 ring-offset-1 ring-offset-[#090b10]`
+                        : `border-white/10 ${c.hoverRing} opacity-60 hover:opacity-100 hover:scale-105 bg-[#121622]`
                     }`}
                   >
-                    <span className="text-amber-400 font-bold text-xs">★</span>
-                    <span>{c.label}</span>
+                    <span className="text-amber-400 font-black text-sm drop-shadow-sm select-none">★</span>
                   </button>
                 );
               })}

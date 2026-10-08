@@ -41,8 +41,8 @@ import { NewDeckModal } from './components/NewDeckModal';
 import { FunctionalRole } from './utils/roleClassifier';
 
 export const App: React.FC = () => {
-  // Navigation State
-  const [navTab, setNavTab] = useState<MainNavTab>('deck_builder');
+  // Navigation State (Defaults to Home / News Hub)
+  const [navTab, setNavTab] = useState<MainNavTab>('home');
   const [brawlPowerTier, setBrawlPowerTier] = useState<PowerTier>('focused');
   const [synergyTab, setSynergyTab] = useState<SynergyCategoryTab>('meta_consensus');
   const [isDeckDrawerOpen, setIsDeckDrawerOpen] = useState<boolean>(() => {
@@ -1056,7 +1056,7 @@ export const App: React.FC = () => {
       {/* Mobile Slide-out Decklist (Drawer for < lg screens) */}
       <div className="lg:hidden">
         <DeckDrawer
-          isOpen={isDeckDrawerOpen}
+          isOpen={isDeckDrawerOpen && navTab === 'deck_builder'}
           variant="drawer"
           onClose={() => setIsDeckDrawerOpen(false)}
           deck={activeDeck}

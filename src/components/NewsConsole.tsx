@@ -3,7 +3,8 @@ import {
   NewsCategory, 
   NewsArticle, 
   fetchNewsArticles,
-  KNOWN_STREAMERS
+  KNOWN_STREAMERS,
+  resolveTopicArt
 } from '../services/newsService';
 import { 
   Newspaper, 
@@ -88,8 +89,11 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
         const matchTitle = article.title.toLowerCase().includes(q);
         const matchDesc = article.description.toLowerCase().includes(q);
         const matchSource = article.source.toLowerCase().includes(q);
+        const matchChannel = (article.channelName || '').toLowerCase().includes(q);
+        const matchStreamer = (article.streamer?.name || '').toLowerCase().includes(q);
+        const matchHandle = (article.streamer?.handle || '').toLowerCase().includes(q);
         const matchTags = article.tags.some(t => t.toLowerCase().includes(q));
-        return matchTitle || matchDesc || matchSource || matchTags;
+        return matchTitle || matchDesc || matchSource || matchChannel || matchStreamer || matchHandle || matchTags;
       }
       return true;
     });
@@ -335,7 +339,7 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src =
                         heroArticle.streamer?.avatarUrl ||
-                        'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+                        resolveTopicArt(heroArticle.title, heroArticle.description, heroArticle.tags);
                     }}
                     className={`w-full h-full ${
                       heroArticle.streamer && (heroArticle.imageUrl === heroArticle.streamer.avatarUrl || !heroArticle.imageUrl)
@@ -355,17 +359,17 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
 
                   {/* Top Badges */}
                   <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap z-20">
-                    {heroArticle.streamer ? (
-                      <div className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-black/85 backdrop-blur-md text-amber-300 border border-amber-400/60 shadow flex items-center gap-1.5">
+                    {(heroArticle.streamer || heroArticle.channelName || activeTab === 'video') ? (
+                      <div className="px-3 py-1 rounded-full text-[11px] font-black uppercase bg-black/90 backdrop-blur-md text-amber-300 border border-amber-400/70 shadow-lg flex items-center gap-2">
                         <img
-                          src={heroArticle.streamer.avatarUrl}
-                          alt={heroArticle.streamer.name}
-                          className="w-4 h-4 rounded-full object-cover border border-amber-400/80"
+                          src={heroArticle.streamer?.avatarUrl || heroArticle.channelAvatarUrl || heroArticle.imageUrl}
+                          alt={heroArticle.streamer?.name || heroArticle.channelName || heroArticle.source}
+                          className="w-4 h-4 rounded-full object-cover border border-amber-400/80 shrink-0"
                         />
-                        <span>{heroArticle.streamer.name}</span>
-                        {heroArticle.streamer.verified && (
-                          <BadgeCheck className="w-3.5 h-3.5 text-amber-400 fill-amber-400/20" />
-                        )}
+                        <span className="font-bold tracking-wide">
+                          {heroArticle.streamer?.name || heroArticle.channelName || heroArticle.source}
+                        </span>
+                        <BadgeCheck className="w-4 h-4 text-amber-400 fill-amber-400/20" />
                       </div>
                     ) : (
                       <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase bg-black/80 backdrop-blur-md text-amber-300 border border-amber-400/50 shadow">
@@ -385,52 +389,50 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                 <div className="lg:col-span-7 p-6 md:p-8 flex flex-col justify-between space-y-4">
                   <div className="space-y-3.5">
                     {/* Dedicated Streamer Attribution Card */}
-                    {heroArticle.streamer ? (
-                      <div className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 flex items-center justify-between gap-3 shadow-inner">
+                    {(heroArticle.streamer || heroArticle.channelName || activeTab === 'video') ? (
+                      <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 flex items-center justify-between gap-3 shadow-inner">
                         <div className="flex items-center gap-3 min-w-0">
                           <a
-                            href={heroArticle.streamer.channelUrl}
+                            href={heroArticle.streamer?.channelUrl || heroArticle.channelUrl || heroArticle.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="relative shrink-0 group/streamer-avatar"
-                            title={`Visit official channel: ${heroArticle.streamer.name}`}
+                            title={`Visit official channel: ${heroArticle.streamer?.name || heroArticle.channelName || heroArticle.source}`}
                           >
                             <img
-                              src={heroArticle.streamer.avatarUrl}
-                              alt={heroArticle.streamer.name}
+                              src={heroArticle.streamer?.avatarUrl || heroArticle.channelAvatarUrl || heroArticle.imageUrl}
+                              alt={heroArticle.streamer?.name || heroArticle.channelName || heroArticle.source}
                               className="w-12 h-12 rounded-2xl object-cover border-2 border-amber-400/70 shadow-lg group-hover/streamer-avatar:scale-105 group-hover/streamer-avatar:border-amber-300 transition duration-300"
                             />
-                            {heroArticle.streamer.verified && (
-                              <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[9px] font-black shadow ring-1 ring-black">
-                                ✓
-                              </span>
-                            )}
+                            <span className="absolute -bottom-1 -right-1 w-4 h-4 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[9px] font-black shadow ring-1 ring-black">
+                              ✓
+                            </span>
                           </a>
                           <div className="min-w-0">
                             <div className="flex items-center gap-2">
                               <a
-                                href={heroArticle.streamer.channelUrl}
+                                href={heroArticle.streamer?.channelUrl || heroArticle.channelUrl || heroArticle.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm font-black text-white hover:text-amber-300 transition truncate"
+                                className="text-sm md:text-base font-black text-white hover:text-amber-300 transition truncate"
                               >
-                                {heroArticle.streamer.name}
+                                {heroArticle.streamer?.name || heroArticle.channelName || heroArticle.source}
                               </a>
                               <span className="text-[10px] px-2 py-0.5 rounded-full font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40 shrink-0">
-                                Official Streamer
+                                Official Creator
                               </span>
                             </div>
                             <div className="flex items-center gap-2 text-xs text-stone-400 mt-0.5">
                               <a
-                                href={heroArticle.streamer.channelUrl}
+                                href={heroArticle.streamer?.channelUrl || heroArticle.channelUrl || heroArticle.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-stone-300 hover:text-amber-400 font-mono text-[11px] transition flex items-center gap-1"
                               >
-                                <span>{heroArticle.streamer.handle}</span>
+                                <span>{heroArticle.streamer?.handle || `@${(heroArticle.channelName || heroArticle.source).replace(/\s+/g, '')}`}</span>
                                 <ExternalLink className="w-2.5 h-2.5 opacity-60" />
                               </a>
-                              {heroArticle.streamer.role && (
+                              {heroArticle.streamer?.role && (
                                 <>
                                   <span>•</span>
                                   <span className="text-stone-400 text-[11px] truncate hidden sm:inline">
@@ -504,20 +506,22 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {heroArticle.streamer && (
+                      {(heroArticle.streamer || heroArticle.channelUrl || heroArticle.channelName || activeTab === 'video') && (
                         <a
-                          href={heroArticle.streamer.channelUrl}
+                          href={heroArticle.streamer?.channelUrl || heroArticle.channelUrl || heroArticle.url}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="px-3.5 py-2 rounded-xl text-xs font-bold bg-[#141a29] hover:bg-[#1f283f] text-stone-200 hover:text-amber-300 border border-white/10 hover:border-amber-400/50 flex items-center gap-1.5 transition shadow"
-                          title={`Visit ${heroArticle.streamer.name}'s official channel`}
+                          title={`Visit ${heroArticle.streamer?.name || heroArticle.channelName || heroArticle.source}'s official channel`}
                         >
                           <img
-                            src={heroArticle.streamer.avatarUrl}
+                            src={heroArticle.streamer?.avatarUrl || heroArticle.channelAvatarUrl || heroArticle.imageUrl}
                             alt=""
                             className="w-3.5 h-3.5 rounded-full object-cover"
                           />
-                          <span>Official Channel</span>
+                          <span className="font-semibold">
+                            Channel: {heroArticle.streamer?.name || heroArticle.channelName || heroArticle.source}
+                          </span>
                           <ExternalLink className="w-3 h-3 text-stone-400" />
                         </a>
                       )}
@@ -561,7 +565,7 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                     onError={(e) => {
                       (e.currentTarget as HTMLImageElement).src =
                         article.streamer?.avatarUrl ||
-                        'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&w=800&q=80';
+                        resolveTopicArt(article.title, article.description, article.tags);
                     }}
                     className={`w-full h-full ${
                       article.streamer && (article.imageUrl === article.streamer.avatarUrl || !article.imageUrl)
@@ -581,17 +585,17 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
 
                   {/* Top Badges */}
                   <div className="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between gap-1.5 z-20">
-                    {article.streamer ? (
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-black/85 backdrop-blur-md text-amber-300 border border-amber-400/50 shadow">
+                    {(article.streamer || article.channelName || activeTab === 'video') ? (
+                      <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[9.5px] font-black bg-black/85 backdrop-blur-md text-amber-300 border border-amber-400/60 shadow">
                         <img
-                          src={article.streamer.avatarUrl}
-                          alt={article.streamer.name}
-                          className="w-3.5 h-3.5 rounded-full object-cover border border-amber-400/80"
+                          src={article.streamer?.avatarUrl || article.channelAvatarUrl || article.imageUrl}
+                          alt={article.streamer?.name || article.channelName || article.source}
+                          className="w-3.5 h-3.5 rounded-full object-cover border border-amber-400/80 shrink-0"
                         />
-                        <span className="truncate max-w-[90px]">{article.streamer.name}</span>
-                        {article.streamer.verified && (
-                          <span className="w-2.5 h-2.5 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[7px] font-black">✓</span>
-                        )}
+                        <span className="truncate max-w-[150px] font-bold">
+                          {article.streamer?.name || article.channelName || article.source}
+                        </span>
+                        <span className="w-2.5 h-2.5 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[7px] font-black shrink-0">✓</span>
                       </div>
                     ) : (
                       <span className="px-2 py-0.5 rounded-full text-[9px] font-black uppercase bg-black/80 backdrop-blur-md text-amber-300 border border-white/15">
@@ -620,48 +624,46 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                 <div className="p-4 flex-1 flex flex-col justify-between space-y-3">
                   <div className="space-y-2.5">
                     {/* Creator Attribution Section */}
-                    {article.streamer ? (
-                      <div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20">
-                        <div className="flex items-center gap-2 min-w-0">
+                    {(article.streamer || article.channelName || activeTab === 'video') ? (
+                      <div className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-gradient-to-r from-amber-500/15 via-orange-500/10 to-transparent border border-amber-500/30 shadow-sm">
+                        <div className="flex items-center gap-2.5 min-w-0">
                           <a
-                            href={article.streamer.channelUrl}
+                            href={article.streamer?.channelUrl || article.channelUrl || article.url}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="relative shrink-0 group/avatar"
-                            title={`Visit ${article.streamer.name}'s official channel`}
+                            title={`Visit ${article.streamer?.name || article.channelName || article.source}'s official channel`}
                           >
                             <img
-                              src={article.streamer.avatarUrl}
-                              alt={article.streamer.name}
-                              className="w-7 h-7 rounded-lg object-cover border border-amber-400/60 group-hover/avatar:scale-105 transition shadow-sm"
+                              src={article.streamer?.avatarUrl || article.channelAvatarUrl || article.imageUrl}
+                              alt={article.streamer?.name || article.channelName || article.source}
+                              className="w-8 h-8 rounded-lg object-cover border border-amber-400/70 group-hover/avatar:scale-105 transition shadow-sm"
                             />
-                            {article.streamer.verified && (
-                              <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[7px] font-black shadow">
-                                ✓
-                              </span>
-                            )}
+                            <span className="absolute -bottom-1 -right-1 w-3 h-3 rounded-full bg-amber-400 text-stone-950 flex items-center justify-center text-[7px] font-black shadow ring-1 ring-black">
+                              ✓
+                            </span>
                           </a>
                           <div className="min-w-0">
                             <div className="flex items-center gap-1.5">
                               <a
-                                href={article.streamer.channelUrl}
+                                href={article.streamer?.channelUrl || article.channelUrl || article.url}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="text-xs font-bold text-amber-300 hover:text-amber-200 truncate transition"
                               >
-                                {article.streamer.name}
+                                {article.streamer?.name || article.channelName || article.source}
                               </a>
                               <span className="text-[9px] px-1 py-0.2 rounded bg-amber-400/20 text-amber-300 font-semibold shrink-0">
                                 Creator
                               </span>
                             </div>
                             <a
-                              href={article.streamer.channelUrl}
+                              href={article.streamer?.channelUrl || article.channelUrl || article.url}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="text-[10px] text-stone-400 hover:text-amber-300 flex items-center gap-1 truncate transition"
                             >
-                              <span>{article.streamer.handle}</span>
+                              <span>{article.streamer?.handle || `@${(article.channelName || article.source).replace(/\s+/g, '')}`}</span>
                               <ExternalLink className="w-2.5 h-2.5 opacity-60" />
                             </a>
                           </div>
@@ -718,16 +720,23 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
                     </div>
 
                     <div className="flex items-center gap-1.5 shrink-0">
-                      {article.streamer && (
+                      {(article.streamer || article.channelUrl || article.channelName || activeTab === 'video') && (
                         <a
-                          href={article.streamer.channelUrl}
+                          href={article.streamer?.channelUrl || article.channelUrl || article.url}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-[11px] font-bold text-stone-400 hover:text-amber-300 flex items-center gap-1 px-1.5 py-0.5 rounded bg-white/5 hover:bg-white/10 transition"
-                          title={`Visit ${article.streamer.name}'s channel`}
+                          className="text-[11px] font-bold text-stone-300 hover:text-amber-300 flex items-center gap-1 px-2 py-1 rounded-lg bg-white/5 hover:bg-white/10 border border-white/5 hover:border-amber-400/30 transition"
+                          title={`Visit ${article.streamer?.name || article.channelName || article.source}'s channel`}
                         >
-                          <span>Channel</span>
-                          <ExternalLink className="w-2.5 h-2.5" />
+                          <img
+                            src={article.streamer?.avatarUrl || article.channelAvatarUrl || article.imageUrl}
+                            alt=""
+                            className="w-3.5 h-3.5 rounded-full object-cover shrink-0"
+                          />
+                          <span className="max-w-[95px] truncate">
+                            {article.streamer?.name || article.channelName || 'Channel'}
+                          </span>
+                          <ExternalLink className="w-2.5 h-2.5 opacity-70" />
                         </a>
                       )}
                       <a
