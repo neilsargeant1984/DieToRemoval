@@ -5,9 +5,10 @@ import { SynergyMatchResult } from './synergyGraph';
  * Transforms a raw match reason into an articulate, punchy tactical breakdown
  * explaining the causal mechanics without repetitive boilerplate.
  */
-function articulateReason(raw: string, commander: Card, card: Card): string {
+function articulateReason(raw: string, commander: Card | undefined, card: Card): string {
   const r = raw.trim();
   const lower = r.toLowerCase();
+  const targetName = commander ? commander.name : 'your deck';
 
   // 1. Community inclusion & meta consensus
   if (r.startsWith('Played in')) {
@@ -30,7 +31,7 @@ function articulateReason(raw: string, commander: Card, card: Card): string {
     return `Card draw engine: maintains hand size and continuously fuels your game plan.`;
   }
   if (lower.includes('commander & board protection') || lower.includes('protection')) {
-    return `Protection: shields ${commander.name} and key permanents from removal and combat damage.`;
+    return `Protection: shields ${targetName} and key permanents from removal and combat damage.`;
   }
   if (lower.includes('sacrifice outlet')) {
     return `Sac outlet: triggers death and aristocrat synergies at instant speed.`;
@@ -42,7 +43,7 @@ function articulateReason(raw: string, commander: Card, card: Card): string {
     return `Aristocrat drain: chips away at opponents' life totals as creatures die.`;
   }
   if (lower.includes('mana rock') || lower.includes('mana dork') || lower.includes('land ramp') || lower.includes('ramp')) {
-    return `Mana acceleration: ramps ahead of curve to cast ${commander.name} earlier.`;
+    return `Mana acceleration: ramps ahead of curve to cast ${targetName} earlier.`;
   }
   if (lower.includes('graveyard hate')) {
     return `Graveyard interaction: exiles enemy graveyards to disrupt opposing recursion.`;
@@ -59,25 +60,25 @@ function articulateReason(raw: string, commander: Card, card: Card): string {
 
   // 4. Synergy Graph causal match reasons
   if (lower.startsWith('supplies life gain')) {
-    return `Lifegain fuel: triggers ${commander.name}'s lifegain payoffs.`;
+    return `Lifegain fuel: triggers ${targetName}'s lifegain payoffs.`;
   }
   if (lower.startsWith('forces card draws')) {
-    return `Draw catalyst: activates ${commander.name}'s draw triggers.`;
+    return `Draw catalyst: activates ${targetName}'s draw triggers.`;
   }
   if (lower.includes('spellslinger/magecraft engine')) {
-    return `Spellslinger engine: triggers ${commander.name}'s spellcasting abilities.`;
+    return `Spellslinger engine: triggers ${targetName}'s spellcasting abilities.`;
   }
   if (lower.startsWith('creature entry triggers')) {
-    return `ETB enabler: triggers ${commander.name} whenever creatures enter.`;
+    return `ETB enabler: triggers ${targetName} whenever creatures enter.`;
   }
   if (lower.startsWith('drains opponents and triggers value')) {
     return `Aristocrat value: drains opponents and generates value when creatures die.`;
   }
   if (lower.startsWith('instant/repeatable sacrifice outlet')) {
-    return `Instant sac outlet: reliably triggers ${commander.name}'s death payoffs.`;
+    return `Instant sac outlet: reliably triggers ${targetName}'s death payoffs.`;
   }
   if (lower.startsWith('provides sacrifice fodder')) {
-    return `Sacrifice fodder: generates expendable tokens and recursive bodies for ${commander.name}.`;
+    return `Sacrifice fodder: generates expendable tokens and recursive bodies for ${targetName}.`;
   }
   if (lower.startsWith('reanimates sacrificed creatures')) {
     return `Recursion loop: reanimates sacrificed creatures to re-trigger abilities.`;
@@ -86,19 +87,20 @@ function articulateReason(raw: string, commander: Card, card: Card): string {
     return `Discard payoff: punishes opponents whenever cards are discarded.`;
   }
   if (lower.startsWith('generates energy')) {
-    return `Energy generator: fuels ${commander.name}'s energy requirements.`;
+    return `Energy generator: fuels ${targetName}'s energy requirements.`;
   }
   if (lower.startsWith('adds counters')) {
-    return `Counter proliferation: boosts loyalty or +1/+1 counters for ${commander.name}.`;
+    return `Counter proliferation: boosts loyalty or +1/+1 counters for ${targetName}.`;
   }
   if (lower.startsWith('flickers')) {
-    return `Flicker engine: blinks ${commander.name} to repeat enter-the-battlefield triggers.`;
+    return `Flicker engine: blinks ${targetName} to repeat enter-the-battlefield triggers.`;
   }
   if (lower.startsWith('shares the') && lower.includes('creature tribe')) {
     return `Tribal synergy: ${r.toLowerCase()}.`;
   }
   if (lower.startsWith('on-color staple option')) {
-    return `On-color staple: highly efficient staple for ${commander.colorIdentity.join('/') || 'Colorless'} Brawl decks.`;
+    const colors = commander?.colorIdentity?.join('/') || 'on-color';
+    return `On-color staple: highly efficient staple for ${colors} decks.`;
   }
 
   // Fallback: clean capitalization & punctuation
@@ -111,7 +113,7 @@ function articulateReason(raw: string, commander: Card, card: Card): string {
  * explaining the causal mechanics between two cards.
  */
 export function explainSynergy(
-  commander: Card,
+  commander: Card | undefined,
   result: SynergyMatchResult
 ): string {
   const { card, matchReasons } = result;
@@ -122,5 +124,6 @@ export function explainSynergy(
   }
 
   // Fallback archetype summary
-  return `Strategic synergy: reinforces the core game plan of ${commander.name} with complementary payoffs.`;
+  const targetName = commander ? commander.name : 'your deck';
+  return `Strategic synergy: reinforces the core game plan of ${targetName} with complementary payoffs.`;
 }

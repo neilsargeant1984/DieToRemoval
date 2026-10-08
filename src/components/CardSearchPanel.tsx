@@ -20,6 +20,7 @@ interface CardSearchPanelProps {
   onSelectCardDetail: (card: Card) => void;
   userCollection?: UserCollection;
   onUpdateCollection?: (col: UserCollection) => void;
+  deckColors?: string[];
 }
 
 export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
@@ -33,7 +34,8 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
   onRemoveCard,
   onSelectCardDetail,
   userCollection = {},
-  onUpdateCollection
+  onUpdateCollection,
+  deckColors = []
 }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFormat, setSelectedFormat] = useState<FormatType>(currentFormat);
@@ -68,14 +70,25 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
     searchTimeoutRef.current = setTimeout(async () => {
       try {
         const smartQuery = buildSmartSearchQuery(searchTerm);
+        const isDeckColorsSelected = selectedColor === 'deck_colors';
+        const useDeckColors = isDeckColorsSelected || (selectedFormat !== 'brawl' && activeRoleFilter && deckColors && deckColors.length > 0 && !selectedColor);
+        const searchColors = isDeckColorsSelected ? deckColors : undefined;
+        const colorFilter = selectedColor && selectedColor !== 'deck_colors' ? selectedColor : null;
+        const effectiveCommanderColorIdentity = (selectedFormat === 'brawl' && commander)
+          ? commander.colorIdentity
+          : (useDeckColors && deckColors && deckColors.length > 0)
+            ? deckColors
+            : undefined;
+
         const result = await searchArenaCards({
           query: smartQuery,
           format: selectedFormat,
-          color: selectedColor,
+          color: colorFilter,
+          colors: searchColors,
           type: selectedType,
           rarity: selectedRarity,
           digitalOnly: digitalOnly,
-          commanderColorIdentity: (selectedFormat === 'brawl' && commander) ? commander.colorIdentity : undefined,
+          commanderColorIdentity: effectiveCommanderColorIdentity,
           roleFilter: activeRoleFilter
         });
         setCards(result.cards);
@@ -92,7 +105,7 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
         clearTimeout(searchTimeoutRef.current);
       }
     };
-  }, [searchTerm, selectedFormat, selectedColor, selectedType, selectedRarity, digitalOnly, commander, activeRoleFilter]);
+  }, [searchTerm, selectedFormat, selectedColor, selectedType, selectedRarity, digitalOnly, commander, activeRoleFilter, deckColors]);
 
   return (
     <div className="arena-panel rounded-2xl p-4 shadow-xl flex flex-col h-full">
@@ -288,6 +301,21 @@ export const CardSearchPanel: React.FC<CardSearchPanelProps> = ({
               </button>
             );
           })}
+          {selectedFormat !== 'brawl' && deckColors.length > 0 && (
+            <button
+              type="button"
+              onClick={() => setSelectedColor(selectedColor === 'deck_colors' ? null : 'deck_colors')}
+              title={`Filter strictly to your deck's colors (${deckColors.join('/')})`}
+              className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
+                selectedColor === 'deck_colors'
+                  ? 'bg-amber-500 text-slate-950 border-amber-400 font-black shadow-md scale-105'
+                  : 'border-amber-500/30 hover:border-amber-400/60 bg-[#161b26] text-amber-300 hover:scale-105'
+              }`}
+            >
+              <span>🎯</span>
+              <span>Deck ({deckColors.join('/')})</span>
+            </button>
+          )}
           {selectedColor && (
             <button
               type="button"

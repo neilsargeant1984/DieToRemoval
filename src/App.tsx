@@ -22,6 +22,7 @@ import { SaveBeforeCommanderChangeModal } from './components/SaveBeforeCommander
 import { ImportDeckModal } from './components/ImportDeckModal';
 import { HomeView } from './components/HomeView';
 import { ManaBaseModal } from './components/ManaBaseModal';
+import { SynergyMatrixDrawer } from './components/SynergyMatrixDrawer';
 import { calculateDeckWildcards } from './utils/wildcardCalculator';
 import { calculateDeckStats } from './utils/deckAnalytics';
 import { getMaxCardCopies } from './utils/cardRules';
@@ -153,10 +154,23 @@ export const App: React.FC = () => {
   const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
   const [isImportDeckModalOpen, setIsImportDeckModalOpen] = useState(false);
   const [isManaModalOpen, setIsManaModalOpen] = useState(false);
+  const [isSynergyMatrixOpen, setIsSynergyMatrixOpen] = useState(false);
   const [isNewDeckModalOpen, setIsNewDeckModalOpen] = useState(false);
   const [standardRoleFilter, setStandardRoleFilter] = useState<FunctionalRole | 'lands' | 'sideboard' | null>(null);
   const [exportImportMode, setExportImportMode] = useState<'export' | 'import' | null>(null);
   const [selectedCardDetail, setSelectedCardDetail] = useState<Card | null>(null);
+
+  // Active Deck Derived Colors
+  const activeDeckColors = useMemo(() => {
+    if (activeDeck.format === 'brawl') {
+      return activeDeck.commander?.card?.colorIdentity || [];
+    }
+    const colors = new Set<string>();
+    activeDeck.mainboard.forEach(item => {
+      (item.card.colorIdentity || []).forEach(c => colors.add(c));
+    });
+    return Array.from(colors);
+  }, [activeDeck]);
 
   // Save Conflict & Notification State
   const [saveConflict, setSaveConflict] = useState<{
@@ -448,6 +462,8 @@ export const App: React.FC = () => {
     setActiveDeck(prev => ({
       ...prev,
       format,
+      name: prev.name.startsWith('New ') ? `New ${format.charAt(0).toUpperCase() + format.slice(1)} Deck` : prev.name,
+      commander: format === 'brawl' ? prev.commander : undefined,
       updatedAt: new Date().toISOString()
     }));
     if (format === 'brawl') {
@@ -603,7 +619,7 @@ export const App: React.FC = () => {
     } else {
       newDeck = {
         id: `deck-${format}-${Date.now()}`,
-        name: `New ${format.toUpperCase()} Deck`,
+        name: `New ${format.charAt(0).toUpperCase() + format.slice(1)} Deck`,
         format: format,
         mainboard: [],
         sideboard: [],
@@ -981,6 +997,7 @@ export const App: React.FC = () => {
                 currentFormat={activeDeck.format}
                 deckCardCounts={deckCardCounts}
                 sideboardCardCounts={sideboardCardCounts}
+                deckColors={activeDeckColors}
                 activeRoleFilter={standardRoleFilter}
                 onClearRoleFilter={() => setStandardRoleFilter(null)}
                 onAddCard={handleAddCard}
@@ -1002,7 +1019,7 @@ export const App: React.FC = () => {
                 activeRoleFilter={standardRoleFilter}
                 onSelectRoleFilter={(role) => setStandardRoleFilter(prev => prev === role ? null : role)}
                 onOpenManaOptimizer={() => setIsManaModalOpen(true)}
-                onOpenSynergyMatrix={() => setStandardRoleFilter(prev => prev === 'threats' ? null : 'threats')}
+                onOpenSynergyMatrix={() => setIsSynergyMatrixOpen(true)}
                 onSaveDeck={handleSaveActiveDeck}
                 onOpenImport={() => setIsImportDeckModalOpen(true)}
                 onOpenExport={() => setExportImportMode('export')}
@@ -1139,6 +1156,16 @@ export const App: React.FC = () => {
         mode={exportImportMode || 'export'}
         onClose={() => setExportImportMode(null)}
         onImportDeck={handleImportDeck}
+      />
+
+      {/* Causal Synergy Matrix Modal */}
+      <SynergyMatrixDrawer
+        isOpen={isSynergyMatrixOpen}
+        onClose={() => setIsSynergyMatrixOpen(false)}
+        commander={activeDeck.format === 'brawl' ? activeDeck.commander?.card : undefined}
+        deck={activeDeck}
+        onAddCard={(card) => handleAddCard(card, false)}
+        userCollection={userCollection}
       />
 
       {/* Supabase Cloud Auth Modal */}

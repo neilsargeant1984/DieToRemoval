@@ -177,19 +177,21 @@ export interface SynergyMatchResult {
 }
 
 /**
- * Calculates causal synergy compatibility between target card (e.g. Commander) and candidate card.
+ * Calculates causal synergy compatibility between target card (e.g. Commander or build-around card) and candidate card.
  */
 export function calculateSynergy(
   commanderCard: Card,
-  candidateCard: Card
+  candidateCard: Card,
+  allowedColors?: string[]
 ): SynergyMatchResult | null {
   // Don't synergize with self
   if (commanderCard.id === candidateCard.id || commanderCard.name === candidateCard.name) {
     return null;
   }
 
-  // Strict Color Identity Check: Candidate color identity MUST be a subset of Commander's
-  if (!candidateCard.colorIdentity.every(col => commanderCard.colorIdentity.includes(col))) {
+  // Strict Color Identity Check: Candidate color identity MUST be a subset of valid colors
+  const validColors = allowedColors ?? commanderCard.colorIdentity;
+  if (!candidateCard.colorIdentity.every(col => validColors.includes(col))) {
     return null;
   }
 
@@ -198,7 +200,7 @@ export function calculateSynergy(
   // Color text restriction: If a colorless card explicitly refers only to an off-color creature/spell/permanent
   // (e.g. Bontu's Monument specifies "black creature spells you cast cost {1} less", 
   // Hazoret's Monument specifies "red creature spells", etc.),
-  // it should NEVER synergize with a commander that does not share that color!
+  // it should NEVER synergize with a target that does not share that color!
   const colorKeywords: { name: string; code: 'W' | 'U' | 'B' | 'R' | 'G' }[] = [
     { name: 'white', code: 'W' },
     { name: 'blue', code: 'U' },
@@ -208,7 +210,7 @@ export function calculateSynergy(
   ];
 
   for (const { name: colorName, code: colorCode } of colorKeywords) {
-    if (!commanderCard.colorIdentity.includes(colorCode)) {
+    if (!validColors.includes(colorCode)) {
       // If card specifies "{color} creature spells you cast cost" or "{color} spells you cast cost"
       const costReductionPattern = new RegExp(`\\b${colorName}\\s+(creature\\s+)?spells\\s+you\\s+cast\\s+cost`, 'i');
       if (costReductionPattern.test(candidateText)) {
@@ -390,13 +392,13 @@ export function calculateSynergy(
 
   // Match 5: Color Affinity (favor on-color cards over generic colorless filler)
   const isColorless = candidateCard.colors.length === 0;
-  if (commanderCard.colorIdentity.length > 0) {
-    if (!isColorless && candidateCard.colors.some(c => commanderCard.colorIdentity.includes(c))) {
+  if (validColors.length > 0) {
+    if (!isColorless && candidateCard.colors.some(c => validColors.includes(c))) {
       score += 15;
     } else if (isColorless) {
-      // De-prioritize high-cost generic colorless cards unless commander is colorless or artifact-based
-      const isArtifactCommander = p1.demands.includes('artifact_etb') || (commanderCard.oracleText || '').toLowerCase().includes('colorless');
-      if (!isArtifactCommander) {
+      // De-prioritize high-cost generic colorless cards unless target is colorless or artifact-based
+      const isArtifactTarget = p1.demands.includes('artifact_etb') || (commanderCard.oracleText || '').toLowerCase().includes('colorless');
+      if (!isArtifactTarget) {
         if (candidateCard.cmc >= 5) {
           score -= 15;
         } else {
@@ -427,3 +429,57 @@ export function calculateSynergy(
     category
   };
 }
+
+/**
+ * Calculates causal synergy for a candidate card against an entire deck of cards (e.g. Standard 60-card deck).
+ */
+export function calculateDeckSynergy(
+  deckCards: Card[],
+  candidateCard: Card,
+  allowedColors: string[]
+): SynergyMatchResult | null {
+  // Candidate must match deck colors
+  if (allowedColors.length > 0 && !candidateCard.colorIdentity.every(col => allowedColors.includes(col))) {
+    return null;
+  }
+
+  // Filter out basics and identical cards
+  const validBaseCards = deckCards.filter(
+    c => !(c.typeLine || '').toLowerCase().includes('basic') && c.id !== candidateCard.id && c.name !== candidateCard.name
+  );
+
+  if (validBaseCards.length === 0) {
+    return null;
+  }
+
+  const individualMatches: SynergyMatchResult[] = [];
+  for (const baseCard of validBaseCards) {
+    const match = calculateSynergy(baseCard, candidateCard, allowedColors);
+    if (match) {
+      individualMatches.push(match);
+    }
+  }
+
+  if (individualMatches.length === 0) {
+    return null;
+  }
+
+  // Sort by highest individual card match
+  individualMatches.sort((a, b) => b.score - a.score);
+  const bestMatch = individualMatches[0];
+
+  // If candidate synergizes with multiple cards in the deck, add a synergy bonus
+  const multiBonus = Math.min(20, (individualMatches.length - 1) * 6);
+  const totalScore = Math.min(99, bestMatch.score + multiBonus);
+
+  // Combine unique match reasons
+  const allReasons = Array.from(new Set(individualMatches.flatMap(m => m.matchReasons)));
+
+  return {
+    card: candidateCard,
+    score: totalScore,
+    matchReasons: allReasons.slice(0, 3),
+    category: bestMatch.category
+  };
+}
+
