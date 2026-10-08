@@ -19,7 +19,8 @@ import {
   ChevronRight, 
   Save,
   Sparkles,
-  RefreshCw
+  RefreshCw,
+  UploadCloud
 } from 'lucide-react';
 import { FormattedOracleText } from './FormattedOracleText';
 import { CardImage } from './CardImage';
@@ -34,6 +35,7 @@ interface BrawlCommandZoneProps {
   onOpenCommanderPicker: () => void;
   onClearDeck: () => void;
   onSaveDeck?: () => void;
+  onOpenImport?: () => void;
   onToggleDeckDrawer: () => void;
   isDeckDrawerOpen: boolean;
   activeSubMode: BrawlSubMode;
@@ -51,6 +53,7 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   onOpenCommanderPicker,
   onClearDeck,
   onSaveDeck,
+  onOpenImport,
   onToggleDeckDrawer,
   isDeckDrawerOpen,
   activeSubMode,
@@ -465,6 +468,18 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                     >
                       <Mountain className="w-3.5 h-3.5" />
                       <span>⚡ Auto-Build Mana Base</span>
+                    </button>
+                  )}
+
+                  {onOpenImport && (
+                    <button
+                      type="button"
+                      onClick={onOpenImport}
+                      className="flex items-center gap-1.5 text-xs font-bold px-3 py-1.5 rounded-xl bg-[#141926] hover:bg-[#1e2538] text-amber-300 border border-amber-500/30 hover:border-amber-400/60 transition shadow-sm"
+                      title="Import MTG Arena formatted decklist"
+                    >
+                      <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
+                      <span>Import Deck</span>
                     </button>
                   )}
 

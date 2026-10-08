@@ -13,7 +13,8 @@ import {
   CheckCircle2,
   Sparkles,
   ChevronRight,
-  Layers
+  Layers,
+  Flame
 } from 'lucide-react';
 
 interface StandardDeckDoctorProps {
@@ -22,6 +23,7 @@ interface StandardDeckDoctorProps {
   onSelectRoleFilter: (role: FunctionalRole | 'lands' | 'sideboard') => void;
   onOpenSynergyMatrix?: () => void;
   onOpenManaOptimizer?: () => void;
+  onOpenMetaDecks?: () => void;
 }
 
 export const StandardDeckDoctor: React.FC<StandardDeckDoctorProps> = ({
@@ -29,7 +31,8 @@ export const StandardDeckDoctor: React.FC<StandardDeckDoctorProps> = ({
   activeRoleFilter,
   onSelectRoleFilter,
   onOpenSynergyMatrix,
-  onOpenManaOptimizer
+  onOpenManaOptimizer,
+  onOpenMetaDecks
 }) => {
   const health = analyzeStandardDeckHealth(deck);
   const validation = validateStandardDeck(deck);
@@ -133,6 +136,16 @@ export const StandardDeckDoctor: React.FC<StandardDeckDoctorProps> = ({
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {onOpenMetaDecks && (
+            <button
+              onClick={onOpenMetaDecks}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500/20 to-orange-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/50 text-xs font-bold rounded-lg transition shadow-sm hover:scale-105"
+              title="Browse Tier 1 & 2 Standard tournament meta decks with live craftability"
+            >
+              <Flame className="w-3.5 h-3.5 text-amber-400" />
+              <span>🔥 Meta Tier List</span>
+            </button>
+          )}
           {onOpenManaOptimizer && (
             <button
               onClick={onOpenManaOptimizer}

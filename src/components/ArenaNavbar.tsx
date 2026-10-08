@@ -26,6 +26,7 @@ interface ArenaNavbarProps {
   inventory: WildcardInventory;
   onOpenSync: () => void;
   onOpenExport: () => void;
+  onOpenImport?: () => void;
   hasCommander?: boolean;
   deckCount?: number;
   user?: any;
@@ -43,6 +44,7 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
   inventory,
   onOpenSync,
   onOpenExport,
+  onOpenImport,
   hasCommander,
   deckCount = 0,
   user,
@@ -168,6 +170,18 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
             <Sparkles className="w-3.5 h-3.5 text-amber-400" />
             <span>Wildcard Vault</span>
           </button>
+
+          {/* Import Deck */}
+          {onOpenImport && (
+            <button
+              onClick={onOpenImport}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-[#1c2335] text-amber-300 hover:text-amber-200 text-xs font-bold rounded-xl border border-amber-500/30 hover:border-amber-400/60 shadow-sm transition"
+              title="Import MTG Arena formatted decklist"
+            >
+              <UploadCloud className="w-3.5 h-3.5 text-amber-400" />
+              <span>Import Deck</span>
+            </button>
+          )}
 
           {/* Export to Arena */}
           <button

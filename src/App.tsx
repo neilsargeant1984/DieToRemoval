@@ -15,6 +15,7 @@ import { GoldfishModal } from './components/GoldfishModal';
 import { MetaDecksModal } from './components/MetaDecksModal';
 import { ExportImportModal } from './components/ExportImportModal';
 import { CommanderFinderModal } from './components/CommanderFinderModal';
+import { StandardMetaModal } from './components/StandardMetaModal';
 import { MyDecksView } from './components/MyDecksView';
 import { SaveDeckConflictModal } from './components/SaveDeckConflictModal';
 import { SaveBeforeCommanderChangeModal } from './components/SaveBeforeCommanderChangeModal';
@@ -147,6 +148,7 @@ export const App: React.FC = () => {
   const [isAnalyticsOpen, setIsAnalyticsOpen] = useState(false);
   const [isGoldfishOpen, setIsGoldfishOpen] = useState(false);
   const [isMetaOpen, setIsMetaOpen] = useState(false);
+  const [isStandardMetaOpen, setIsStandardMetaOpen] = useState(false);
   const [isCommanderPickerOpen, setIsCommanderPickerOpen] = useState(false);
   const [isImportDeckModalOpen, setIsImportDeckModalOpen] = useState(false);
   const [isManaModalOpen, setIsManaModalOpen] = useState(false);
@@ -824,6 +826,7 @@ export const App: React.FC = () => {
         inventory={wildcardInventory}
         onOpenSync={() => setIsWildcardModalOpen(true)}
         onOpenExport={() => setExportImportMode('export')}
+        onOpenImport={() => setIsImportDeckModalOpen(true)}
         hasCommander={!!activeDeck.commander}
         deckCount={savedDecks.length}
         user={user}
@@ -878,6 +881,7 @@ export const App: React.FC = () => {
               onOpenCommanderPicker={() => setIsCommanderPickerOpen(true)}
               onClearDeck={handleClearDeck}
               onSaveDeck={handleSaveActiveDeck}
+              onOpenImport={() => setIsImportDeckModalOpen(true)}
               onToggleDeckDrawer={() => setIsDeckDrawerOpen(!isDeckDrawerOpen)}
               isDeckDrawerOpen={isDeckDrawerOpen}
               activeSubMode={brawlSubMode}
@@ -966,6 +970,10 @@ export const App: React.FC = () => {
                 onSelectRoleFilter={(role) => setStandardRoleFilter(prev => prev === role ? null : role)}
                 onOpenManaOptimizer={() => setIsManaModalOpen(true)}
                 onOpenSynergyMatrix={() => setStandardRoleFilter(prev => prev === 'threats' ? null : 'threats')}
+                onSaveDeck={handleSaveActiveDeck}
+                onOpenImport={() => setIsImportDeckModalOpen(true)}
+                onOpenExport={() => setExportImportMode('export')}
+                onOpenMetaDecks={() => setIsStandardMetaOpen(true)}
               />
             </div>
           </div>
@@ -1042,6 +1050,17 @@ export const App: React.FC = () => {
         isOpen={isCommanderPickerOpen}
         onClose={() => setIsCommanderPickerOpen(false)}
         onSelectCommander={handleSelectCommander}
+      />
+
+      <StandardMetaModal
+        isOpen={isStandardMetaOpen}
+        onClose={() => setIsStandardMetaOpen(false)}
+        onLoadDeck={(deck) => {
+          handleLoadDeck(deck);
+          setIsStandardMetaOpen(false);
+        }}
+        userCollection={userCollection}
+        wildcardInventory={wildcardInventory}
       />
 
       <CardDetailModal
