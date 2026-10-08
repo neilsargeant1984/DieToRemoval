@@ -32,6 +32,7 @@ interface DeckDrawerProps {
   userCollection: UserCollection;
   variant?: 'inline' | 'drawer';
   onAddCard?: (card: Card) => void;
+  onClearDeck?: () => void;
 }
 
 export const DeckDrawer: React.FC<DeckDrawerProps> = ({
@@ -46,7 +47,8 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
   wildcardCost,
   userCollection,
   variant = 'drawer',
-  onAddCard
+  onAddCard,
+  onClearDeck
 }) => {
   const [hoveredCard, setHoveredCard] = useState<Card | null>(null);
   const [isDragOver, setIsDragOver] = useState<boolean>(false);
@@ -444,6 +446,20 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
             <Download className="w-3.5 h-3.5" />
             <span>Export for Arena</span>
           </button>
+          {onClearDeck && (deck.mainboard.length > 0 || (deck.sideboard && deck.sideboard.length > 0)) && (
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to clear this deck? All cards will be removed.')) {
+                  onClearDeck();
+                }
+              }}
+              className="px-3 py-2 bg-[#171c28] hover:bg-rose-950/40 text-stone-400 hover:text-rose-400 font-bold text-xs rounded-xl border border-white/10 hover:border-rose-500/30 transition flex items-center gap-1.5"
+              title="Clear all cards from this deck"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Clear</span>
+            </button>
+          )}
           <button
             onClick={onClose}
             className="px-3.5 py-2 bg-[#171c28] hover:bg-[#202738] text-stone-300 hover:text-white font-bold text-xs rounded-xl border border-white/10 transition"

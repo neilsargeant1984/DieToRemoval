@@ -984,6 +984,7 @@ export const App: React.FC = () => {
                     wildcardCost={wildcardCost}
                     userCollection={userCollection}
                     onAddCard={card => handleAddCard(card, false)}
+                    onClearDeck={handleClearDeck}
                   />
                 </aside>
               )}
@@ -1024,6 +1025,7 @@ export const App: React.FC = () => {
                 onOpenImport={() => setIsImportDeckModalOpen(true)}
                 onOpenExport={() => setExportImportMode('export')}
                 onOpenMetaDecks={() => setIsStandardMetaOpen(true)}
+                onClearDeck={handleClearDeck}
               />
             </div>
           </div>
@@ -1045,6 +1047,7 @@ export const App: React.FC = () => {
           wildcardCost={wildcardCost}
           userCollection={userCollection}
           onAddCard={card => handleAddCard(card, false)}
+          onClearDeck={handleClearDeck}
         />
       </div>
 

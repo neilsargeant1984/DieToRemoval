@@ -28,6 +28,7 @@ interface DeckListWorkspaceProps {
   onOpenImport?: () => void;
   onOpenExport?: () => void;
   onOpenMetaDecks?: () => void;
+  onClearDeck?: () => void;
 }
 
 export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
@@ -45,7 +46,8 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
   onSaveDeck,
   onOpenImport,
   onOpenExport,
-  onOpenMetaDecks
+  onOpenMetaDecks,
+  onClearDeck
 }) => {
   const [hoveredCard, setHoveredCard] = useState<Card | null>(null);
 
@@ -302,6 +304,21 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
             >
               <Download className="w-3.5 h-3.5 text-[#c5a059]" />
               <span>Export</span>
+            </button>
+          )}
+
+          {onClearDeck && (deck.mainboard.length > 0 || (deck.sideboard && deck.sideboard.length > 0)) && (
+            <button
+              onClick={() => {
+                if (window.confirm('Are you sure you want to clear this deck? All cards in the mainboard and sideboard will be removed.')) {
+                  onClearDeck();
+                }
+              }}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-[#141926] hover:bg-rose-950/40 text-stone-400 hover:text-rose-400 text-xs font-bold rounded-xl border border-white/10 hover:border-rose-500/30 transition shadow-sm"
+              title="Clear all cards from this deck"
+            >
+              <Trash2 className="w-3.5 h-3.5 text-stone-400 hover:text-rose-400" />
+              <span>Clear Deck</span>
             </button>
           )}
         </div>
