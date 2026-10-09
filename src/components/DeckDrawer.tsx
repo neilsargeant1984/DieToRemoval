@@ -488,8 +488,14 @@ export const DeckDrawer: React.FC<DeckDrawerProps> = ({
 
   // Drawer variant (modal slide-in for small screens)
   return (
-    <div className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200">
-      <div className="w-full max-w-md h-full animate-in slide-in-from-right duration-200">
+    <div 
+      onClick={onClose}
+      className="fixed inset-0 z-50 overflow-hidden bg-black/60 backdrop-blur-sm flex justify-end animate-in fade-in duration-200 cursor-pointer"
+    >
+      <div 
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-md h-full animate-in slide-in-from-right duration-200 cursor-default"
+      >
         {panelContent}
       </div>
       {hoverPreview}

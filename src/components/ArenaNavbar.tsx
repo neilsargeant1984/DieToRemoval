@@ -16,7 +16,7 @@ import {
   Home
 } from 'lucide-react';
 
-export type MainNavTab = 'home' | 'deck_builder' | 'card_library' | 'my_collection' | 'my_decks';
+export type MainNavTab = 'home' | 'deck_builder' | 'card_library' | 'my_decks';
 
 interface ArenaNavbarProps {
   currentTab: MainNavTab;

@@ -1036,7 +1036,7 @@ export const App: React.FC = () => {
           />
         ) : activeDeck.format === 'brawl' ? (
           /* Dedicated Brawl Hero Experience */
-          <div className="space-y-6">
+          <div className="space-y-6 pb-20 lg:pb-0">
             {/* Command Zone (Hero In-Game Art Presentation) */}
             <BrawlCommandZone
               commander={activeDeck.commander?.card}

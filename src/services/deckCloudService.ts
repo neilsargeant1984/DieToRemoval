@@ -148,14 +148,24 @@ export const deckCloudService = {
         continue;
       }
 
-      const remoteMatch = isValidUuid(localDeck.id) ? remoteMap.get(localDeck.id) : null;
+      let remoteMatch = isValidUuid(localDeck.id) ? remoteMap.get(localDeck.id) : null;
+
+      // Fallback matching by format & clean name for legacy non-UUID local decks
+      if (!remoteMatch) {
+        const normLocalName = localDeck.name.toLowerCase().trim();
+        for (const r of remoteMap.values()) {
+          if (r.format === localDeck.format && r.name.toLowerCase().trim() === normLocalName) {
+            remoteMatch = r;
+            break;
+          }
+        }
+      }
 
       if (!remoteMatch) {
         // Local deck is not on the cloud yet -> upload it!
         const { data: saved, error: saveErr } = await this.saveDeck(localDeck);
         if (saved && !saveErr) {
           finalDecks.push(saved);
-          remoteMap.set(saved.id, saved);
           uploadedCount++;
         } else {
           // If cloud upload failed, keep local deck so user doesn't lose data
@@ -167,8 +177,9 @@ export const deckCloudService = {
         const remoteTime = new Date(remoteMatch.updatedAt || 0).getTime();
 
         if (localTime > remoteTime) {
-          await this.saveDeck(localDeck);
-          finalDecks.push(localDeck);
+          const deckToSave = { ...localDeck, id: remoteMatch.id };
+          await this.saveDeck(deckToSave);
+          finalDecks.push(deckToSave);
         } else {
           finalDecks.push(remoteMatch);
         }
@@ -182,10 +193,20 @@ export const deckCloudService = {
       finalDecks.push(remainingRemote);
     }
 
-    // Sort by updated_at descending
-    finalDecks.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+    // Deduplicate by deck ID to ensure 100% uniqueness
+    const seenIds = new Set<string>();
+    const deduplicatedDecks: Deck[] = [];
+    for (const d of finalDecks) {
+      if (!seenIds.has(d.id)) {
+        seenIds.add(d.id);
+        deduplicatedDecks.push(d);
+      }
+    }
 
-    return { syncedDecks: finalDecks, uploadedCount, error: null };
+    // Sort by updated_at descending
+    deduplicatedDecks.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+
+    return { syncedDecks: deduplicatedDecks, uploadedCount, error: null };
   },
 
   // Delete a deck from Supabase
