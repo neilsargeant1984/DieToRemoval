@@ -797,14 +797,99 @@ function extractSourceFromTitle(fullTitle: string, defaultSource: string): { tit
 }
 
 /**
+interface RawFeedItem {
+  title: string;
+  link: string;
+  pubDate: string;
+  description: string;
+  content: string;
+  author?: string;
+  thumbnail?: string;
+}
+
+/**
+ * Robust multi-tier RSS fetcher with fallback.
+ * Primary: feed2json.org (high capacity, supports Google News RSS cleanly)
+ * Secondary: api.rss2json.com (fallback)
+ */
+async function fetchRawRssFeed(queryUrl: string): Promise<RawFeedItem[]> {
+  // Strategy 1: feed2json.org
+  try {
+    const feed2JsonUrl = `https://feed2json.org/convert?url=${encodeURIComponent(queryUrl)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(feed2JsonUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.items) && data.items.length > 0) {
+        return data.items.map((item: any) => ({
+          title: item.title || '',
+          link: item.url || item.guid || '',
+          pubDate: item.date_published || item.date_modified || new Date().toISOString(),
+          description: item.summary || item.content_html || '',
+          content: item.content_html || item.summary || '',
+          author: typeof item.author === 'string' ? item.author : item.author?.name || '',
+          thumbnail: item.image || item.banner_image || ''
+        }));
+      }
+    }
+  } catch (err) {
+    // continue to fallback
+  }
+
+  // Strategy 2: api.rss2json.com
+  try {
+    const rss2JsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(queryUrl)}`;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(rss2JsonUrl, { signal: controller.signal });
+    clearTimeout(timeoutId);
+    if (res.ok) {
+      const data = await res.json();
+      if (data.status === 'ok' && Array.isArray(data.items) && data.items.length > 0) {
+        return data.items.map((item: any) => ({
+          title: item.title || '',
+          link: item.link || item.guid || '',
+          pubDate: item.pubDate || new Date().toISOString(),
+          description: item.description || '',
+          content: item.content || item.description || '',
+          author: item.author || '',
+          thumbnail: item.thumbnail || item.enclosure?.link || ''
+        }));
+      }
+    }
+  } catch (err) {
+    // continue to fallback
+  }
+
+  return [];
+}
+
+/**
+ * Clears the news cache to force a fresh hourly or manual sync.
+ */
+export function clearNewsCache(category?: NewsCategory): void {
+  if (category) {
+    newsCache.delete(category);
+  } else {
+    newsCache.clear();
+  }
+}
+
+/**
  * Fetches live news articles for a specific category.
  * Queries Google News RSS through public JSON parser, parses metadata,
  * detects Arena-only tags, and merges with curated baseline articles.
  */
 export async function fetchNewsArticles(category: NewsCategory, forceRefresh: boolean = false): Promise<NewsArticle[]> {
-  const cached = newsCache.get(category);
-  if (!forceRefresh && cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
-    return cached.articles;
+  if (forceRefresh) {
+    newsCache.delete(category);
+  } else {
+    const cached = newsCache.get(category);
+    if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+      return cached.articles;
+    }
   }
 
   // Determine query parameters based on category
@@ -814,40 +899,27 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
 
   if (category === 'official') {
     // Official news query targeting Wizards of the Coast
-    queryUrl = 'https://news.google.com/rss/search?q=site%3Amagic.wizards.com&hl=en-US';
+    queryUrl = 'https://news.google.com/rss/search?q=(site%3Amagic.wizards.com+OR+%22Wizards+of+the+Coast%22+OR+%22MTG+Arena+Announcements%22)&hl=en-US';
     defaultSource = 'Wizards of the Coast';
     baseline = CURATED_OFFICIAL_NEWS;
   } else if (category === 'web') {
-    // Around the web query for gaming outlets and MTG articles
-    queryUrl = 'https://news.google.com/rss/search?q=Magic+the+Gathering+MTG+Arena+news&hl=en-US';
+    // Around the web query for gaming outlets and MTG articles from the last 2-3 days
+    queryUrl = 'https://news.google.com/rss/search?q=(%22Magic+The+Gathering%22+OR+%22MTG+Arena%22)+when%3A3d&hl=en-US';
     defaultSource = 'Web';
     baseline = CURATED_WEB_NEWS;
   } else if (category === 'video') {
-    // Video query for YouTube streams and videos
-    queryUrl = 'https://news.google.com/rss/search?q=site%3Ayoutube.com+(%22Magic+The+Gathering%22+OR+%22MTG+Arena%22)&hl=en-US';
+    // Video query for YouTube streams and videos from the last 7 days
+    queryUrl = 'https://news.google.com/rss/search?q=site%3Ayoutube.com+(%22Magic+The+Gathering%22+OR+%22MTG+Arena%22)+when%3A7d&hl=en-US';
     defaultSource = 'YouTube';
     baseline = CURATED_VIDEO_NEWS;
   }
 
   try {
-    const rss2JsonUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(queryUrl)}`;
-    
-    // Set a strict 6 second timeout so the UI never stalls
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 6000);
+    const rawItems = await fetchRawRssFeed(queryUrl);
 
-    const response = await fetch(rss2JsonUrl, { signal: controller.signal });
-    clearTimeout(timeoutId);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error ${response.status}`);
-    }
-
-    const data = await response.json();
-
-    if (data.status === 'ok' && Array.isArray(data.items) && data.items.length > 0) {
-      const liveArticles: NewsArticle[] = (data.items
-        .map((item: any, idx: number) => {
+    if (rawItems.length > 0) {
+      const liveArticles: NewsArticle[] = (rawItems
+        .map((item: RawFeedItem, idx: number) => {
           const { title, source } = extractSourceFromTitle(item.title || '', defaultSource);
           const description = cleanHtmlSnippet(item.description || item.content || '');
           const pubDate = item.pubDate || new Date().toISOString();
@@ -875,7 +947,7 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
           if (detectedStreamer) tags.push(detectedStreamer.name);
 
           // Extract image from article or fallback to authentic MTG topic art
-          let imageUrl = item.thumbnail || item.enclosure?.link || '';
+          let imageUrl = item.thumbnail || '';
 
           // 1. Try to extract embedded <img> from description or content
           if (!imageUrl) {
@@ -908,7 +980,7 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
             id: `live-${category}-${idx}-${encodeURIComponent(title.slice(0, 15))}`,
             title,
             description: description || `Latest coverage from ${detectedStreamer?.name || source}. Click to watch.`,
-            url: item.link || item.guid || '#',
+            url: item.link || '#',
             source: detectedStreamer ? detectedStreamer.name : (source || defaultSource),
             category,
             publishedAt: pubDate,
