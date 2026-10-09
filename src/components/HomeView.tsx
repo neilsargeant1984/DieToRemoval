@@ -390,16 +390,30 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </button>
         </div>
 
-        {/* Right: Format & Arena Info Tag */}
-        <div className="hidden sm:flex items-center gap-2 text-xs text-stone-400 pr-2">
-          <span className="flex items-center gap-1.5 font-medium text-stone-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping" />
-            MTG Arena Sync Live
-          </span>
-          <span className="text-stone-600">•</span>
-          <span className="text-[11px] font-mono text-amber-300/80 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-            {ARENA_SETS.length} Sets Available
-          </span>
+        {/* Right: Format & Arena Info Tag + Support Button */}
+        <div className="flex items-center gap-3 w-full sm:w-auto justify-between sm:justify-end">
+          <div className="hidden lg:flex items-center gap-2 text-xs text-stone-400">
+            <span className="flex items-center gap-1.5 font-medium text-stone-300">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 inline-block animate-ping" />
+              MTG Arena Sync Live
+            </span>
+            <span className="text-stone-600">•</span>
+            <span className="text-[11px] font-mono text-amber-300/80 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
+              {ARENA_SETS.length} Sets Available
+            </span>
+          </div>
+
+          <a
+            href="https://buymeacoffee.com/triplecrowned"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2 px-3.5 py-2 rounded-xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-stone-950 font-black text-xs transition-all duration-200 shadow-md shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-[1.02] active:scale-[0.98] select-none group w-full sm:w-auto"
+            title="Support this project on Buy Me a Coffee"
+          >
+            <Coffee className="w-3.5 h-3.5 text-stone-950 group-hover:rotate-12 transition-transform duration-200" />
+            <span className="tracking-wide">Support this project</span>
+            <ExternalLink className="w-3 h-3 text-stone-900/70 group-hover:text-stone-950 transition-colors" />
+          </a>
         </div>
       </div>
 
@@ -883,6 +897,47 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
       )}
++
+      {/* ========================================================
+          SUPPORT THIS PROJECT BANNER (COMMUNITY CALLOUT)
+          ======================================================== */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-[#101420] via-[#161d2e] to-[#0c0f17] border border-amber-500/30 rounded-3xl p-6 md:p-8 shadow-2xl backdrop-blur-xl">
+        {/* Subtle decorative glows */}
+        <div className="absolute -top-24 -right-24 w-72 h-72 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-72 h-72 bg-rose-500/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-400 to-yellow-500 flex items-center justify-center text-stone-950 shadow-lg shadow-amber-500/25 flex-shrink-0 mt-0.5">
+              <Coffee className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <div className="space-y-1">
+              <div className="flex items-center gap-2.5 flex-wrap">
+                <h4 className="text-lg md:text-xl font-fantasy font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400 m-0">
+                  Support DieToRemoval
+                </h4>
+                <span className="px-2.5 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-[10px] font-black uppercase text-amber-300 tracking-wider">
+                  Community Powered
+                </span>
+              </div>
+              <p className="text-xs md:text-sm text-stone-400 max-w-2xl leading-relaxed">
+                DieToRemoval is a free, fan-made tool built for the Magic: The Gathering Arena community. If you enjoy using the deck builder, live arena news hub, or set release trackers, consider buying a coffee to help support server hosting and active development!
+              </p>
+            </div>
+          </div>
+
+          <a
+            href="https://buymeacoffee.com/triplecrowned"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center justify-center gap-2.5 px-6 py-3 rounded-2xl bg-gradient-to-r from-amber-400 via-amber-500 to-yellow-500 hover:from-amber-300 hover:to-yellow-400 text-stone-950 font-black text-xs md:text-sm transition-all duration-200 shadow-xl shadow-amber-500/20 hover:shadow-amber-500/40 hover:scale-[1.02] active:scale-[0.98] flex-shrink-0 select-none group w-full md:w-auto"
+          >
+            <Coffee className="w-4 h-4 text-stone-950 group-hover:rotate-12 transition-transform duration-200" />
+            <span>Support on Buy Me a Coffee</span>
+            <ExternalLink className="w-3.5 h-3.5 text-stone-950/70" />
+          </a>
+        </div>
+      </div>
     </div>
   );
 };
