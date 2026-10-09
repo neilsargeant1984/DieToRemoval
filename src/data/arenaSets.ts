@@ -11,6 +11,10 @@ export interface ArenaSet {
  * (most recent release first at the top, going further and further back in time).
  */
 export const ARENA_SETS: ArenaSet[] = [
+  { code: 'NAU', name: "Nauctis: The Sunken Realm", category: 'standard', releaseYear: 2027, releaseDate: '2027-02-05' },
+  { code: 'TRK', name: "Star Trek", category: 'standard', releaseYear: 2026, releaseDate: '2026-11-13' },
+  { code: 'TRC', name: "Star Trek Commander", category: 'standard', releaseYear: 2026, releaseDate: '2026-11-13' },
+  { code: 'YFRA', name: "Alchemy: Reality Fracture", category: 'alchemy', releaseYear: 2026, releaseDate: '2026-10-13' },
   // --- 2026 ---
   { code: 'FRA', name: 'Reality Fracture', category: 'standard', releaseYear: 2026, releaseDate: '2026-10-02' },
   { code: 'FRC', name: 'Reality Fracture Commander', category: 'eternal', releaseYear: 2026, releaseDate: '2026-10-02' },

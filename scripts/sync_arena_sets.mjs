@@ -77,11 +77,17 @@ async function main() {
 
   console.log(`Currently tracking ${existingSetCodes.size} sets in arenaSets.ts.`);
 
+  // Extract newest existing release date from arenaSets.ts (e.g. '2026-10-02')
+  const dateMatches = [...currentSetsContent.matchAll(/releaseDate:\s*['"](\d{4}-\d{2}-\d{2})['"]/g)].map(m => m[1]);
+  dateMatches.sort().reverse();
+  const latestExistingDate = dateMatches[0] || '2026-10-01';
+  console.log(`Latest known release date in registry: ${latestExistingDate}`);
+
   // Find newly released or upcoming sets that aren't tracked yet
   const newSets = [];
   for (const s of candidates) {
     const codeUpper = s.code.toUpperCase();
-    if (!existingSetCodes.has(codeUpper)) {
+    if (!existingSetCodes.has(codeUpper) && s.released_at >= latestExistingDate) {
       let category = 'standard';
       if (s.set_type === 'alchemy') category = 'alchemy';
       else if (s.set_type === 'masters' || s.name.toLowerCase().includes('remastered')) category = 'remastered';

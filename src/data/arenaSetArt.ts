@@ -2,6 +2,14 @@
  * Official MTG Key Artwork / Art Crops and Set Symbols for MTG Arena Sets
  */
 export const ARENA_SET_ART: Record<string, { name: string; artCrop: string }> = {
+  "TRK": {
+    "name": "Watery Grave",
+    "artCrop": "https://cards.scryfall.io/art_crop/front/5/5/5525d6a6-e532-4047-9da4-bfae7927fecc.jpg?1784036860"
+  },
+  "TRC": {
+    "name": "Bio-Asset Allocator",
+    "artCrop": "https://cards.scryfall.io/art_crop/front/f/b/fb9805a5-eea3-48a8-92b6-7387bb23bc88.jpg?1784036706"
+  },
   "FRA": {
     "name": "The Theorist, Jace Beleren",
     "artCrop": "https://cards.scryfall.io/art_crop/front/2/0/20bb8c55-4b0b-425f-8201-b54fa2fdde86.jpg?1788329228"

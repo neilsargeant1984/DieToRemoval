@@ -29,11 +29,20 @@ export function getLatestArenaSetSync(): ArenaSet {
   } catch {
     // Ignore storage parse errors
   }
-  return ARENA_SETS[0];
+
+  const now = new Date();
+  // Find the newest standard set that is already released (releaseDate <= now)
+  const released = ARENA_SETS.find(s => 
+    s.category === 'standard' &&
+    s.releaseDate &&
+    new Date(s.releaseDate) <= now
+  );
+
+  return released || ARENA_SETS.find(s => s.code === 'FRA') || ARENA_SETS[0];
 }
 
 /**
- * Returns the next upcoming MTG Arena release (if one is scheduled within ~90 days).
+ * Returns the next upcoming MTG Arena release (closest upcoming expansion).
  */
 export function getUpcomingArenaSetSync(): ArenaSet | null {
   try {
@@ -47,7 +56,16 @@ export function getUpcomingArenaSetSync(): ArenaSet | null {
   } catch {
     // Ignore storage parse errors
   }
-  return null;
+
+  const now = new Date();
+  // Find upcoming expansions and pick the closest one
+  const upcomingList = ARENA_SETS.filter(s =>
+    s.category === 'standard' &&
+    s.releaseDate &&
+    new Date(s.releaseDate) > now
+  ).sort((a, b) => new Date(a.releaseDate!).getTime() - new Date(b.releaseDate!).getTime());
+
+  return upcomingList[0] || null;
 }
 
 /**
