@@ -31,7 +31,7 @@ import { getMaxCardCopies } from './utils/cardRules';
 import { ARENA_CARDS } from './data/arenaCards';
 import { parsePlayerLogDecks } from './utils/arenaParser';
 import { fetchCardByArenaId } from './services/scryfallService';
-import { Layers, Search } from 'lucide-react';
+import { Layers, Search, Coffee, ExternalLink } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { deckCloudService } from './services/deckCloudService';
 import { localAccountService } from './services/localAccountService';
@@ -1432,10 +1432,23 @@ export const App: React.FC = () => {
       )}
 
       {/* Footer with WotC Fan Content Policy Disclaimer */}
-      <footer className="w-full border-t border-[#c5a059]/20 bg-[#080a0f]/80 backdrop-blur-md py-6 px-4 mt-auto text-center text-xs text-stone-500 space-y-1">
-        <p className="font-fantasy font-bold text-stone-300 tracking-wider">
-          DIE<span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">TO</span>REMOVAL<span className="text-rose-400">.GG</span>
-        </p>
+      <footer className="w-full border-t border-[#c5a059]/20 bg-[#080a0f]/80 backdrop-blur-md py-6 px-4 mt-auto text-center text-xs text-stone-500 space-y-2">
+        <div className="flex items-center justify-center gap-4 flex-wrap">
+          <p className="font-fantasy font-bold text-stone-300 tracking-wider m-0">
+            DIE<span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-400 to-amber-400">TO</span>REMOVAL<span className="text-rose-400">.GG</span>
+          </p>
+          <span className="text-stone-700 hidden sm:inline">•</span>
+          <a
+            href="https://buymeacoffee.com/triplecrowned"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-amber-400 hover:text-amber-300 font-bold transition hover:underline"
+          >
+            <Coffee className="w-3.5 h-3.5 text-amber-400" />
+            <span>Support this project</span>
+            <ExternalLink className="w-3 h-3 text-stone-500" />
+          </a>
+        </div>
         <p className="max-w-3xl mx-auto text-[11px] text-stone-400 leading-relaxed">
           DieToRemoval (dietoremoval.gg) is unofficial Fan Content permitted under the Wizards of the Coast Fan Content Policy.
           Portions of the materials used are property of Wizards of the Coast. &copy;Wizards of the Coast LLC.

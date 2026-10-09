@@ -897,7 +897,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
           </div>
         </div>
       )}
-+
+
       {/* ========================================================
           SUPPORT THIS PROJECT BANNER (COMMUNITY CALLOUT)
           ======================================================== */}
