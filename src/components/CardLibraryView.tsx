@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { Card, CardRarity, CardTypeCategory, FormatType } from '../types/card';
 import { UserCollection } from '../types/collection';
 import { searchArenaCards, buildSmartSearchQuery } from '../services/scryfallService';
+import { matchesColorFilter, ColorMatchMode } from '../utils/colorFilter';
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
@@ -23,7 +24,8 @@ import {
   Crown,
   Layers,
   ChevronRight,
-  LayoutGrid
+  LayoutGrid,
+  Filter
 } from 'lucide-react';
 
 interface CardLibraryViewProps {
@@ -77,14 +79,12 @@ const MANA_COLORS = [
     id: 'C',
     name: 'Colorless',
     manaSymbol: '{C}',
-    label: 'Colorless',
     activeRing: 'ring-2 ring-slate-300 shadow-[0_0_10px_rgba(203,213,225,0.5)] border-slate-400 bg-slate-800 text-slate-100',
     hoverRing: 'hover:border-slate-400/50 bg-[#121622] text-slate-300'
   },
   {
     id: 'M',
     name: 'Multicolor',
-    label: 'Multi',
     activeRing: 'ring-2 ring-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)] bg-gradient-to-r from-amber-500 via-rose-500 to-indigo-500 text-white font-black border-transparent',
     hoverRing: 'hover:border-amber-400/50 bg-[#121622] text-amber-300'
   }
@@ -121,6 +121,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFormat, setSelectedFormat] = useState<FormatType>(initialFormat);
   const [selectedColors, setSelectedColors] = useState<string[]>([]);
+  const [colorMatchMode, setColorMatchMode] = useState<ColorMatchMode>('selected');
   const [selectedCmcs, setSelectedCmcs] = useState<(number | '7+')[]>([]);
   const [selectedTypes, setSelectedTypes] = useState<CardTypeCategory[]>([]);
   const [selectedRarities, setSelectedRarities] = useState<CardRarity[]>([]);
@@ -147,24 +148,48 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
 
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Parse MTG Arena quantity / craftable syntax typed into the search bar (e.g. q=0, q>0, q=4, ?craftable)
+  const effectiveOwnershipFilter = useMemo<OwnershipStatus>(() => {
+    const lower = searchTerm.toLowerCase();
+    if (lower.includes('q=0') || lower.includes('q:0') || lower.includes('?craftable')) {
+      return 'unowned';
+    }
+    if (lower.includes('q>0') || lower.includes('q>=1') || lower.includes('q:1')) {
+      return 'owned';
+    }
+    if (lower.includes('q=4') || lower.includes('q:4')) {
+      return 'playsets';
+    }
+    return ownershipFilter;
+  }, [searchTerm, ownershipFilter]);
+
+  // Clean Scryfall query string by stripping client-only Arena operators
+  const cleanedSearchQuery = useMemo(() => {
+    return searchTerm
+      .replace(/\b(q=[0-4]|q:[0-4]|q>[0-3]|q>=[1-4]|\?craftable)\b/gi, '')
+      .trim();
+  }, [searchTerm]);
+
   // Compute active filters count
   const activeFiltersCount = useMemo(() => {
     let count = 0;
     if (selectedColors.length > 0) count++;
+    if (colorMatchMode !== 'selected') count++;
     if (selectedCmcs.length > 0) count++;
     if (selectedTypes.length > 0) count += selectedTypes.length;
     if (selectedRarities.length > 0) count += selectedRarities.length;
     if (selectedSets.length > 0) count += selectedSets.length;
     if (digitalOnly) count++;
     if (isLegendary) count++;
-    if (ownershipFilter !== 'all') count++;
+    if (effectiveOwnershipFilter !== 'all') count++;
     return count;
-  }, [selectedColors, selectedCmcs, selectedTypes, selectedRarities, selectedSets, digitalOnly, isLegendary, ownershipFilter]);
+  }, [selectedColors, colorMatchMode, selectedCmcs, selectedTypes, selectedRarities, selectedSets, digitalOnly, isLegendary, effectiveOwnershipFilter]);
 
   // Reset all filters
   const handleResetFilters = () => {
     setSearchTerm('');
     setSelectedColors([]);
+    setColorMatchMode('selected');
     setSelectedCmcs([]);
     setSelectedTypes([]);
     setSelectedRarities([]);
@@ -282,10 +307,10 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     setPage(1);
 
     if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
-    const delay = searchTerm.trim() ? 320 : 60;
+    const delay = cleanedSearchQuery ? 320 : 60;
 
     searchTimeoutRef.current = setTimeout(async () => {
-      const isBrowsingAllColors = !searchTerm.trim() && selectedColors.length === 0;
+      const isBrowsingAllColors = !cleanedSearchQuery && selectedColors.length === 0;
       setIsMultiGroupMode(isBrowsingAllColors);
 
       if (isBrowsingAllColors) {
@@ -339,9 +364,10 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         // Targeted filter / search mode: Fetch matching cards and group them
         try {
           const result = await searchArenaCards({
-            query: buildSmartSearchQuery(searchTerm),
+            query: buildSmartSearchQuery(cleanedSearchQuery),
             format: selectedFormat,
             colors: selectedColors.length > 0 ? selectedColors : undefined,
+            colorMode: colorMatchMode === 'selected' ? undefined : colorMatchMode,
             cmcValues: selectedCmcs.length > 0 ? selectedCmcs : undefined,
             types: selectedTypes.length > 0 ? selectedTypes : undefined,
             rarities: selectedRarities.length > 0 ? selectedRarities : undefined,
@@ -368,9 +394,10 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
       if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
     };
   }, [
-    searchTerm, 
+    cleanedSearchQuery, 
     selectedFormat, 
     selectedColors, 
+    colorMatchMode,
     selectedCmcs, 
     selectedTypes, 
     selectedRarities, 
@@ -438,9 +465,10 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
 
     try {
       const result = await searchArenaCards({
-        query: buildSmartSearchQuery(searchTerm),
+        query: buildSmartSearchQuery(cleanedSearchQuery),
         format: selectedFormat,
         colors: selectedColors.length > 0 ? selectedColors : undefined,
+        colorMode: colorMatchMode === 'selected' ? undefined : colorMatchMode,
         cmcValues: selectedCmcs.length > 0 ? selectedCmcs : undefined,
         types: selectedTypes.length > 0 ? selectedTypes : undefined,
         rarities: selectedRarities.length > 0 ? selectedRarities : undefined,
@@ -462,19 +490,26 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
     }
   };
 
-  // Client-side ownership filtering
+  // Client-side ownership and color match filtering
   const displayedCards = useMemo(() => {
-    if (ownershipFilter === 'all') return cards;
+    let list = cards;
 
-    return cards.filter(card => {
+    // Apply color matching filter when in targeted search or custom color mode
+    if (selectedColors.length > 0 && !isMultiGroupMode) {
+      list = list.filter(card => matchesColorFilter(card, selectedColors, colorMatchMode));
+    }
+
+    if (effectiveOwnershipFilter === 'all') return list;
+
+    return list.filter(card => {
       const count = getCardOwnedCount(card, userCollection);
-      if (ownershipFilter === 'owned') return count > 0;
-      if (ownershipFilter === 'playsets') return count >= 4;
-      if (ownershipFilter === 'incomplete') return count > 0 && count < 4;
-      if (ownershipFilter === 'unowned') return count === 0;
+      if (effectiveOwnershipFilter === 'owned') return count > 0;
+      if (effectiveOwnershipFilter === 'playsets') return count >= 4;
+      if (effectiveOwnershipFilter === 'incomplete') return count > 0 && count < 4;
+      if (effectiveOwnershipFilter === 'unowned') return count === 0;
       return true;
     });
-  }, [cards, ownershipFilter, userCollection]);
+  }, [cards, selectedColors, colorMatchMode, isMultiGroupMode, effectiveOwnershipFilter, userCollection]);
 
   // Group displayed cards by Color & Lands in WUBRG order
   const colorGroups = useMemo(() => {
@@ -737,8 +772,8 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
       {/* Search & Filter Hero Cockpit */}
       <div className="arena-panel rounded-3xl p-5 md:p-6 shadow-2xl space-y-4 border border-white/10 bg-[#0d1017]/95 backdrop-blur-md">
         
-        {/* Top Header Row */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        {/* Top Header Row: Title, Collection Ownership Quick Toggle, and Filters Button */}
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
           <div>
             <h2 className="font-fantasy font-black text-xl text-white uppercase tracking-wider flex items-center gap-2">
               <Globe className="w-5 h-5 text-amber-400" />
@@ -749,7 +784,49 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Quick Collection / Crafting State Segmented Control */}
+            <div className="flex items-center bg-[#090b10] p-1 rounded-xl border border-white/10 text-xs shadow-inner">
+              <button
+                type="button"
+                onClick={() => setOwnershipFilter('all')}
+                className={`px-3 py-1 rounded-lg font-bold transition select-none ${
+                  effectiveOwnershipFilter === 'all'
+                    ? 'bg-amber-500 text-stone-950 shadow-sm font-black'
+                    : 'text-stone-400 hover:text-white'
+                }`}
+                title="View all Arena cards"
+              >
+                All Cards
+              </button>
+              <button
+                type="button"
+                onClick={() => setOwnershipFilter('owned')}
+                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 select-none ${
+                  effectiveOwnershipFilter === 'owned'
+                    ? 'bg-emerald-600 text-white shadow-sm font-black'
+                    : 'text-stone-400 hover:text-white'
+                }`}
+                title="View cards in your collection (1+ owned)"
+              >
+                <ShieldCheck className="w-3.5 h-3.5" />
+                <span>Collected</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setOwnershipFilter('unowned')}
+                className={`px-3 py-1 rounded-lg font-bold transition flex items-center gap-1.5 select-none ${
+                  effectiveOwnershipFilter === 'unowned'
+                    ? 'bg-purple-600 text-white shadow-sm font-black'
+                    : 'text-stone-400 hover:text-white'
+                }`}
+                title="View missing cards craftable with wildcards (0 owned)"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Craftable</span>
+              </button>
+            </div>
+
             {/* Active Card Count */}
             <div className="flex items-center gap-2 text-xs text-stone-300 bg-[#121622] px-3.5 py-1.5 rounded-xl border border-white/5 shadow-inner font-bold">
               {isLoading ? (
@@ -759,39 +836,38 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                 </span>
               ) : (
                 <span>
-                  {ownershipFilter !== 'all' ? `${displayedCards.length} / ` : ''}
+                  {effectiveOwnershipFilter !== 'all' ? `${displayedCards.length} / ` : ''}
                   {totalCount} cards found
                 </span>
               )}
             </div>
 
-            {/* Advanced Filters Button */}
+            {/* Arena Filter Modal Button */}
             <button
-              onClick={() => setIsAdvancedOpen(prev => !prev)}
+              onClick={() => setIsAdvancedOpen(true)}
               className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition shadow-sm border ${
-                isAdvancedOpen || activeFiltersCount > 0
+                activeFiltersCount > 0
                   ? 'btn-mythic-spark border-amber-400/50 text-white'
                   : 'bg-[#161c28] text-stone-300 border-white/10 hover:border-amber-400/40 hover:text-white'
               }`}
             >
-              <SlidersHorizontal className="w-3.5 h-3.5" />
+              <SlidersHorizontal className="w-3.5 h-3.5 text-amber-400" />
               <span>Filters</span>
               {activeFiltersCount > 0 && (
                 <span className="bg-amber-400 text-stone-950 px-1.5 py-0.2 rounded-full text-[10px] font-black">
                   {activeFiltersCount}
                 </span>
               )}
-              <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isAdvancedOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
         </div>
 
-        {/* Search Bar + Sort Order */}
+        {/* Search Bar + Sort Selector */}
         <div className="flex flex-col sm:flex-row items-center gap-3">
           <div className="relative flex-1 w-full">
             <input
               type="text"
-              placeholder="Search card name, rules text, or type across MTG Arena..."
+              placeholder="Search card name, rules text, or Arena syntax (e.g. t:creature, s:otj, r:rare, cmc=3, q=0)..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
               className="w-full bg-[#090b10] border border-white/10 rounded-xl pl-11 pr-10 py-2.5 text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:border-amber-500 transition shadow-inner font-medium"
@@ -801,6 +877,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
               <button
                 onClick={() => setSearchTerm('')}
                 className="absolute right-3.5 top-3 text-stone-400 hover:text-stone-200 transition"
+                title="Clear search query"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -829,8 +906,7 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
         {/* Quick Filter Strip: Formats, Mana Colors, Mana Value Pips */}
         <div className="space-y-3 pt-3 border-t border-white/10">
           
-          {/* Row 1: Formats & Mana Colors */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-4 text-xs">
             {/* Format Pills */}
             <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
               <span className="text-[11px] font-fantasy font-bold text-stone-400 uppercase mr-1">Format:</span>
@@ -849,89 +925,50 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
               ))}
             </div>
 
-            {/* Mana Colors (Multi-Selectable) */}
+            {/* Mana Colors (All 7 Circular Uniform Pips) */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] font-fantasy font-bold text-stone-400 uppercase mr-1">Colors:</span>
               {MANA_COLORS.map(c => {
                 const isSelected = selectedColors.includes(c.id);
 
-                if (c.manaSymbol && !c.label) {
-                  // Single color pips (White Sun, Blue Water Drop, Black Skull, Red Fireball, Green Tree)
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => toggleColor(c.id)}
-                      title={`Filter by ${c.name} (${c.id})`}
-                      aria-label={c.name}
-                      className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
-                        isSelected
-                          ? `${c.activeRing} scale-110 opacity-100 ring-offset-1 ring-offset-[#090b10]`
-                          : `border-white/10 ${c.hoverRing} opacity-60 hover:opacity-100 hover:scale-105 bg-[#121622]`
-                      }`}
-                    >
-                      <ManaCost manaCost={c.manaSymbol} size="md" />
-                    </button>
-                  );
-                }
-
-                if (c.id === 'C') {
-                  // Colorless with {C} Eldrazi mana pip
-                  return (
-                    <button
-                      key={c.id}
-                      type="button"
-                      onClick={() => toggleColor(c.id)}
-                      title="Filter by Colorless"
-                      aria-label="Colorless"
-                      className={`h-7 px-2.5 rounded-xl flex items-center gap-1.5 text-xs font-bold transition-all duration-150 border select-none ${
-                        isSelected
-                          ? `${c.activeRing} scale-105 ring-offset-1 ring-offset-[#090b10]`
-                          : `border-white/10 ${c.hoverRing} hover:scale-105 text-stone-300`
-                      }`}
-                    >
-                      <ManaCost manaCost="{C}" size="sm" />
-                      <span>{c.label}</span>
-                    </button>
-                  );
-                }
-
-                // Multicolor (Gold Symbol button)
                 return (
                   <button
                     key={c.id}
                     type="button"
                     onClick={() => toggleColor(c.id)}
-                    title="Filter by Multicolor"
-                    aria-label="Multicolor"
+                    title={c.id === 'M' ? 'Filter by Multicolor (★)' : `Filter by ${c.name} (${c.id})`}
+                    aria-label={c.name}
                     className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
                       isSelected
                         ? `${c.activeRing} scale-110 opacity-100 ring-offset-1 ring-offset-[#090b10]`
-                        : `border-white/10 ${c.hoverRing} opacity-60 hover:opacity-100 hover:scale-105 bg-[#121622]`
+                        : `border-white/10 ${c.hoverRing} opacity-65 hover:opacity-100 hover:scale-105 bg-[#121622]`
                     }`}
                   >
-                    <span className="text-amber-400 font-black text-sm drop-shadow-sm select-none">★</span>
+                    {c.manaSymbol ? (
+                      <ManaCost manaCost={c.manaSymbol} size="md" />
+                    ) : (
+                      <span className="text-amber-400 font-black text-sm drop-shadow-sm select-none">★</span>
+                    )}
                   </button>
                 );
               })}
+
               {selectedColors.length > 0 && (
                 <button
                   type="button"
                   onClick={() => setSelectedColors([])}
                   className="p-1 text-stone-400 hover:text-stone-200 ml-0.5 rounded-lg hover:bg-white/5 transition"
-                  title="Clear color filter"
+                  title="Clear color filters"
                 >
                   <X className="w-3.5 h-3.5" />
                 </button>
               )}
             </div>
-          </div>
 
-          {/* Row 2: Mana Cost (CMC) Pips: 0 1 2 3 4 5 6 7+ */}
-          <div className="flex flex-wrap items-center justify-between gap-3 text-xs pt-1">
+            {/* Mana Value (CMC) Pips: 0 1 2 3 4 5 6 7+ */}
             <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[11px] font-fantasy font-bold text-stone-400 uppercase mr-1">
-                Mana Cost:
+                Mana Value:
               </span>
               <div className="flex items-center gap-1 bg-[#090b10] p-1 rounded-xl border border-white/10">
                 {CMC_PIPS.map(cmc => {
@@ -945,19 +982,20 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                           ? 'bg-amber-500 text-stone-950 shadow-md font-bold ring-2 ring-amber-400 scale-105'
                           : 'text-stone-300 hover:bg-white/10 hover:text-white'
                       }`}
-                      title={`Mana cost: ${cmc}`}
+                      title={`Mana value: ${cmc}`}
                     >
                       {cmc}
                     </button>
                   );
                 })}
               </div>
+
               {selectedCmcs.length > 0 && (
                 <button
                   onClick={() => setSelectedCmcs([])}
                   className="text-[11px] text-stone-400 hover:text-amber-400 ml-1.5 font-semibold"
                 >
-                  Clear CMCs
+                  Clear
                 </button>
               )}
             </div>
@@ -966,228 +1004,346 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
             {activeFiltersCount > 0 && (
               <button
                 onClick={handleResetFilters}
-                className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-bold transition"
+                className="flex items-center gap-1.5 text-xs text-amber-400 hover:text-amber-300 font-bold transition ml-auto"
               >
                 <RotateCcw className="w-3 h-3" />
-                <span>Reset All Filters</span>
+                <span>Reset Filters</span>
               </button>
             )}
           </div>
         </div>
 
-        {/* --- Advanced Filters Expandable Drawer --- */}
+        {/* --- Authentic MTG Arena Filter Modal --- */}
         {isAdvancedOpen && (
-          <div className="pt-4 border-t border-white/10 space-y-4 animate-in fade-in slide-in-from-top-2 duration-200">
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 bg-[#090b10]/90 p-4 rounded-2xl border border-white/5">
+          <div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-black/80 backdrop-blur-md animate-in fade-in duration-200"
+            onClick={() => setIsAdvancedOpen(false)}
+          >
+            <div 
+              className="bg-[#0c1018] border border-amber-500/40 rounded-3xl p-5 sm:p-7 max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl space-y-6 text-stone-200 custom-scrollbar"
+              onClick={e => e.stopPropagation()}
+            >
               
-              {/* Column 1: Card Types */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider">
-                    Card Types
-                  </span>
-                  {selectedTypes.length > 0 && (
-                    <button
-                      onClick={() => setSelectedTypes([])}
-                      className="text-[10px] text-stone-400 hover:text-stone-200"
-                    >
-                      Clear
-                    </button>
-                  )}
+              {/* Modal Header */}
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 shadow-inner">
+                    <SlidersHorizontal className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-fantasy font-black text-lg text-white uppercase tracking-wider">
+                      MTG Arena Filter Controls
+                    </h3>
+                    <p className="text-xs text-stone-400">
+                      Fine-tune search results using authentic Arena color matching, rarities, sets, and card types.
+                    </p>
+                  </div>
                 </div>
-                <div className="grid grid-cols-2 gap-1.5">
-                  {CARD_TYPES.map(t => {
-                    const isSelected = selectedTypes.includes(t);
+
+                <button
+                  onClick={() => setIsAdvancedOpen(false)}
+                  className="p-2 rounded-xl text-stone-400 hover:text-white hover:bg-white/10 transition"
+                  title="Close filter modal"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+
+              {/* Section 1: Colors & Match Mode */}
+              <div className="bg-[#121622] p-4 rounded-2xl border border-white/5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider">
+                    Colors & Matching Rules
+                  </span>
+                  
+                  {/* Arena Color Match Modes */}
+                  <div className="flex items-center gap-1 bg-[#090b10] p-1 rounded-xl border border-white/10 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setColorMatchMode('selected')}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition ${
+                        colorMatchMode === 'selected'
+                          ? 'bg-amber-500 text-stone-950 font-black shadow-sm'
+                          : 'text-stone-400 hover:text-white'
+                      }`}
+                      title="Cards with only selected colors (MTG Arena default)"
+                    >
+                      Match Selected
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setColorMatchMode('any')}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition ${
+                        colorMatchMode === 'any'
+                          ? 'bg-amber-500 text-stone-950 font-black shadow-sm'
+                          : 'text-stone-400 hover:text-white'
+                      }`}
+                      title="Cards containing any of the selected colors"
+                    >
+                      Match Any
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setColorMatchMode('multi_only')}
+                      className={`px-2.5 py-1 rounded-lg font-bold transition ${
+                        colorMatchMode === 'multi_only'
+                          ? 'bg-amber-500 text-stone-950 font-black shadow-sm'
+                          : 'text-stone-400 hover:text-white'
+                      }`}
+                      title="Cards with 2 or more colors"
+                    >
+                      Multicolor Only
+                    </button>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap">
+                  {MANA_COLORS.map(c => {
+                    const isSelected = selectedColors.includes(c.id);
                     return (
                       <button
-                        key={t}
-                        onClick={() => toggleType(t)}
-                        className={`px-2.5 py-1.5 rounded-lg text-xs font-bold text-left flex items-center justify-between border transition ${
+                        key={c.id}
+                        type="button"
+                        onClick={() => toggleColor(c.id)}
+                        className={`w-9 h-9 rounded-full flex items-center justify-center transition border ${
                           isSelected
-                            ? 'bg-amber-500/20 text-amber-300 border-amber-500/50 shadow-sm'
-                            : 'bg-[#121622] text-stone-400 border-white/5 hover:border-white/20 hover:text-stone-200'
+                            ? `${c.activeRing} scale-110 opacity-100 ring-offset-2 ring-offset-[#121622]`
+                            : `border-white/10 ${c.hoverRing} opacity-60 hover:opacity-100 hover:scale-105 bg-[#090b10]`
                         }`}
+                        title={c.name}
                       >
-                        <span>{t}</span>
-                        {isSelected && <Check className="w-3 h-3 text-amber-400" />}
+                        {c.manaSymbol ? (
+                          <ManaCost manaCost={c.manaSymbol} size="md" />
+                        ) : (
+                          <span className="text-amber-400 font-black text-base">★</span>
+                        )}
                       </button>
                     );
                   })}
-                </div>
-              </div>
-
-              {/* Column 2: Rarity */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider">
-                    Rarity
-                  </span>
-                  {selectedRarities.length > 0 && (
+                  {selectedColors.length > 0 && (
                     <button
-                      onClick={() => setSelectedRarities([])}
-                      className="text-[10px] text-stone-400 hover:text-stone-200"
+                      type="button"
+                      onClick={() => setSelectedColors([])}
+                      className="text-xs text-stone-400 hover:text-amber-400 ml-2 font-semibold"
                     >
-                      Clear
+                      Clear colors
                     </button>
                   )}
                 </div>
-                <div className="space-y-1.5">
-                  {CARD_RARITIES.map(r => {
-                    const isSelected = selectedRarities.includes(r.id);
-                    return (
-                      <button
-                        key={r.id}
-                        onClick={() => toggleRarity(r.id)}
-                        className={`w-full px-3 py-1.5 rounded-lg text-xs font-bold text-left flex items-center justify-between border transition ${
-                          isSelected
-                            ? `${r.activeBg} font-black ring-1 ring-white/30`
-                            : `bg-[#121622] ${r.color} border-white/5 hover:border-white/20`
-                        }`}
-                      >
-                        <div className="flex items-center gap-2">
-                          <span className="w-2 h-2 rounded-full bg-current opacity-80" />
-                          <span>{r.label}</span>
-                        </div>
-                        {isSelected && <Check className="w-3.5 h-3.5" />}
-                      </button>
-                    );
-                  })}
-                </div>
               </div>
 
-              {/* Column 3: Collection Ownership & Attributes */}
-              <div className="space-y-2">
-                <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider block">
-                  Collection & Rules
-                </span>
-                <div className="space-y-1.5 text-xs">
-                  {/* Ownership status */}
-                  <div className="bg-[#121622] p-2 rounded-xl border border-white/5 space-y-1.5">
-                    <span className="text-[10px] uppercase font-bold text-stone-400 block">
-                      Ownership Status
+              {/* Grid: Card Types, Rarities, Collection & Rules */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                {/* Column 1: Card Types */}
+                <div className="bg-[#121622] p-4 rounded-2xl border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider">
+                      Card Types
                     </span>
-                    <div className="grid grid-cols-2 gap-1">
+                    {selectedTypes.length > 0 && (
+                      <button
+                        onClick={() => setSelectedTypes([])}
+                        className="text-[10px] text-stone-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-2 gap-1.5">
+                    {CARD_TYPES.map(t => {
+                      const isSelected = selectedTypes.includes(t);
+                      return (
+                        <button
+                          key={t}
+                          onClick={() => toggleType(t)}
+                          className={`px-2.5 py-1.5 rounded-lg text-xs font-bold text-left flex items-center justify-between border transition ${
+                            isSelected
+                              ? 'bg-amber-500/25 text-amber-300 border-amber-500/60 shadow-sm'
+                              : 'bg-[#090b10] text-stone-400 border-white/5 hover:border-white/20 hover:text-stone-200'
+                          }`}
+                        >
+                          <span>{t}</span>
+                          {isSelected && <Check className="w-3 h-3 text-amber-400" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Column 2: Rarity */}
+                <div className="bg-[#121622] p-4 rounded-2xl border border-white/5 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider">
+                      Rarity
+                    </span>
+                    {selectedRarities.length > 0 && (
+                      <button
+                        onClick={() => setSelectedRarities([])}
+                        className="text-[10px] text-stone-400 hover:text-white"
+                      >
+                        Clear
+                      </button>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    {CARD_RARITIES.map(r => {
+                      const isSelected = selectedRarities.includes(r.id);
+                      return (
+                        <button
+                          key={r.id}
+                          onClick={() => toggleRarity(r.id)}
+                          className={`w-full px-3 py-1.5 rounded-lg text-xs font-bold text-left flex items-center justify-between border transition ${
+                            isSelected
+                              ? `${r.activeBg} font-black ring-1 ring-white/30`
+                              : `bg-[#090b10] ${r.color} border-white/5 hover:border-white/20`
+                          }`}
+                        >
+                          <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-current opacity-90 shadow-sm" />
+                            <span>{r.label}</span>
+                          </div>
+                          {isSelected && <Check className="w-3.5 h-3.5" />}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Column 3: Collection Status & Special */}
+                <div className="bg-[#121622] p-4 rounded-2xl border border-white/5 space-y-3">
+                  <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider block">
+                    Collection & Rules
+                  </span>
+                  <div className="space-y-2">
+                    <div className="grid grid-cols-2 gap-1.5">
                       {[
                         { id: 'all', label: 'All Cards' },
-                        { id: 'owned', label: 'Owned (1+)' },
+                        { id: 'owned', label: 'Collected (1+)' },
                         { id: 'playsets', label: 'Playsets (4x)' },
-                        { id: 'unowned', label: 'Missing (0x)' }
+                        { id: 'unowned', label: 'Craftable (0x)' }
                       ].map(opt => (
                         <button
                           key={opt.id}
                           onClick={() => setOwnershipFilter(opt.id as OwnershipStatus)}
-                          className={`px-2 py-1 rounded text-[11px] font-bold text-center transition ${
-                            ownershipFilter === opt.id
-                              ? 'bg-amber-500 text-stone-950 font-black'
-                              : 'bg-black/30 text-stone-400 hover:text-stone-200'
+                          className={`px-2 py-1.5 rounded-lg text-xs font-bold text-center transition ${
+                            effectiveOwnershipFilter === opt.id
+                              ? 'bg-amber-500 text-stone-950 font-black shadow-sm'
+                              : 'bg-[#090b10] text-stone-400 hover:text-stone-200 border border-white/5'
                           }`}
                         >
                           {opt.label}
                         </button>
                       ))}
                     </div>
-                  </div>
 
-                  {/* Special toggles */}
-                  <div className="space-y-1 pt-1">
-                    <button
-                      onClick={() => setIsLegendary(prev => !prev)}
-                      className={`w-full px-3 py-1.5 rounded-lg font-bold flex items-center justify-between border transition ${
-                        isLegendary
-                          ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
-                          : 'bg-[#121622] text-stone-400 border-white/5 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Crown className="w-3.5 h-3.5 text-amber-400" />
-                        <span>Legendary Only</span>
-                      </div>
-                      {isLegendary && <Check className="w-3.5 h-3.5 text-amber-400" />}
-                    </button>
+                    <div className="space-y-1.5 pt-2 border-t border-white/5">
+                      <button
+                        onClick={() => setIsLegendary(prev => !prev)}
+                        className={`w-full px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between border transition ${
+                          isLegendary
+                            ? 'bg-amber-500/25 text-amber-300 border-amber-500/60'
+                            : 'bg-[#090b10] text-stone-400 border-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Crown className="w-3.5 h-3.5 text-amber-400" />
+                          <span>Legendary Only</span>
+                        </div>
+                        {isLegendary && <Check className="w-3.5 h-3.5 text-amber-400" />}
+                      </button>
 
-                    <button
-                      onClick={() => setDigitalOnly(prev => !prev)}
-                      className={`w-full px-3 py-1.5 rounded-lg font-bold flex items-center justify-between border transition ${
-                        digitalOnly
-                          ? 'bg-purple-950/60 text-purple-200 border-purple-500/50'
-                          : 'bg-[#121622] text-stone-400 border-white/5 hover:border-white/20'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-purple-400" />
-                        <span>Digital Only / Alchemy</span>
-                      </div>
-                      {digitalOnly && <Check className="w-3.5 h-3.5 text-purple-400" />}
-                    </button>
+                      <button
+                        onClick={() => setDigitalOnly(prev => !prev)}
+                        className={`w-full px-3 py-1.5 rounded-lg text-xs font-bold flex items-center justify-between border transition ${
+                          digitalOnly
+                            ? 'bg-purple-950/60 text-purple-200 border-purple-500/60'
+                            : 'bg-[#090b10] text-stone-400 border-white/5 hover:border-white/20'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                          <span>Digital Only / Alchemy</span>
+                        </div>
+                        {digitalOnly && <Check className="w-3.5 h-3.5 text-purple-400" />}
+                      </button>
+                    </div>
                   </div>
                 </div>
+
               </div>
 
-              {/* Column 4: Arena Sets / Expansions */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider">
-                    Arena Sets ({selectedSets.length ? `${selectedSets.length} selected` : 'All'})
-                  </span>
+              {/* Arena Sets / Expansions */}
+              <div className="bg-[#121622] p-4 rounded-2xl border border-white/5 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-fantasy font-black uppercase text-amber-400 tracking-wider">
+                      Arena Sets & Expansions
+                    </span>
+                    <span className="text-[11px] text-stone-400">
+                      ({selectedSets.length ? `${selectedSets.length} selected` : 'All Sets'})
+                    </span>
+                  </div>
+
                   {selectedSets.length > 0 && (
                     <button
                       onClick={() => setSelectedSets([])}
-                      className="text-[10px] text-stone-400 hover:text-stone-200"
+                      className="text-xs text-stone-400 hover:text-amber-400 font-semibold"
                     >
-                      Clear
+                      Clear Sets
                     </button>
                   )}
                 </div>
 
-                {/* Set Category Tabs */}
-                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-1 text-[10px]">
-                  {(['all', 'standard', 'eternal', 'remastered', 'alchemy'] as const).map(cat => (
-                    <button
-                      key={cat}
-                      onClick={() => setSetSelectedCategory(cat)}
-                      className={`px-2 py-0.5 rounded capitalize font-bold whitespace-nowrap transition ${
-                        setSelectedCategory === cat
-                          ? 'bg-amber-400 text-stone-950'
-                          : 'bg-[#121622] text-stone-400 hover:text-stone-200'
-                      }`}
-                    >
-                      {cat}
-                    </button>
-                  ))}
+                {/* Categories & Search */}
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <div className="flex items-center gap-1 overflow-x-auto no-scrollbar pb-0.5 text-[11px] w-full sm:w-auto">
+                    {(['all', 'standard', 'eternal', 'remastered', 'alchemy'] as const).map(cat => (
+                      <button
+                        key={cat}
+                        onClick={() => setSetSelectedCategory(cat)}
+                        className={`px-2.5 py-1 rounded-lg capitalize font-bold whitespace-nowrap transition ${
+                          setSelectedCategory === cat
+                            ? 'bg-amber-400 text-stone-950 font-black'
+                            : 'bg-[#090b10] text-stone-400 hover:text-stone-200 border border-white/5'
+                        }`}
+                      >
+                        {cat === 'eternal' ? 'Historic / Eternal' : cat}
+                      </button>
+                    ))}
+                  </div>
+
+                  <input
+                    type="text"
+                    placeholder="Find set (e.g. MH3, Bloomburrow, OTJ)..."
+                    value={setSearchQuery}
+                    onChange={e => setSetSearchQuery(e.target.value)}
+                    className="w-full sm:flex-1 bg-[#090b10] border border-white/10 rounded-xl px-3 py-1.5 text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-400"
+                  />
                 </div>
 
-                {/* Set Search Input */}
-                <input
-                  type="text"
-                  placeholder="Find set (e.g. MH3, Bloomburrow)..."
-                  value={setSearchQuery}
-                  onChange={e => setSetSearchQuery(e.target.value)}
-                  className="w-full bg-[#121622] border border-white/10 rounded-lg px-2.5 py-1 text-xs text-stone-200 placeholder-stone-500 focus:outline-none focus:border-amber-400"
-                />
-
-                {/* Scrollable Set Badges List */}
-                <div className="max-h-36 overflow-y-auto space-y-1 pr-1 custom-scrollbar">
+                {/* Scrollable Set Grid */}
+                <div className="max-h-48 overflow-y-auto grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-1.5 pr-1 custom-scrollbar">
                   {filteredSets.map(s => {
                     const isSelected = selectedSets.includes(s.code);
                     return (
                       <button
                         key={s.code}
                         onClick={() => toggleSet(s.code)}
-                        className={`w-full px-2 py-1 rounded text-left flex items-center justify-between text-xs transition border ${
+                        className={`px-2.5 py-1.5 rounded-xl text-left flex items-center justify-between text-xs transition border ${
                           isSelected
-                            ? 'bg-amber-500/20 text-amber-200 border-amber-500/50 font-bold'
-                            : 'bg-black/20 text-stone-400 border-transparent hover:text-stone-200 hover:bg-black/40'
+                            ? 'bg-amber-500/25 text-amber-200 border-amber-500/60 font-bold'
+                            : 'bg-[#090b10] text-stone-400 border-white/5 hover:text-stone-200 hover:border-white/20'
                         }`}
                       >
                         <div className="flex items-center gap-1.5 min-w-0 flex-1">
-                          <span className="font-mono text-[10px] px-1 rounded bg-white/10 text-stone-300 flex-shrink-0">
+                          <span className="font-mono text-[10px] px-1 rounded bg-white/10 text-stone-300 flex-shrink-0 font-bold">
                             {s.code}
                           </span>
                           <span className="truncate text-[11px]">{s.name}</span>
                         </div>
                         <div className="flex items-center gap-1.5 flex-shrink-0 ml-1.5">
-                          <span className="text-[10px] font-mono font-medium text-stone-400 bg-white/5 px-1.5 py-0.5 rounded border border-white/5">
+                          <span className="text-[10px] font-mono text-stone-500">
                             {s.releaseYear}
                           </span>
                           {isSelected && <Check className="w-3 h-3 text-amber-400 flex-shrink-0" />}
@@ -1198,21 +1354,31 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
                 </div>
               </div>
 
-            </div>
+              {/* Modal Footer */}
+              <div className="flex items-center justify-between pt-2 border-t border-white/10">
+                <span className="text-xs text-stone-400">
+                  {activeFiltersCount} active filter criteria applied.
+                </span>
 
-            {/* Done Button Bar */}
-            <div className="flex items-center justify-between pt-2">
-              <span className="text-xs text-stone-400">
-                {activeFiltersCount} active filter criteria applied.
-              </span>
-              <button
-                onClick={() => setIsAdvancedOpen(false)}
-                className="btn-mythic-spark px-4 py-1.5 rounded-xl text-xs font-bold text-white shadow-sm"
-              >
-                Close Filters
-              </button>
-            </div>
+                <div className="flex items-center gap-3">
+                  {activeFiltersCount > 0 && (
+                    <button
+                      onClick={handleResetFilters}
+                      className="px-4 py-2 rounded-xl text-xs font-bold text-stone-400 hover:text-amber-400 transition"
+                    >
+                      Reset All
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setIsAdvancedOpen(false)}
+                    className="btn-mythic-spark px-5 py-2 rounded-xl text-xs font-bold text-white shadow-lg"
+                  >
+                    Apply & Close
+                  </button>
+                </div>
+              </div>
 
+            </div>
           </div>
         )}
 
@@ -1294,11 +1460,21 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
               </span>
             ))}
 
+            {/* Color Match Mode */}
+            {colorMatchMode !== 'selected' && (
+              <span className="bg-stone-800/80 border border-white/10 text-amber-300 px-2 py-0.5 rounded-lg text-[11px] font-bold flex items-center gap-1">
+                <span>Mode: {colorMatchMode === 'any' ? 'Match Any' : 'Multicolor Only'}</span>
+                <button onClick={() => setColorMatchMode('selected')} className="hover:text-white">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
             {/* Ownership */}
-            {ownershipFilter !== 'all' && (
+            {effectiveOwnershipFilter !== 'all' && (
               <span className="bg-stone-800/80 border border-white/10 text-emerald-300 px-2 py-0.5 rounded-lg text-[11px] font-bold flex items-center gap-1 capitalize">
-                <span>{ownershipFilter}</span>
-                <button onClick={() => setOwnershipFilter('all')} className="hover:text-white">
+                <span>{effectiveOwnershipFilter === 'unowned' ? 'Craftable (0x)' : effectiveOwnershipFilter === 'owned' ? 'Collected (1+)' : effectiveOwnershipFilter}</span>
+                <button onClick={() => { setOwnershipFilter('all'); setSearchTerm(prev => prev.replace(/\b(q=[0-4]|q:[0-4]|q>[0-3]|q>=[1-4]|\?craftable)\b/gi, '').trim()); }} className="hover:text-white">
                   <X className="w-3 h-3" />
                 </button>
               </span>

@@ -20,7 +20,7 @@ export interface SearchArenaParams {
   format?: FormatType;
   color?: string | null;
   colors?: string[];
-  colorMode?: 'exact' | 'include' | 'at_most';
+  colorMode?: 'exact' | 'include' | 'at_most' | 'any' | 'multi_only';
   type?: CardTypeCategory | null;
   types?: CardTypeCategory[];
   rarity?: CardRarity | null;
@@ -62,7 +62,7 @@ export interface SearchResult {
 
 /**
  * Constructs a flexible Scryfall query token from user input.
- * If the user inputs explicit Scryfall operators (e.g. `t:`, `c:`, `o:`, `(`),
+ * If the user inputs explicit Scryfall operators (e.g. `t:`, `c:`, `o:`, `cmc=`, `pow>=`, `(`),
  * it preserves their syntax. Otherwise, it tokenizes the terms and searches both
  * card name and card types/subtypes for each word (e.g. "sphinx", "goblin", "nicol bolas").
  */
@@ -70,8 +70,8 @@ export function buildSmartSearchQuery(raw: string): string | undefined {
   const term = raw.trim();
   if (!term) return undefined;
 
-  // Preserve explicit Scryfall syntax
-  if (term.includes(':') || term.includes('(') || term.includes(')')) {
+  // Preserve explicit syntax (operators :, =, >, <, (, ))
+  if (term.includes(':') || term.includes('(') || term.includes(')') || term.includes('=') || term.includes('>') || term.includes('<')) {
     return term;
   }
 
@@ -312,6 +312,19 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     } else if (params.colorMode === 'at_most') {
       // Explicit at-most mode (e.g. from CommanderFinderModal at_most toggle)
       parts.push(`c<=${colorLetters}`);
+    } else if (params.colorMode === 'any') {
+      // MTG Arena "Match Any Color" mode
+      const clauses = normalColors.map(c => `c:${c.toLowerCase()}`);
+      if (hasColorless) clauses.push('c:c');
+      if (hasMulti) clauses.push('c:m');
+      parts.push(`(${clauses.join(' or ')})`);
+    } else if (params.colorMode === 'multi_only') {
+      // MTG Arena "Multicolor Only" mode
+      if (normalColors.length > 0) {
+        parts.push(`(c<=${colorLetters} c:m)`);
+      } else {
+        parts.push('c:m');
+      }
     } else if (normalColors.length === 1) {
       // Single base color (e.g. 'U')
       const single = normalColors[0].toLowerCase();

@@ -14,7 +14,13 @@ import { Card } from '../types/card';
  * - Selecting only 'C' matches cards with 0 colors (colorless).
  * - Selecting 'C' alongside base colors includes colorless cards.
  */
-export function matchesColorFilter(card: Card, selectedColors: string[]): boolean {
+export type ColorMatchMode = 'selected' | 'any' | 'exact' | 'multi_only';
+
+export function matchesColorFilter(
+  card: Card, 
+  selectedColors: string[],
+  colorMode: ColorMatchMode = 'selected'
+): boolean {
   if (!selectedColors || selectedColors.length === 0) return true;
 
   const cardColors: string[] = (card.colors && card.colors.length > 0)
@@ -28,6 +34,29 @@ export function matchesColorFilter(card: Card, selectedColors: string[]): boolea
   const isCardColorless = cardColors.length === 0;
   const isCardMulti = cardColors.length >= 2;
 
+  // Mode: "any" (Match Any Color)
+  if (colorMode === 'any') {
+    const matchesNormal = normalSelected.length > 0 && cardColors.some(c => normalSelected.includes(c));
+    const matchesC = hasColorless && isCardColorless;
+    const matchesM = hasMulti && isCardMulti;
+    return matchesNormal || matchesC || matchesM;
+  }
+
+  // Mode: "exact" (Match Exact Colors)
+  if (colorMode === 'exact') {
+    if (hasColorless && !hasMulti && normalSelected.length === 0) return isCardColorless;
+    if (normalSelected.length === 0) return true;
+    return normalSelected.length === cardColors.length && cardColors.every(c => normalSelected.includes(c));
+  }
+
+  // Mode: "multi_only" (Multicolor Only)
+  if (colorMode === 'multi_only') {
+    if (!isCardMulti) return false;
+    if (normalSelected.length === 0) return true;
+    return cardColors.every(c => normalSelected.includes(c));
+  }
+
+  // Default Arena Mode: "selected" (Match Selected Colors subset)
   // 1. Only C and/or M selected (no base colors)
   if (normalSelected.length === 0) {
     if (hasColorless && hasMulti) {
