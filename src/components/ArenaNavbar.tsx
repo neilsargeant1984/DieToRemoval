@@ -13,7 +13,8 @@ import {
   User,
   LogOut,
   Cloud,
-  Home
+  Home,
+  Swords
 } from 'lucide-react';
 
 export type MainNavTab = 'home' | 'deck_builder' | 'card_library' | 'my_decks';
@@ -35,6 +36,16 @@ interface ArenaNavbarProps {
   onOpenWildcards?: () => void;
   onOpenCommanderFinder?: () => void;
 }
+
+const FORMAT_OPTIONS: {
+  id: FormatType;
+  label: string;
+  cardCount: string;
+  isFlagship?: boolean;
+}[] = [
+  { id: 'brawl', label: 'Brawl', cardCount: '100', isFlagship: true },
+  { id: 'standard', label: 'Standard', cardCount: '60' },
+];
 
 export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
   currentTab,
@@ -227,48 +238,78 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
         </div>
       </div>
 
-      {/* Sub-Pill Menu for Deck Builder Formats */}
+      {/* Prominent Format Selection Bar for Deck Builder */}
       {currentTab === 'deck_builder' && (
-        <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto pt-2 mt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
-          <div className="flex items-center gap-2.5">
-            <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
-              Format:
-            </span>
-            <div className="flex items-center gap-1 bg-[#0d1017]/80 p-0.5 rounded-xl border border-white/5">
-              {[
-                { id: 'brawl' as FormatType, label: 'Brawl' },
-                { id: 'standard' as FormatType, label: 'Standard' },
-                { id: 'explorer' as FormatType, label: 'Pioneer' }
-              ].map(fmt => {
-                const isActive = currentFormat === fmt.id;
-                return (
+        <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto mt-2.5 pt-2 border-t border-[#c5a059]/30">
+          <div className="flex flex-wrap items-center justify-between gap-2.5 bg-gradient-to-r from-[#121622]/95 via-[#182030]/95 to-[#121622]/95 p-2 sm:px-3 rounded-2xl border border-[#c5a059]/35 shadow-xl shadow-black/50">
+            {/* Format Label & High-Visibility Format Buttons */}
+            <div className="flex items-center gap-2.5 flex-wrap sm:flex-nowrap overflow-x-auto no-scrollbar py-0.5">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/25 to-orange-500/15 border border-amber-400/50 text-amber-300 shadow-sm shadow-amber-500/20 flex-shrink-0">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+                <span className="text-[11px] font-black uppercase tracking-wider font-fantasy">
+                  Format
+                </span>
+              </div>
+
+              <div className="flex items-center gap-1.5 bg-[#0b0e14]/90 p-1 rounded-xl border border-white/10 shadow-inner overflow-x-auto no-scrollbar">
+                {FORMAT_OPTIONS.map(fmt => {
+                  const isActive = currentFormat === fmt.id;
+                  return (
+                    <button
+                      key={fmt.id}
+                      type="button"
+                      onClick={() => onSelectFormat(fmt.id)}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer select-none whitespace-nowrap ${
+                        isActive
+                          ? fmt.isFlagship
+                            ? 'bg-gradient-to-r from-amber-500 via-orange-500 to-amber-600 text-slate-950 font-black shadow-[0_0_18px_rgba(245,158,11,0.6)] border border-amber-300 ring-2 ring-amber-400/50 scale-[1.03]'
+                            : 'bg-gradient-to-r from-amber-400 to-orange-400 text-slate-950 font-black shadow-[0_0_14px_rgba(245,158,11,0.5)] border border-amber-200 ring-2 ring-amber-400/40 scale-[1.02]'
+                          : fmt.isFlagship
+                            ? 'bg-amber-500/10 hover:bg-amber-500/25 text-amber-300 hover:text-amber-100 border border-amber-500/40 font-bold hover:scale-[1.01]'
+                            : 'bg-[#141926] hover:bg-[#1f273a] text-stone-300 hover:text-white border border-white/10 hover:border-amber-400/40 hover:scale-[1.01]'
+                      }`}
+                    >
+                      {fmt.isFlagship ? (
+                        <Crown className={`w-3.5 h-3.5 ${isActive ? 'text-slate-950' : 'text-amber-400'}`} />
+                      ) : fmt.id === 'standard' ? (
+                        <Swords className={`w-3 h-3 ${isActive ? 'text-slate-950' : 'text-stone-400'}`} />
+                      ) : null}
+                      <span>{fmt.label}</span>
+                      <span className={`text-[10px] px-1.5 py-0.2 rounded font-mono font-bold ${
+                        isActive
+                          ? 'bg-black/25 text-slate-950'
+                          : 'bg-white/5 text-stone-400'
+                      }`}>
+                        {fmt.cardCount}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Right Quick Action / Format Info Badge */}
+            <div className="flex items-center gap-2 ml-auto">
+              {currentFormat === 'brawl' ? (
+                onOpenCommanderFinder && (
                   <button
-                    key={fmt.id}
-                    onClick={() => onSelectFormat(fmt.id)}
-                    className={`px-3 py-1 rounded-lg text-xs font-semibold transition ${
-                      isActive
-                        ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
-                        : 'text-stone-400 hover:text-stone-200 hover:bg-white/5'
-                    }`}
+                    type="button"
+                    onClick={onOpenCommanderFinder}
+                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-gradient-to-r from-amber-500/20 via-orange-500/20 to-amber-500/20 hover:from-amber-500/30 hover:to-orange-500/30 text-amber-300 border border-amber-500/40 text-xs font-bold transition shadow-sm hover:shadow-amber-500/20 group cursor-pointer"
+                    title="Discover Brawl commanders by color identity and playstyle archetypes"
                   >
-                    <span>{fmt.label}</span>
+                    <Crown className="w-3.5 h-3.5 text-amber-400 group-hover:scale-110 transition-transform" />
+                    <span>Find a Commander</span>
                   </button>
-                );
-              })}
+                )
+              ) : (
+                <div className="hidden sm:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-black/40 border border-white/10 text-stone-300 text-xs font-semibold">
+                  <Swords className="w-3.5 h-3.5 text-amber-400/80" />
+                  <span>60-Card Standard Legal • Rotation Safe</span>
+                </div>
+              )}
             </div>
           </div>
-
-          {currentFormat === 'brawl' && onOpenCommanderFinder && (
-            <button
-              type="button"
-              onClick={onOpenCommanderFinder}
-              className="flex items-center gap-1.5 px-3 py-1 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 text-xs font-semibold transition shadow-sm"
-              title="Discover Brawl commanders by color identity and playstyle archetypes"
-            >
-              <Crown className="w-3.5 h-3.5 text-amber-400" />
-              <span>Find a Commander</span>
-            </button>
-          )}
         </div>
       )}
     </header>

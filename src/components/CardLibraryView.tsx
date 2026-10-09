@@ -6,6 +6,7 @@ import { matchesColorFilter, ColorMatchMode } from '../utils/colorFilter';
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
+import { ManaRuneFilterBar } from './ManaRuneFilterBar';
 import { OwnershipPips } from './OwnershipPips';
 import { getCardOwnedCount } from '../services/ownershipService';
 import { 
@@ -925,45 +926,16 @@ export const CardLibraryView: React.FC<CardLibraryViewProps> = ({
               ))}
             </div>
 
-            {/* Mana Colors (All 7 Circular Uniform Pips) */}
-            <div className="flex items-center gap-1.5 flex-wrap">
-              <span className="text-[11px] font-fantasy font-bold text-stone-400 uppercase mr-1">Colors:</span>
-              {MANA_COLORS.map(c => {
-                const isSelected = selectedColors.includes(c.id);
-
-                return (
-                  <button
-                    key={c.id}
-                    type="button"
-                    onClick={() => toggleColor(c.id)}
-                    title={c.id === 'M' ? 'Filter by Multicolor (★)' : `Filter by ${c.name} (${c.id})`}
-                    aria-label={c.name}
-                    className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-150 select-none border ${
-                      isSelected
-                        ? `${c.activeRing} scale-110 opacity-100 ring-offset-1 ring-offset-[#090b10]`
-                        : `border-white/10 ${c.hoverRing} opacity-65 hover:opacity-100 hover:scale-105 bg-[#121622]`
-                    }`}
-                  >
-                    {c.manaSymbol ? (
-                      <ManaCost manaCost={c.manaSymbol} size="md" />
-                    ) : (
-                      <span className="text-amber-400 font-black text-sm drop-shadow-sm select-none">★</span>
-                    )}
-                  </button>
-                );
-              })}
-
-              {selectedColors.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedColors([])}
-                  className="p-1 text-stone-400 hover:text-stone-200 ml-0.5 rounded-lg hover:bg-white/5 transition"
-                  title="Clear color filters"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
+        {/* Glowing Mana Runes Filter Bar */}
+        <ManaRuneFilterBar
+          selectedColors={selectedColors}
+          onToggleColor={toggleColor}
+          onClearColors={() => setSelectedColors([])}
+          colorMode={colorMatchMode === 'exact' ? 'exact' : 'include'}
+          onChangeColorMode={(mode) => setColorMatchMode(mode === 'include' ? 'selected' : mode as ColorMatchMode)}
+          label="Mana Filter"
+          className="w-full"
+        />
 
             {/* Mana Value (CMC) Pips: 0 1 2 3 4 5 6 7+ */}
             <div className="flex items-center gap-1.5 flex-wrap">

@@ -161,6 +161,22 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   const [isFlipped, setIsFlipped] = React.useState<boolean>(false);
   const [isRulesExpanded, setIsRulesExpanded] = React.useState<boolean>(false);
 
+  // Mana Curve histogram calculation for Spotlight telemetry
+  const manaCurve = React.useMemo(() => {
+    const curve: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0 };
+    (deck.mainboard || []).forEach(item => {
+      if (item.card.types.includes('Land')) return;
+      const cmc = Math.min(Math.max(item.card.cmc || 0, 1), 7);
+      curve[cmc] = (curve[cmc] || 0) + item.quantity;
+    });
+    return curve;
+  }, [deck.mainboard]);
+
+  const maxCurveCount = React.useMemo(() => {
+    const values = Object.values(manaCurve);
+    return Math.max(...values, 1);
+  }, [manaCurve]);
+
   React.useEffect(() => {
     setIsFlipped(false);
     setIsRulesExpanded(false);
@@ -211,6 +227,12 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                   <Crown className="w-3 h-3 text-slate-950" />
                   <span>Commander</span>
                 </div>
+
+                {/* Ornate Corner Filigree Brackets */}
+                <div className="absolute top-1.5 left-1.5 w-4 h-4 border-t-2 border-l-2 border-[#c5a059] rounded-tl pointer-events-none z-30" />
+                <div className="absolute top-1.5 right-1.5 w-4 h-4 border-t-2 border-r-2 border-[#c5a059] rounded-tr pointer-events-none z-30" />
+                <div className="absolute bottom-1.5 left-1.5 w-4 h-4 border-b-2 border-l-2 border-[#c5a059] rounded-bl pointer-events-none z-30" />
+                <div className="absolute bottom-1.5 right-1.5 w-4 h-4 border-b-2 border-r-2 border-[#c5a059] rounded-br pointer-events-none z-30" />
 
                 {/* Card Corner Reverse Face Toggle Button */}
                 {isMultiFace && (
@@ -500,6 +522,46 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
                   </div>
                 )}
               </div>
+
+              {/* Mana Curve Histogram (Spotlight Telemetry) */}
+              {deck.mainboard.length > 0 && (
+                <div className="bg-[#0b0e14]/90 border border-white/5 rounded-xl p-2.5 shadow-inner">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[10px] font-fantasy font-black uppercase text-amber-300 tracking-wider">
+                      Mana Curve
+                    </span>
+                    <span className="text-[10px] font-mono text-stone-400">
+                      Spells: {deck.mainboard.filter(c => !c.card.types.includes('Land')).reduce((a, b) => a + b.quantity, 0)}
+                    </span>
+                  </div>
+                  <div className="flex items-end justify-between gap-1.5 h-12 pt-1 px-1">
+                    {[1, 2, 3, 4, 5, 6, 7].map(cmc => {
+                      const count = manaCurve[cmc] || 0;
+                      const heightPercent = maxCurveCount > 0 ? Math.max((count / maxCurveCount) * 100, 8) : 8;
+                      return (
+                        <div key={cmc} className="flex-1 flex flex-col items-center gap-0.5 group/bar h-full justify-end select-none">
+                          <span className="text-[9px] font-mono font-bold text-stone-400 group-hover/bar:text-amber-300 transition leading-none">
+                            {count > 0 ? count : ''}
+                          </span>
+                          <div className="w-full bg-[#161c28] rounded-t-sm overflow-hidden flex flex-col justify-end h-full max-h-[26px]">
+                            <div
+                              style={{ height: `${count > 0 ? heightPercent : 0}%` }}
+                              className={`w-full rounded-t transition-all duration-300 ${
+                                count > 0
+                                  ? 'bg-gradient-to-t from-amber-600 to-amber-400 group-hover/bar:brightness-125 shadow-[0_0_6px_rgba(245,158,11,0.3)]'
+                                  : 'bg-transparent'
+                              }`}
+                            />
+                          </div>
+                          <span className="text-[9px] font-mono font-bold text-stone-500 leading-none">
+                            {cmc === 7 ? '7+' : cmc}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
 
               {/* Status Bar: Deck Size, Wildcard Deficiencies, Clean Deck */}
               <div className="flex flex-wrap items-center justify-between pt-2 border-t border-white/5 text-xs gap-3">

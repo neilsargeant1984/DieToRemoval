@@ -251,9 +251,10 @@ export const DeckListWorkspace: React.FC<DeckListWorkspaceProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-white/5">
         <div className="flex flex-wrap items-center gap-2.5">
           <h2 className="font-fantasy font-black text-base text-slate-100">{deck.name}</h2>
-          <span className="text-[11px] px-2.5 py-0.5 rounded-full capitalize font-semibold bg-[#121622] text-amber-300 border border-white/5">
-            {deck.format}
-          </span>
+          <div className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-gradient-to-r from-amber-500/20 to-orange-500/20 text-amber-300 border border-amber-400/40 shadow-sm">
+            <span className="text-[10px] uppercase font-bold text-amber-400/80">Format:</span>
+            <span className="capitalize font-black">{deck.format === 'explorer' ? 'Pioneer' : deck.format}</span>
+          </div>
           <div className="flex items-center gap-1.5 text-xs font-semibold">
             <span className={`px-2 py-0.5 rounded-lg border ${
               mainCount >= (deck.format === 'brawl' ? 100 : 60)

@@ -507,27 +507,69 @@ export const App: React.FC = () => {
       return;
     }
 
-    // When switching format on a populated deck, seamlessly create a new deck in the selected format
-    if (activeDeck.mainboard.length > 0 || (activeDeck.sideboard && activeDeck.sideboard.length > 0) || activeDeck.commander) {
+    // Check if user already has an existing deck in this target format in savedDecks
+    const existingDeckInFormat = savedDecks.find(d => d.format === format);
+
+    // When switching format on an empty blank slate deck, seamlessly switch in-place
+    if (activeDeck.mainboard.length === 0 && (!activeDeck.sideboard || activeDeck.sideboard.length === 0) && !activeDeck.commander) {
+      if (existingDeckInFormat) {
+        setActiveDeck(existingDeckInFormat);
+      } else {
+        setActiveDeck(prev => ({
+          ...prev,
+          format,
+          name: prev.name.startsWith('New ') ? `New ${format.charAt(0).toUpperCase() + format.slice(1)} Deck` : prev.name,
+          commander: format === 'brawl' ? prev.commander : undefined,
+          updatedAt: new Date().toISOString()
+        }));
+      }
+      if (format === 'brawl') {
+        setSynergyTab('meta_consensus');
+        if (!activeDeck.commander && !existingDeckInFormat?.commander) {
+          setIsCommanderPickerOpen(true);
+        }
+      }
+      return;
+    }
+
+    // When switching format on a populated deck, load existing deck in that format or create a new one
+    if (existingDeckInFormat) {
+      setActiveDeck(existingDeckInFormat);
+      if (format === 'brawl') {
+        setSynergyTab('meta_consensus');
+      }
+    } else {
       handleCreateNewDeck(format);
       if (format === 'brawl') {
         setSynergyTab('meta_consensus');
         setIsCommanderPickerOpen(true);
       }
-      return;
     }
+  };
 
-    setActiveDeck(prev => ({
-      ...prev,
-      format,
-      name: prev.name.startsWith('New ') ? `New ${format.charAt(0).toUpperCase() + format.slice(1)} Deck` : prev.name,
-      commander: format === 'brawl' ? prev.commander : undefined,
-      updatedAt: new Date().toISOString()
-    }));
-    if (format === 'brawl') {
-      setSynergyTab('meta_consensus');
-      setIsCommanderPickerOpen(true);
+  // Ensure Brawl is selected as default when navigating to Deck Builder
+  const handleSelectNavTab = (tab: MainNavTab) => {
+    if (tab === 'deck_builder') {
+      if (activeDeck.format !== 'brawl') {
+        const brawlDeck = savedDecks.find(d => d.format === 'brawl');
+        if (brawlDeck) {
+          setActiveDeck(brawlDeck);
+        } else {
+          if (activeDeck.mainboard.length === 0 && (!activeDeck.sideboard || activeDeck.sideboard.length === 0) && !activeDeck.commander) {
+            setActiveDeck(prev => ({
+              ...prev,
+              format: 'brawl',
+              name: 'New Brawl Deck',
+              updatedAt: new Date().toISOString()
+            }));
+          } else {
+            handleCreateNewDeck('brawl');
+          }
+        }
+        setSynergyTab('meta_consensus');
+      }
     }
+    setNavTab(tab);
   };
 
   const handleClearDeck = () => {
@@ -984,7 +1026,7 @@ export const App: React.FC = () => {
       {/* Top Navigation Shell */}
       <ArenaNavbar
         currentTab={navTab}
-        onSelectTab={setNavTab}
+        onSelectTab={handleSelectNavTab}
         currentFormat={activeDeck.format}
         onSelectFormat={handleChangeFormat}
         inventory={wildcardInventory}
@@ -1203,6 +1245,7 @@ export const App: React.FC = () => {
               }`}>
                 <CardSearchPanel
                   currentFormat={activeDeck.format}
+                  onSelectFormat={handleChangeFormat}
                   deckCardCounts={deckCardCounts}
                   sideboardCardCounts={sideboardCardCounts}
                   deckColors={activeDeckColors}
