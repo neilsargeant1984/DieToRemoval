@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
+import { ManaRuneFilterBar } from './ManaRuneFilterBar';
 import { 
   COMMANDER_STRATEGIES, 
   CommanderStrategyId, 
@@ -423,63 +424,19 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
             )}
           </div>
 
-          {/* Row 3: Color Identity Selector & Modes */}
+          {/* Row 3: Glowing Mana Runes Filter Bar & Guild Presets */}
           <div className="flex flex-wrap items-center justify-between gap-3 pt-1">
-            <div className="flex items-center flex-wrap gap-2">
-              <span className="text-xs font-bold text-stone-400 uppercase tracking-wider mr-1">
-                Colors:
-              </span>
-              
-              {(['W', 'U', 'B', 'R', 'G', 'C'] as ManaColor[]).map(color => {
-                const isSelected = selectedColors.includes(color);
-                return (
-                  <button
-                    key={color}
-                    onClick={() => handleToggleColor(color)}
-                    className={`w-7 h-7 rounded-full text-xs font-black flex items-center justify-center border transition-all ${
-                      isSelected
-                        ? `${colorBadgeBg[color]} ring-2 ring-amber-400 scale-110 shadow-md`
-                        : 'bg-[#121622] text-stone-400 border-stone-700/80 hover:border-stone-500 hover:text-stone-200 opacity-60 hover:opacity-100'
-                    }`}
-                  >
-                    {color}
-                  </button>
-                );
-              })}
-
-              {/* Color Mode Switcher */}
-              {selectedColors.length > 0 && selectedColors[0] !== 'C' && (
-                <div className="flex items-center bg-[#0d1017] p-0.5 rounded-lg border border-slate-700 ml-2 text-[11px]">
-                  <button
-                    onClick={() => setColorMode('include')}
-                    className={`px-2 py-0.5 rounded font-bold transition ${
-                      colorMode === 'include' ? 'bg-amber-500 text-slate-950' : 'text-stone-400 hover:text-white'
-                    }`}
-                    title="Includes all selected colors"
-                  >
-                    Contains
-                  </button>
-                  <button
-                    onClick={() => setColorMode('exact')}
-                    className={`px-2 py-0.5 rounded font-bold transition ${
-                      colorMode === 'exact' ? 'bg-amber-500 text-slate-950' : 'text-stone-400 hover:text-white'
-                    }`}
-                    title="Exact color identity only"
-                  >
-                    Exact
-                  </button>
-                  <button
-                    onClick={() => setColorMode('at_most')}
-                    className={`px-2 py-0.5 rounded font-bold transition ${
-                      colorMode === 'at_most' ? 'bg-amber-500 text-slate-950' : 'text-stone-400 hover:text-white'
-                    }`}
-                    title="Playable with at most these colors"
-                  >
-                    At Most
-                  </button>
-                </div>
-              )}
-            </div>
+            <ManaRuneFilterBar
+              selectedColors={selectedColors}
+              onToggleColor={(c) => handleToggleColor(c as ManaColor)}
+              onClearColors={() => setSelectedColors([])}
+              colorMode={colorMode}
+              onChangeColorMode={setColorMode}
+              showMulticolor={false}
+              showColorless={true}
+              label="Color Identity"
+              className="py-1.5 px-3 flex-1 min-w-[280px]"
+            />
 
             {/* Guild & Preset Dropdown */}
             <div className="flex items-center gap-1.5 text-xs">
@@ -840,13 +797,17 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
           {previewCommander && (
             <div className="hidden md:flex w-[300px] lg:w-[340px] flex-shrink-0 bg-[#0e121a]/90 border border-[#c5a059]/30 rounded-2xl p-4 flex-col justify-between shadow-xl space-y-3">
               <div className="space-y-3 overflow-y-auto pr-1">
-                <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-[#c5a059]/40 bg-black aspect-[5/7]">
+                <div className="relative rounded-2xl overflow-hidden shadow-2xl border border-[#c5a059]/50 bg-black aspect-[5/7] altar-pedestal">
                   <CardImage
                     src={previewCommander.imageUrl}
                     cardName={previewCommander.name}
                     alt={previewCommander.name}
                     className="w-full h-full object-cover"
                   />
+                  <div className="absolute top-1.5 left-1.5 w-3.5 h-3.5 border-t-2 border-l-2 border-[#c5a059] rounded-tl pointer-events-none z-20" />
+                  <div className="absolute top-1.5 right-1.5 w-3.5 h-3.5 border-t-2 border-r-2 border-[#c5a059] rounded-tr pointer-events-none z-20" />
+                  <div className="absolute bottom-1.5 left-1.5 w-3.5 h-3.5 border-b-2 border-l-2 border-[#c5a059] rounded-bl pointer-events-none z-20" />
+                  <div className="absolute bottom-1.5 right-1.5 w-3.5 h-3.5 border-b-2 border-r-2 border-[#c5a059] rounded-br pointer-events-none z-20" />
                   <div className="absolute top-2 right-2 px-2 py-1 bg-black/85 backdrop-blur-md rounded-xl border border-white/20 text-xs font-bold text-amber-300 flex items-center gap-1">
                     <Crown className="w-3.5 h-3.5 text-amber-400" />
                     <span>Commander</span>
