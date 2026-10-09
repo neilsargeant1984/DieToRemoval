@@ -34,6 +34,8 @@ import { fetchCardByArenaId } from './services/scryfallService';
 import { Layers, Search } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { deckCloudService } from './services/deckCloudService';
+import { localAccountService } from './services/localAccountService';
+import { generateDeckId, isValidUuid } from './utils/uuid';
 import { AuthModal } from './components/AuthModal';
 import { WildcardEditModal } from './components/WildcardEditModal';
 import { CollectionSyncModal } from './components/CollectionSyncModal';
@@ -51,8 +53,8 @@ export const App: React.FC = () => {
   });
   const [mobileConstructedTab, setMobileConstructedTab] = useState<'search' | 'decklist'>('search');
 
-  // User Auth & Cloud State
-  const [user, setUser] = useState<any>(null);
+  // User Auth & Cloud State (Persistent on browser)
+  const [user, setUser] = useState<any>(() => localAccountService.getLocalAccount());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
   const [isWildcardModalOpen, setIsWildcardModalOpen] = useState<boolean>(false);
 
@@ -296,28 +298,51 @@ export const App: React.FC = () => {
     };
   }, [activeDeck.id]);
 
-  // Supabase Auth and Cloud Sync Lifecycle
+  // Supabase Auth, Browser Account & Cloud Sync Lifecycle
   useEffect(() => {
+    // Check if there is an active local browser account
+    const localAcc = localAccountService.getLocalAccount();
+    if (localAcc) {
+      setUser(localAcc);
+    }
+
     if (!isSupabaseConfigured) return;
 
-    supabase.auth.getUser().then(({ data: { user } }) => {
-      setUser(user);
+    // Check current session from Supabase on startup
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      const currentUser = session?.user ?? null;
+      if (currentUser) {
+        const syncedAcc = localAccountService.syncWithSupabaseUser(currentUser);
+        setUser(syncedAcc);
+        // Bidirectional sync between local browser decks and Supabase
+        const { syncedDecks, uploadedCount } = await deckCloudService.syncAllDecks(savedDecks);
+        if (syncedDecks.length > 0) {
+          setSavedDecks(syncedDecks);
+          if (uploadedCount > 0) {
+            setSaveNotification(`Synced ${syncedDecks.length} deck(s) (${uploadedCount} uploaded to cloud)!`);
+            setTimeout(() => setSaveNotification(null), 3500);
+          }
+        }
+      }
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const currentUser = session?.user ?? null;
-      setUser(currentUser);
       if (currentUser) {
-        // Automatically sync cloud decks down to user's library
-        deckCloudService.getUserDecks().then(({ data }) => {
-          if (data && data.length > 0) {
-            setSavedDecks(prev => {
-              const localMap = new Map(prev.map(d => [d.id, d]));
-              data.forEach(d => localMap.set(d.id, d));
-              return Array.from(localMap.values());
-            });
-          }
-        });
+        const syncedAcc = localAccountService.syncWithSupabaseUser(currentUser);
+        setUser(syncedAcc);
+        // Automatically sync and retrieve decks on login
+        const { syncedDecks, uploadedCount, error } = await deckCloudService.syncAllDecks(savedDecks);
+        if (!error && syncedDecks.length > 0) {
+          setSavedDecks(syncedDecks);
+          setSaveNotification(`Account ready! Retrieved ${syncedDecks.length} deck(s)${uploadedCount > 0 ? ` (${uploadedCount} uploaded)` : ''}.`);
+          setTimeout(() => setSaveNotification(null), 3500);
+        }
+      } else {
+        const local = localAccountService.getLocalAccount();
+        if (!local || local.isCloudSynced) {
+          setUser(null);
+        }
       }
     });
 
@@ -326,13 +351,34 @@ export const App: React.FC = () => {
     };
   }, []);
 
+  const handleAuthSuccess = async () => {
+    const localAcc = localAccountService.getLocalAccount();
+    if (localAcc) {
+      setUser(localAcc);
+    }
+    if (isSupabaseConfigured) {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        const syncedAcc = localAccountService.syncWithSupabaseUser(session.user);
+        setUser(syncedAcc);
+        const { syncedDecks, uploadedCount } = await deckCloudService.syncAllDecks(savedDecks);
+        if (syncedDecks.length > 0) {
+          setSavedDecks(syncedDecks);
+          setSaveNotification(`Signed in! Retrieved ${syncedDecks.length} deck(s)${uploadedCount > 0 ? ` (${uploadedCount} uploaded)` : ''}.`);
+          setTimeout(() => setSaveNotification(null), 3500);
+        }
+      }
+    }
+  };
+
   const handleSignOut = async () => {
     if (isSupabaseConfigured) {
       await supabase.auth.signOut();
-      setUser(null);
-      setSaveNotification('Signed out of cloud account');
-      setTimeout(() => setSaveNotification(null), 3000);
     }
+    localAccountService.clearLocalAccount();
+    setUser(null);
+    setSaveNotification('Signed out of account');
+    setTimeout(() => setSaveNotification(null), 3000);
   };
 
   // Derived Calculations
@@ -514,7 +560,7 @@ export const App: React.FC = () => {
     const finalTier = targetTier || (isHellQueue ? 'max_power' : brawlPowerTier);
 
     setActiveDeck({
-      id: `brawl-${card.id}-${Date.now()}`,
+      id: generateDeckId(),
       name: `${card.name} Brawl`,
       format: 'brawl',
       commander: { card, quantity: 1 },
@@ -628,7 +674,7 @@ export const App: React.FC = () => {
     let newDeck: Deck;
     if (format === 'brawl') {
       newDeck = {
-        id: `deck-brawl-${Date.now()}`,
+        id: generateDeckId(),
         name: `New Brawl Deck`,
         format: 'brawl',
         mainboard: [],
@@ -639,7 +685,7 @@ export const App: React.FC = () => {
       setSynergyTab('meta_consensus');
     } else {
       newDeck = {
-        id: `deck-${format}-${Date.now()}`,
+        id: generateDeckId(),
         name: `New ${format.charAt(0).toUpperCase() + format.slice(1)} Deck`,
         format: format,
         mainboard: [],
@@ -663,23 +709,37 @@ export const App: React.FC = () => {
       }
       return next;
     });
+
+    if (user && isSupabaseConfigured) {
+      deckCloudService.deleteDeck(deckId).catch(console.error);
+    }
   };
 
   const handleDuplicateDeck = (deck: Deck) => {
     const copy: Deck = {
       ...deck,
-      id: `deck-copy-${Date.now()}`,
+      id: generateDeckId(),
       name: `${deck.name} (Copy)`,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
     };
     setSavedDecks(prev => [copy, ...prev]);
+
+    if (user && isSupabaseConfigured) {
+      deckCloudService.saveDeck(copy).catch(console.error);
+    }
   };
 
   const handleRenameDeck = (deckId: string, newName: string) => {
-    setSavedDecks(prev => prev.map(d => d.id === deckId ? { ...d, name: newName, updatedAt: new Date().toISOString() } : d));
+    const now = new Date().toISOString();
+    setSavedDecks(prev => prev.map(d => d.id === deckId ? { ...d, name: newName, updatedAt: now } : d));
     if (activeDeck.id === deckId) {
-      setActiveDeck(prev => ({ ...prev, name: newName, updatedAt: new Date().toISOString() }));
+      setActiveDeck(prev => ({ ...prev, name: newName, updatedAt: now }));
+    }
+
+    const deckToUpdate = savedDecks.find(d => d.id === deckId);
+    if (deckToUpdate && user && isSupabaseConfigured) {
+      deckCloudService.saveDeck({ ...deckToUpdate, name: newName, updatedAt: now }).catch(console.error);
     }
   };
 
@@ -704,29 +764,50 @@ export const App: React.FC = () => {
       }
     }
 
-    // Direct save / update
+    const currentDeckId = isValidUuid(activeDeck.id) ? activeDeck.id : generateDeckId();
+    const updatedDeck: Deck = {
+      ...activeDeck,
+      id: currentDeckId,
+      updatedAt: new Date().toISOString()
+    };
+
+    setActiveDeck(updatedDeck);
+
+    // Direct save / update locally in browser
     setSavedDecks(prev => {
-      const idx = prev.findIndex(d => d.id === activeDeck.id);
+      const idx = prev.findIndex(d => d.id === currentDeckId || d.id === activeDeck.id);
       if (idx >= 0) {
         const next = [...prev];
-        next[idx] = { ...activeDeck, updatedAt: new Date().toISOString() };
+        next[idx] = updatedDeck;
         return next;
       } else {
-        return [{ ...activeDeck, updatedAt: new Date().toISOString() }, ...prev];
+        return [updatedDeck, ...prev];
       }
     });
 
-    setSaveNotification(`Deck "${activeDeck.name}" successfully saved to My Decks!`);
+    setSaveNotification(`Deck "${updatedDeck.name}" successfully saved to My Decks!`);
     setTimeout(() => setSaveNotification(null), 3500);
 
     // If user is authenticated, sync to Supabase Cloud
     if (user && isSupabaseConfigured) {
-      deckCloudService.saveDeck(activeDeck).then(({ error }) => {
-        if (!error) {
-          setSaveNotification(`Deck "${activeDeck.name}" synced to Supabase Cloud!`);
+      deckCloudService.saveDeck(updatedDeck).then(({ data, error }) => {
+        if (!error && data) {
+          if (data.id !== updatedDeck.id) {
+            setActiveDeck(prev => ({ ...prev, id: data.id }));
+            setSavedDecks(prev => prev.map(d => d.id === updatedDeck.id ? { ...d, id: data.id } : d));
+          }
+          setSaveNotification(`Deck "${updatedDeck.name}" saved & synced to Supabase Cloud!`);
           setTimeout(() => setSaveNotification(null), 3500);
+        } else if (error) {
+          console.warn('Cloud save notice:', error);
+          setSaveNotification(`Saved locally on browser (Cloud notice: ${error})`);
+          setTimeout(() => setSaveNotification(null), 4000);
         }
-      }).catch(console.error);
+      }).catch(err => {
+        console.error(err);
+        setSaveNotification(`Saved locally on browser (Cloud sync failed)`);
+        setTimeout(() => setSaveNotification(null), 3500);
+      });
     }
   };
 
@@ -734,25 +815,32 @@ export const App: React.FC = () => {
     if (!saveConflict) return;
     const { deckToSave, conflictingDeck, onResolved } = saveConflict;
 
+    const now = new Date().toISOString();
+    const updated = {
+      ...deckToSave,
+      id: conflictingDeck.id,
+      name: conflictingDeck.name,
+      updatedAt: now
+    };
+
     setSavedDecks(prev => {
-      // Replace the conflicting deck with the current deck data
       return prev.map(d => {
         if (d.id === conflictingDeck.id) {
-          return {
-            ...deckToSave,
-            id: conflictingDeck.id,
-            name: conflictingDeck.name,
-            updatedAt: new Date().toISOString()
-          };
+          return updated;
         }
         return d;
       });
     });
 
-    setActiveDeck(prev => ({ ...prev, id: conflictingDeck.id, name: conflictingDeck.name }));
+    setActiveDeck(updated);
     setSaveNotification(`Successfully overwrote "${conflictingDeck.name}" in My Decks!`);
     setTimeout(() => setSaveNotification(null), 3500);
     setSaveConflict(null);
+
+    if (user && isSupabaseConfigured) {
+      deckCloudService.saveDeck(updated).catch(console.error);
+    }
+
     if (onResolved) {
       onResolved();
     }
@@ -764,7 +852,7 @@ export const App: React.FC = () => {
 
     const newDeck: Deck = {
       ...deckToSave,
-      id: `deck-${Date.now()}`,
+      id: generateDeckId(),
       name: newName,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString()
@@ -775,6 +863,11 @@ export const App: React.FC = () => {
     setSaveNotification(`Saved as new deck: "${newName}" in My Decks!`);
     setTimeout(() => setSaveNotification(null), 3500);
     setSaveConflict(null);
+
+    if (user && isSupabaseConfigured) {
+      deckCloudService.saveDeck(newDeck).catch(console.error);
+    }
+
     if (onResolved) {
       onResolved();
     }
@@ -794,6 +887,10 @@ export const App: React.FC = () => {
     if (openInBuilder) {
       setActiveDeck(newDeck);
       setNavTab('deck_builder');
+    }
+
+    if (user && isSupabaseConfigured) {
+      deckCloudService.saveDeck(newDeck).catch(console.error);
     }
 
     setSaveNotification(`Successfully imported "${newDeck.name}"!`);
@@ -1289,6 +1386,7 @@ export const App: React.FC = () => {
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+        onAuthSuccess={handleAuthSuccess}
       />
 
       {/* Commander Conflict Resolution Modal */}

@@ -1,6 +1,7 @@
 import { supabase, isSupabaseConfigured } from './supabaseClient';
 import { Deck } from '../types/deck';
 import { UserCollection, WildcardInventory } from '../types/collection';
+import { generateDeckId, isValidUuid } from '../utils/uuid';
 
 export interface CloudDeckRecord {
   id: string;
@@ -30,8 +31,11 @@ export const deckCloudService = {
     }
 
     try {
+      // Ensure we always provide a valid RFC-4122 UUID so PostgreSQL does not reject with 22P02
+      const targetId = isValidUuid(deck.id) ? deck.id : generateDeckId();
+
       const payload = {
-        id: deck.id.startsWith('default-') ? undefined : deck.id,
+        id: targetId,
         user_id: user.id,
         name: deck.name,
         format: deck.format,
@@ -41,7 +45,7 @@ export const deckCloudService = {
         sideboard: deck.sideboard || [],
         tags: deck.tags || [],
         is_public: isPublic,
-        updated_at: new Date().toISOString()
+        updated_at: deck.updatedAt || new Date().toISOString()
       };
 
       const { data, error } = await supabase
@@ -114,10 +118,85 @@ export const deckCloudService = {
     }
   },
 
+  /**
+   * Two-way synchronization between local browser decks and Supabase Cloud:
+   * 1. Pulls all remote decks from Supabase for this user.
+   * 2. Pushes any local decks that don't exist remotely (or have legacy non-UUID IDs).
+   * 3. Merges them, resolving any conflicts by latest updatedAt timestamp.
+   * 4. Returns the unified list of decks.
+   */
+  async syncAllDecks(localDecks: Deck[]): Promise<{ syncedDecks: Deck[]; uploadedCount: number; error: string | null }> {
+    if (!isSupabaseConfigured) {
+      return { syncedDecks: localDecks, uploadedCount: 0, error: 'Supabase not configured' };
+    }
+
+    const { data: remoteDecks, error } = await this.getUserDecks();
+    if (error) {
+      return { syncedDecks: localDecks, uploadedCount: 0, error };
+    }
+
+    const remoteMap = new Map<string, Deck>();
+    remoteDecks.forEach(d => remoteMap.set(d.id, d));
+
+    const finalDecks: Deck[] = [];
+    let uploadedCount = 0;
+
+    // Check each local deck
+    for (const localDeck of localDecks) {
+      // If the deck is a blank initial placeholder with 0 cards, skip pushing to cloud
+      if (localDeck.id.startsWith('default-') && localDeck.mainboard.length === 0 && !localDeck.commander) {
+        continue;
+      }
+
+      const remoteMatch = isValidUuid(localDeck.id) ? remoteMap.get(localDeck.id) : null;
+
+      if (!remoteMatch) {
+        // Local deck is not on the cloud yet -> upload it!
+        const { data: saved, error: saveErr } = await this.saveDeck(localDeck);
+        if (saved && !saveErr) {
+          finalDecks.push(saved);
+          remoteMap.set(saved.id, saved);
+          uploadedCount++;
+        } else {
+          // If cloud upload failed, keep local deck so user doesn't lose data
+          finalDecks.push(localDeck);
+        }
+      } else {
+        // Exists in both: choose the most recently updated
+        const localTime = new Date(localDeck.updatedAt || 0).getTime();
+        const remoteTime = new Date(remoteMatch.updatedAt || 0).getTime();
+
+        if (localTime > remoteTime) {
+          await this.saveDeck(localDeck);
+          finalDecks.push(localDeck);
+        } else {
+          finalDecks.push(remoteMatch);
+        }
+        // Remove from map to indicate it has been processed
+        remoteMap.delete(remoteMatch.id);
+      }
+    }
+
+    // Add any remaining remote decks that were not in local storage
+    for (const remainingRemote of remoteMap.values()) {
+      finalDecks.push(remainingRemote);
+    }
+
+    // Sort by updated_at descending
+    finalDecks.sort((a, b) => new Date(b.updatedAt || 0).getTime() - new Date(a.updatedAt || 0).getTime());
+
+    return { syncedDecks: finalDecks, uploadedCount, error: null };
+  },
+
   // Delete a deck from Supabase
   async deleteDeck(deckId: string): Promise<{ success: boolean; error: string | null }> {
     if (!isSupabaseConfigured) {
       return { success: false, error: 'Supabase is not configured.' };
+    }
+
+    if (!isValidUuid(deckId)) {
+      // Local-only deck without UUID, deletion only applies locally
+      return { success: true, error: null };
     }
 
     try {

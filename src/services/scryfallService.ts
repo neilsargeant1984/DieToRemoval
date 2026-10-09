@@ -36,6 +36,7 @@ export interface SearchArenaParams {
   order?: 'edhrec' | 'name' | 'cmc' | 'rarity' | 'rank' | 'color';
   dir?: 'asc' | 'desc';
   page?: number;
+  fetchAllPages?: boolean;
 }
 
 
@@ -430,7 +431,7 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
   const page = params.page || 1;
   const order = params.order || 'cmc';
   const dir = params.dir || 'asc';
-  const cacheKey = `${queryString}__order_${order}__dir_${dir}__page_${page}`;
+  const cacheKey = `${queryString}__order_${order}__dir_${dir}__page_${params.fetchAllPages ? 'all' : page}`;
 
   // Check cache
   const cached = searchCache.get(cacheKey);
@@ -438,7 +439,7 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     return {
       cards: cached.cards,
       totalCards: cached.totalCards,
-      hasMore: cached.totalCards > page * 175
+      hasMore: params.fetchAllPages ? false : cached.totalCards > page * 175
     };
   }
 
@@ -464,6 +465,60 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
     let cards = params.commanderColorIdentity !== undefined
       ? allParsed.filter((c: Card) => c.colorIdentity.every((col: string) => params.commanderColorIdentity!.includes(col)))
       : allParsed;
+
+    if (params.fetchAllPages) {
+      let allCards: Card[] = [...cards];
+      let currentPage = page;
+      let hasMorePages = Boolean(data.has_more);
+      const reportedTotal = data.total_cards || cards.length;
+
+      while (hasMorePages && currentPage < 10) {
+        currentPage++;
+        // Respect Scryfall rate-limit guidelines (polite delay between requests)
+        await new Promise(r => setTimeout(r, 60));
+
+        try {
+          const nextUrl = `https://api.scryfall.com/cards/search?q=${encodeURIComponent(queryString)}&order=${order}&dir=${dir}&page=${currentPage}`;
+          const nextResp = await fetch(nextUrl, { headers: getScryfallHeaders() });
+          if (!nextResp.ok) break;
+
+          const nextData = await nextResp.json();
+          const nextRaw = nextData.data || [];
+          const nextParsed = nextRaw.map(transformScryfallCard);
+          const nextFiltered = params.commanderColorIdentity !== undefined
+            ? nextParsed.filter((c: Card) => c.colorIdentity.every((col: string) => params.commanderColorIdentity!.includes(col)))
+            : nextParsed;
+
+          allCards.push(...nextFiltered);
+          hasMorePages = Boolean(nextData.has_more);
+        } catch {
+          break;
+        }
+      }
+
+      // Deterministic sort tie-break across all pages
+      if (order === 'cmc') {
+        allCards.sort((a, b) => {
+          if (dir === 'asc') {
+            if (a.cmc !== b.cmc) return a.cmc - b.cmc;
+          } else {
+            if (a.cmc !== b.cmc) return b.cmc - a.cmc;
+          }
+          return a.name.localeCompare(b.name);
+        });
+      } else if (order === 'name') {
+        allCards.sort((a, b) => (dir === 'asc' ? a.name.localeCompare(b.name) : b.name.localeCompare(a.name)));
+      }
+
+      const totalCards = Math.max(reportedTotal, allCards.length);
+      searchCache.set(cacheKey, { cards: allCards, totalCards, timestamp: Date.now() });
+
+      return {
+        cards: allCards,
+        totalCards,
+        hasMore: false
+      };
+    }
     
     // Deterministic CMC sort tie-break if sorted by CMC
     if (order === 'cmc') {
@@ -596,6 +651,20 @@ export async function searchArenaCards(params: SearchArenaParams): Promise<Searc
       hasMore: false
     };
   }
+}
+
+/**
+ * Fetches all cards in a set on MTG Arena across all Scryfall pages (handling pagination).
+ */
+export async function fetchAllArenaCardsForSet(
+  setCode: string,
+  order: 'name' | 'cmc' = 'name'
+): Promise<SearchResult> {
+  return searchArenaCards({
+    set: setCode.toLowerCase(),
+    order,
+    fetchAllPages: true
+  });
 }
 
 /**

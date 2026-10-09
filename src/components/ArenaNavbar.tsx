@@ -184,13 +184,29 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
             <span>Export to Arena</span>
           </button>
 
-          {/* Supabase Cloud Account */}
+          {/* User Account (Cloud or Browser) */}
           {user ? (
-            <div className="flex items-center gap-2 bg-[#141926] px-3 py-1.5 rounded-xl border border-emerald-500/30 text-xs shadow-inner">
-              <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" title="Cloud Active" />
+            <div className={`flex items-center gap-2 bg-[#141926] px-3 py-1.5 rounded-xl border text-xs shadow-inner ${
+              user.isCloudSynced !== false ? 'border-emerald-500/30' : 'border-amber-500/30'
+            }`}>
+              <div 
+                className={`w-2 h-2 rounded-full ${
+                  user.isCloudSynced !== false ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'
+                }`} 
+                title={user.isCloudSynced !== false ? 'Cloud Synced' : 'Stored in Browser (Local Account)'} 
+              />
               <span className="text-stone-300 font-semibold max-w-[110px] truncate" title={user.email}>
-                {user.email?.split('@')[0]}
+                {user.username || user.email?.split('@')[0]}
               </span>
+              {user.isCloudSynced === false && onOpenAuth && (
+                <button
+                  onClick={onOpenAuth}
+                  title="Enable Cloud Sync"
+                  className="text-[10px] px-1 py-0.5 rounded bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 transition"
+                >
+                  Cloud
+                </button>
+              )}
               <button
                 onClick={onSignOut}
                 title="Sign Out"

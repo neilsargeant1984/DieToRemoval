@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Deck } from '../types/deck';
 import { FormatType } from '../types/card';
 import { parseArenaFormatAsync, ParsedDeckResult } from '../utils/arenaParser';
+import { generateDeckId } from '../utils/uuid';
 import { 
   X, 
   Clipboard, 
@@ -103,7 +104,7 @@ export const ImportDeckModal: React.FC<ImportDeckModalProps> = ({
     }
 
     const newDeck: Deck = {
-      id: `imported-deck-${Date.now()}`,
+      id: generateDeckId(),
       name: deckName.trim() || parsedResult.suggestedTitle || 'Imported Arena Deck',
       format: format,
       commander: parsedResult.commander,

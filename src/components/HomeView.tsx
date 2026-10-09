@@ -4,7 +4,7 @@ import { UserCollection } from '../types/collection';
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { ARENA_CARDS } from '../data/arenaCards';
 import { getSetBannerArt, getSetIconSvgUri } from '../data/arenaSetArt';
-import { searchArenaCards } from '../services/scryfallService';
+import { searchArenaCards, fetchAllArenaCardsForSet } from '../services/scryfallService';
 import { matchesColorFilter } from '../utils/colorFilter';
 import { CardImage } from './CardImage';
 import { ManaCost } from './ManaCost';
@@ -108,10 +108,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
     const loadLatestCards = async () => {
       try {
-        const res = await searchArenaCards({
-          set: latestSet.code.toLowerCase(),
-          order: 'name'
-        });
+        const res = await fetchAllArenaCardsForSet(latestSet.code, 'name');
 
         if (!isCancelled) {
           if (res.cards && res.cards.length > 0) {
@@ -159,10 +156,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
 
     setLoadingSetCodes(prev => ({ ...prev, [setCode]: true }));
     try {
-      const res = await searchArenaCards({
-        set: setCode.toLowerCase(),
-        order: 'cmc'
-      });
+      const res = await fetchAllArenaCardsForSet(setCode, 'cmc');
       setPreviousSetCards(prev => ({
         ...prev,
         [setCode]: res.cards || []
