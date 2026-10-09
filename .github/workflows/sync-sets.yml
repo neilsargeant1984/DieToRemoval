@@ -1,0 +1,38 @@
+name: Auto Sync MTG Arena Sets
+
+on:
+  schedule:
+    # Run every Monday at 06:00 UTC
+    - cron: '0 6 * * 1'
+  workflow_dispatch: # Allows manual trigger from GitHub UI
+
+permissions:
+  contents: write
+
+jobs:
+  sync-sets:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Run set sync script
+        run: node scripts/sync_arena_sets.mjs
+
+      - name: Commit and push changes if updated
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          if [ -n "$(git status --porcelain)" ]; then
+            git add src/data/arenaSets.ts src/data/arenaSetArt.ts
+            git commit -m "chore(sets): auto-sync newly discovered MTG Arena sets & key artwork"
+            git push
+          else
+            echo "No new sets found. Repository is up-to-date."
+          fi

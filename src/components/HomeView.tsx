@@ -4,6 +4,13 @@ import { UserCollection } from '../types/collection';
 import { ARENA_SETS, ArenaSet } from '../data/arenaSets';
 import { ARENA_CARDS } from '../data/arenaCards';
 import { getSetBannerArt, getSetIconSvgUri } from '../data/arenaSetArt';
+import {
+  getLatestArenaSetSync,
+  getUpcomingArenaSetSync,
+  getAllArenaSetsSync,
+  refreshArenaSetsAsync,
+  resolveSetBannerArt
+} from '../services/setService';
 import { searchArenaCards, fetchAllArenaCardsForSet } from '../services/scryfallService';
 import { matchesColorFilter } from '../utils/colorFilter';
 import { CardImage } from './CardImage';
@@ -74,14 +81,11 @@ export const HomeView: React.FC<HomeViewProps> = ({
   // Console Tab State (Default to News & Updates Hub)
   const [consoleTab, setConsoleTab] = useState<ConsoleTab>('news');
 
-  // Latest Set (Reality Fracture)
-  const latestSet: ArenaSet = ARENA_SETS[0] || {
-    code: 'FRA',
-    name: 'Reality Fracture',
-    category: 'standard',
-    releaseYear: 2026,
-    releaseDate: '2026-10-02'
-  };
+  // Dynamic Latest & Upcoming Set Discovery State
+  const [latestSet, setLatestSet] = useState<ArenaSet>(() => getLatestArenaSetSync());
+  const [upcomingSet, setUpcomingSet] = useState<ArenaSet | null>(() => getUpcomingArenaSetSync());
+  const [allSets, setAllSets] = useState<ArenaSet[]>(() => getAllArenaSetsSync());
+  const [bannerArt, setBannerArt] = useState<string>(() => getSetBannerArt(latestSet.code));
 
   const [isLatestExpanded, setIsLatestExpanded] = useState<boolean>(true);
   const [latestCards, setLatestCards] = useState<Card[]>([]);
@@ -94,16 +98,44 @@ export const HomeView: React.FC<HomeViewProps> = ({
   const [selectedCmcs, setSelectedCmcs] = useState<(number | '7+')[]>([]);
   const [selectedRarities, setSelectedRarities] = useState<CardRarity[]>([]);
 
+  // Automatically discover latest and upcoming sets from Scryfall API on mount
+  useEffect(() => {
+    let isCancelled = false;
+
+    refreshArenaSetsAsync().then(async (result) => {
+      if (isCancelled) return;
+      if (result.latestSet && result.latestSet.code !== latestSet.code) {
+        setLatestSet(result.latestSet);
+      }
+      if (result.upcomingSet) {
+        setUpcomingSet(result.upcomingSet);
+      }
+      if (result.allSets && result.allSets.length > 0) {
+        setAllSets(result.allSets);
+      }
+
+      // Dynamically resolve high-res panoramic banner artwork
+      const art = await resolveSetBannerArt(result.latestSet.code);
+      if (!isCancelled && art) {
+        setBannerArt(art);
+      }
+    });
+
+    return () => {
+      isCancelled = true;
+    };
+  }, [latestSet.code]);
+
   // Previous Sets (Ordered strictly in reverse chronological order: newest -> oldest)
   const previousSets: ArenaSet[] = useMemo(() => {
-    return ARENA_SETS.slice(1);
-  }, []);
+    return allSets.filter(s => s.code.toUpperCase() !== latestSet.code.toUpperCase());
+  }, [allSets, latestSet.code]);
 
   const [expandedPreviousSets, setExpandedPreviousSets] = useState<Record<string, boolean>>({});
   const [previousSetCards, setPreviousSetCards] = useState<Record<string, Card[]>>({});
   const [loadingSetCodes, setLoadingSetCodes] = useState<Record<string, boolean>>({});
 
-  // Fetch cards for latest set (Reality Fracture)
+  // Fetch cards for latest set dynamically
   useEffect(() => {
     let isCancelled = false;
     setIsLatestLoading(true);
@@ -116,20 +148,22 @@ export const HomeView: React.FC<HomeViewProps> = ({
           if (res.cards && res.cards.length > 0) {
             setLatestCards(res.cards);
           } else {
-            const localFraCards = ARENA_CARDS.filter(
-              c => c.set?.toUpperCase() === 'FRA' || c.setName?.toLowerCase().includes('reality fracture')
+            const localCards = ARENA_CARDS.filter(
+              c => c.set?.toUpperCase() === latestSet.code.toUpperCase() ||
+                   c.setName?.toLowerCase().includes(latestSet.name.toLowerCase())
             );
-            setLatestCards(localFraCards.length > 0 ? localFraCards : ARENA_CARDS.slice(0, 36));
+            setLatestCards(localCards.length > 0 ? localCards : ARENA_CARDS.slice(0, 36));
           }
           setIsLatestLoading(false);
         }
       } catch (err) {
         console.warn('Scryfall fetch for latest set fallback to local:', err);
         if (!isCancelled) {
-          const localFraCards = ARENA_CARDS.filter(
-            c => c.set?.toUpperCase() === 'FRA' || c.setName?.toLowerCase().includes('reality fracture')
+          const localCards = ARENA_CARDS.filter(
+            c => c.set?.toUpperCase() === latestSet.code.toUpperCase() ||
+                 c.setName?.toLowerCase().includes(latestSet.name.toLowerCase())
           );
-          setLatestCards(localFraCards.length > 0 ? localFraCards : ARENA_CARDS.slice(0, 36));
+          setLatestCards(localCards.length > 0 ? localCards : ARENA_CARDS.slice(0, 36));
           setIsLatestLoading(false);
         }
       }
@@ -399,7 +433,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
             </span>
             <span className="text-stone-600">•</span>
             <span className="text-[11px] font-mono text-amber-300/80 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20">
-              {ARENA_SETS.length} Sets Available
+              {allSets.length} Sets Available
             </span>
           </div>
 
@@ -439,7 +473,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
                   Universal Set Filters
                 </span>
                 <span className="text-[11px] text-stone-500 hidden sm:inline">
-                  (Applies to Reality Fracture and any set you expand below)
+                  {`(Applies to ${latestSet.name} and any set you expand below)`}
                 </span>
               </div>
 
@@ -613,7 +647,7 @@ export const HomeView: React.FC<HomeViewProps> = ({
               {/* Background Panoramic MTG Official Art Crop with Subtle Zoom */}
               <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
                 <img
-                  src={getSetBannerArt(latestSet.code)}
+                  src={bannerArt || getSetBannerArt(latestSet.code)}
                   alt={latestSet.name}
                   className="w-full h-full object-cover object-center brightness-60 contrast-110 group-hover/hero:scale-105 group-hover/hero:brightness-75 transition-all duration-700 ease-out"
                 />
@@ -652,6 +686,12 @@ export const HomeView: React.FC<HomeViewProps> = ({
                       <Calendar className="w-3.5 h-3.5 text-amber-400" />
                       {latestSet.releaseDate || `${latestSet.releaseYear}`}
                     </span>
+                    {upcomingSet && upcomingSet.code !== latestSet.code && (
+                      <span className="hidden sm:inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-300/90 border border-amber-500/30 backdrop-blur-sm" title={`Next Standard set release: ${upcomingSet.name}`}>
+                        <Clock className="w-3 h-3 text-amber-400" />
+                        Next: {upcomingSet.name} ({upcomingSet.releaseDate})
+                      </span>
+                    )}
                   </div>
 
                   <h2 className="text-2xl md:text-3xl lg:text-4xl font-fantasy font-black tracking-wide text-transparent bg-clip-text bg-gradient-to-r from-white via-amber-200 to-amber-400 drop-shadow-md m-0">

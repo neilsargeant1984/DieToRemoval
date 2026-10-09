@@ -64,6 +64,46 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
     };
   }, [activeTab]);
 
+  // Force live relative-time recalculation every 60 seconds
+  const [, setMinuteTick] = useState<number>(0);
+  useEffect(() => {
+    const tickTimer = setInterval(() => setMinuteTick(t => t + 1), 60000);
+    return () => clearInterval(tickTimer);
+  }, []);
+
+  // Automated hourly background refresh + visibility sync
+  useEffect(() => {
+    const HOURLY_INTERVAL_MS = 60 * 60 * 1000;
+
+    const intervalId = setInterval(() => {
+      console.log(`[NewsHub] Running automated hourly background sync for '${activeTab}'...`);
+      fetchNewsArticles(activeTab, true).then(freshData => {
+        setArticles(freshData);
+        setLastUpdated(new Date());
+      }).catch(err => {
+        console.warn('[NewsHub] Hourly background sync failed:', err);
+      });
+    }, HOURLY_INTERVAL_MS);
+
+    // Refresh if user refocuses the tab after more than 1 hour
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const elapsed = Date.now() - lastUpdated.getTime();
+        if (elapsed >= HOURLY_INTERVAL_MS) {
+          console.log('[NewsHub] Tab refocused after >1 hour, auto-refreshing news feed...');
+          handleRefresh();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [activeTab, lastUpdated]);
+
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
@@ -138,20 +178,32 @@ export const NewsConsole: React.FC<NewsConsoleProps> = () => {
             </div>
           </div>
 
-          {/* Refresh & Last Updated Timestamp */}
-          <div className="flex items-center gap-3">
-            <span className="text-[11px] text-stone-400 font-medium flex items-center gap-1.5">
+          {/* Refresh & Last Updated Timestamp with Hourly Auto-Sync Status */}
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <div 
+              className="flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-950/60 border border-emerald-500/40 text-emerald-300 text-[11px] font-bold shadow-sm"
+              title="Automated system polls and updates the news feed every hour"
+            >
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              </span>
+              <span>Hourly Auto-Sync</span>
+            </div>
+
+            <span className="text-[11px] text-stone-400 font-medium flex items-center gap-1.5 hidden sm:flex">
               <Clock className="w-3.5 h-3.5 text-stone-500" />
               Updated {lastUpdated.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
+
             <button
               onClick={handleRefresh}
               disabled={isRefreshing || isLoading}
               className="px-3 py-1.5 rounded-xl bg-[#141a29] hover:bg-[#1c2438] text-xs font-bold text-amber-300 border border-amber-500/30 flex items-center gap-1.5 transition disabled:opacity-50 shadow-sm"
-              title="Refresh news feed"
+              title="Force manual sync of news feed"
             >
               <RefreshCw className={`w-3.5 h-3.5 text-amber-400 ${isRefreshing ? 'animate-spin' : ''}`} />
-              <span>Refresh Feed</span>
+              <span>Refresh Now</span>
             </button>
           </div>
         </div>

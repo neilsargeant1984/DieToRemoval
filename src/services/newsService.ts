@@ -796,7 +796,6 @@ function extractSourceFromTitle(fullTitle: string, defaultSource: string): { tit
   return { title: fullTitle, source: defaultSource };
 }
 
-/**
 interface RawFeedItem {
   title: string;
   link: string;
@@ -918,8 +917,8 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
     const rawItems = await fetchRawRssFeed(queryUrl);
 
     if (rawItems.length > 0) {
-      const liveArticles: NewsArticle[] = (rawItems
-        .map((item: RawFeedItem, idx: number) => {
+      const liveArticles: NewsArticle[] = rawItems
+        .map((item: RawFeedItem, idx: number): NewsArticle | null => {
           const { title, source } = extractSourceFromTitle(item.title || '', defaultSource);
           const description = cleanHtmlSnippet(item.description || item.content || '');
           const pubDate = item.pubDate || new Date().toISOString();
@@ -995,7 +994,7 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
             streamer: detectedStreamer
           };
         })
-        .filter((a: any): a is NewsArticle => a !== null));
+        .filter((a): a is NewsArticle => a !== null);
 
       // Seamlessly combine live articles with curated baseline
       const combined = [...liveArticles];

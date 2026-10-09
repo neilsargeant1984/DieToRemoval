@@ -1,3 +1,5 @@
+import { getLatestArenaSetSync, refreshArenaSetsAsync } from '../services/setService';
+
 export interface StandardSetInfo {
   code: string;
   name: string;
@@ -6,6 +8,15 @@ export interface StandardSetInfo {
 
 // Chronological Standard sets release history
 export const KNOWN_STANDARD_SETS: StandardSetInfo[] = [
+  { code: 'FRA', name: 'Reality Fracture', releaseDate: '2026-10-02' },
+  { code: 'HOB', name: 'The Hobbit', releaseDate: '2026-08-14' },
+  { code: 'MSH', name: 'Marvel Super Heroes', releaseDate: '2026-06-26' },
+  { code: 'SOS', name: 'Secrets of Strixhaven', releaseDate: '2026-04-24' },
+  { code: 'ECL', name: 'Lorwyn Eclipsed', releaseDate: '2026-01-23' },
+  { code: 'SPM', name: "Marvel's Spider-Man", releaseDate: '2025-09-26' },
+  { code: 'OM1', name: 'Through the Omenpaths', releaseDate: '2025-09-23' },
+  { code: 'EOE', name: 'Edge of Eternities', releaseDate: '2025-08-01' },
+  { code: 'FIN', name: 'Final Fantasy', releaseDate: '2025-06-13' },
   { code: 'TDM', name: 'Tarkir: Dragonstorm', releaseDate: '2025-04-11' },
   { code: 'DFT', name: 'Aetherdrift', releaseDate: '2025-02-14' },
   { code: 'FDN', name: 'Foundations', releaseDate: '2024-11-15' },
@@ -25,22 +36,9 @@ const SET_CACHE_KEY = 'dietoremoval_latest_standard_set_v1';
 
 /**
  * Returns the latest Standard set that is currently released (releaseDate <= today).
- * Checks localStorage cache first, then asynchronously refreshes from Scryfall /sets API.
+ * Integrates with unified setService and checks deck code overrides.
  */
 export function getLatestStandardSetSync(availableSetCodesInDecks?: string[]): StandardSetInfo {
-  // If cached in localStorage, check if still valid (24 hour TTL)
-  try {
-    const cached = localStorage.getItem(SET_CACHE_KEY);
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (parsed && parsed.set && parsed.timestamp && Date.now() - parsed.timestamp < 24 * 60 * 60 * 1000) {
-        return parsed.set;
-      }
-    }
-  } catch {
-    // Ignore storage parse error
-  }
-
   const now = new Date();
 
   // If specific set codes are present in the deck database, find the most recent among them
@@ -52,9 +50,19 @@ export function getLatestStandardSetSync(availableSetCodesInDecks?: string[]): S
     if (matchingSet) return matchingSet;
   }
 
+  // Use unified setService sync resolver
+  const setServiceLatest = getLatestArenaSetSync();
+  if (setServiceLatest?.code) {
+    return {
+      code: setServiceLatest.code,
+      name: setServiceLatest.name,
+      releaseDate: setServiceLatest.releaseDate || '2026-10-02'
+    };
+  }
+
   // Fallback to the latest released set in known history
   const latestReleased = KNOWN_STANDARD_SETS.find(s => new Date(s.releaseDate) <= now);
-  return latestReleased || KNOWN_STANDARD_SETS[3]; // Default Duskmourn (DSK)
+  return latestReleased || KNOWN_STANDARD_SETS[0];
 }
 
 /**
@@ -62,44 +70,16 @@ export function getLatestStandardSetSync(availableSetCodesInDecks?: string[]): S
  */
 export async function refreshLatestStandardSetAsync(): Promise<StandardSetInfo> {
   try {
-    const response = await fetch('https://api.scryfall.com/sets');
-    if (!response.ok) throw new Error(`Scryfall sets error: ${response.status}`);
-    const data = await response.json();
-    if (!data || !Array.isArray(data.data)) throw new Error('Invalid Scryfall response');
-
-    const now = new Date();
-    const standardExpansions = data.data.filter((s: any) => 
-      (s.set_type === 'expansion' || s.set_type === 'core') &&
-      !s.digital &&
-      s.card_count > 80 &&
-      new Date(s.released_at) <= now
-    );
-
-    standardExpansions.sort((a: any, b: any) => 
-      new Date(b.released_at).getTime() - new Date(a.released_at).getTime()
-    );
-
-    if (standardExpansions.length > 0) {
-      const top = standardExpansions[0];
-      const latestSet: StandardSetInfo = {
-        code: top.code.toUpperCase(),
-        name: top.name,
-        releaseDate: top.released_at
+    const discovery = await refreshArenaSetsAsync();
+    if (discovery.latestSet) {
+      return {
+        code: discovery.latestSet.code,
+        name: discovery.latestSet.name,
+        releaseDate: discovery.latestSet.releaseDate || '2026-10-02'
       };
-
-      try {
-        localStorage.setItem(SET_CACHE_KEY, JSON.stringify({
-          set: latestSet,
-          timestamp: Date.now()
-        }));
-      } catch {
-        // Storage quota safe
-      }
-
-      return latestSet;
     }
   } catch (err) {
-    console.warn('Could not refresh latest set from Scryfall, using built-in timeline:', err);
+    console.warn('Could not refresh latest set via setService, using built-in timeline:', err);
   }
 
   return getLatestStandardSetSync();
