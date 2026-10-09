@@ -54,19 +54,15 @@ async function main() {
     throw new Error('Invalid Scryfall response');
   }
 
-  // Filter relevant MTG sets (exclude tokens, promos, memorabilia, minigames)
-  const validTypes = new Set(['expansion', 'core', 'masters', 'alchemy']);
-  const now = new Date();
-
-  const candidates = setsData.data.filter(s =>
-    validTypes.has(s.set_type) &&
-    s.set_type !== 'token' &&
-    s.set_type !== 'memorabilia' &&
-    s.set_type !== 'promo' &&
-    s.code &&
-    s.name &&
-    s.released_at
-  );
+  // Filter relevant MTG Arena sets (exclude tokens, promos, memorabilia, and legacy paper-only sets)
+  const candidates = setsData.data.filter(s => {
+    if (['token', 'promo', 'memorabilia', 'funny', 'minigame'].includes(s.set_type)) return false;
+    // Must be either an explicit Arena set (has arena_code or digital alchemy)
+    // or a premier expansion/core set from recent/upcoming years (2025+)
+    const isArenaSpecific = Boolean(s.arena_code || s.digital || s.set_type === 'alchemy');
+    const isModernPremier = ['expansion', 'core'].includes(s.set_type) && s.released_at && s.released_at >= '2025-01-01';
+    return (isArenaSpecific || isModernPremier) && s.code && s.name && s.released_at;
+  });
 
   console.log(`Found ${candidates.length} candidate sets from Scryfall.`);
 
