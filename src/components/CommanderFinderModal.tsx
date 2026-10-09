@@ -810,6 +810,24 @@ export const CommanderFinderModal: React.FC<CommanderFinderModalProps> = ({
                           <span className="font-mono text-amber-400">{cmd.manaCost}</span>
                           <span className="text-[10px] text-stone-500 font-semibold">{cmd.setName}</span>
                         </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const targetTier: PowerTier = isHellQueueCommander(cmd.name) || powerFilter === 'max_power'
+                              ? 'max_power'
+                              : powerFilter === 'casual'
+                              ? 'casual'
+                              : 'focused';
+                            onSelectCommander(cmd, targetTier);
+                            onClose();
+                          }}
+                          className="w-full mt-1.5 py-1 px-2 rounded-lg text-[11px] font-bold btn-mythic-spark flex items-center justify-center gap-1 shadow-sm transition hover:scale-[1.02]"
+                        >
+                          <Crown className="w-3 h-3 text-slate-950" />
+                          <span>Select</span>
+                        </button>
                       </div>
                     </div>
                   );
