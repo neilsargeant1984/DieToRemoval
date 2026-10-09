@@ -343,7 +343,7 @@ export const KNOWN_STREAMERS: StreamerProfile[] = [
     verified: true,
     role: 'Mythic Ranked Standard Brewer',
     description: 'Premier MTG Arena competitor famous for Best-of-One meta mastery, Standard brews, and deep deck guides.',
-    keywords: ['covertgoblue', 'cgb', '@covertgoblue']
+    keywords: ['covertgoblue', 'cgb', '@covertgoblue', 'speed demon doom', 'mono-white midrange']
   },
   {
     id: 'legenvd',
@@ -355,7 +355,7 @@ export const KNOWN_STREAMERS: StreamerProfile[] = [
     verified: true,
     role: 'Historic Brawl & Synergy Specialist',
     description: 'Master of synergies, intricate combos, Historic Brawl Commander deck techs, and analytical gameplay commentary.',
-    keywords: ['legenvd', 'lvd', '@legenvd']
+    keywords: ['legenvd', 'lvd', '@legenvd', 'the new liliana', 'terra, magical adept']
   },
   {
     id: 'tolarian',
@@ -367,7 +367,7 @@ export const KNOWN_STREAMERS: StreamerProfile[] = [
     verified: true,
     role: 'The Professor • Commander & Magic Hub',
     description: 'Magic\'s largest educational channel, host of Shuffle Up & Play, card reviews, and community advocacy.',
-    keywords: ['tolarian', 'the professor', 'professor', 'shuffle up & play', '@tolariancommunitycollege']
+    keywords: ['tolarian', 'the professor', 'professor', 'shuffle up & play', 'shuffle up play', 'shuffle up', 'rhystic studies', '@tolariancommunitycollege']
   },
   {
     id: 'amazonian',
@@ -439,7 +439,7 @@ export const KNOWN_STREAMERS: StreamerProfile[] = [
     verified: true,
     role: 'Competitive Standard & Explorer Pro',
     description: 'Fast-paced MTG Arena competitive gameplay, tournament prep, and metagame breakdowns.',
-    keywords: ['ashlizzlle', '@ashlizzlle']
+    keywords: ['ashlizzlle', '@ashlizzlle', 'broke lifegain']
   },
   {
     id: 'monoblackmagic',
@@ -493,7 +493,7 @@ export const KNOWN_STREAMERS: StreamerProfile[] = [
 
 /**
  * Searches and returns the matching streamer profile based on title, source,
- * channel name, author, or video URL.
+ * channel name, author, or video URL. Strictly matches known MTG creators.
  */
 export function findStreamerForArticle(
   title: string = '',
@@ -508,44 +508,6 @@ export function findStreamerForArticle(
       return streamer;
     }
   }
-
-  // Extract from title prefix like "Creator Name: Video Title"
-  const titleColonMatch = title.match(/^([A-Za-z0-9\s&]{3,35}):\s+/);
-  if (titleColonMatch && titleColonMatch[1]) {
-    const candidate = titleColonMatch[1].trim();
-    if (!['video', 'watch', 'magic', 'mtg', 'arena', 'new', 'breaking', 'announcement'].includes(candidate.toLowerCase())) {
-      return {
-        id: candidate.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-        name: candidate,
-        handle: `@${candidate.replace(/\s+/g, '')}`,
-        channelName: candidate,
-        channelUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(candidate)}`,
-        avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(candidate)}&background=f59e0b&color=0f172a&bold=true&size=256`,
-        verified: true,
-        role: 'Content Creator',
-        description: `Official MTG content creator: ${candidate}`,
-        keywords: [candidate.toLowerCase()]
-      };
-    }
-  }
-
-  // Fallback to explicit channelName, source, or author if valid and not generic
-  const candidateName = (channelName || (source !== 'YouTube' && source !== 'Google News' && source !== 'Web' && source !== 'Magic News' ? source : '') || author).trim();
-  if (candidateName && candidateName.length >= 2) {
-    return {
-      id: candidateName.toLowerCase().replace(/[^a-z0-9]/g, '-'),
-      name: candidateName,
-      handle: `@${candidateName.replace(/\s+/g, '')}`,
-      channelName: candidateName,
-      channelUrl: `https://www.youtube.com/results?search_query=${encodeURIComponent(candidateName)}`,
-      avatarUrl: `https://ui-avatars.com/api/?name=${encodeURIComponent(candidateName)}&background=f59e0b&color=0f172a&bold=true&size=256`,
-      verified: true,
-      role: 'Content Creator',
-      description: `Official MTG content creator: ${candidateName}`,
-      keywords: [candidateName.toLowerCase()]
-    };
-  }
-
   return undefined;
 }
 
@@ -892,7 +854,7 @@ export async function fetchNewsArticles(category: NewsCategory, forceRefresh: bo
           const isArenaOnly = detectIsArenaOnly(title, description, source);
 
           const detectedStreamer = category === 'video' || item.link?.includes('youtube.com')
-            ? findStreamerForArticle(title, source, category === 'video' ? source : '', item.author, item.link)
+            ? findStreamerForArticle(title, source, '', item.author, item.link)
             : undefined;
 
           // In the video hub, every video MUST belong to an identified streamer/channel

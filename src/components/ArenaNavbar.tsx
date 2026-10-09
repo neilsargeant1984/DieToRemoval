@@ -55,15 +55,15 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
 }) => {
   return (
     <header className="sticky top-0 z-40 bg-[#0e121a]/95 border-b border-[#c5a059]/25 backdrop-blur-xl px-4 py-2.5 shadow-2xl">
-      <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
+      <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto flex flex-col md:flex-row items-center justify-between gap-2.5">
         {/* Brand & Top-level Navigation Pills */}
-        <div className="flex items-center gap-6">
+        <div className="flex flex-wrap sm:flex-nowrap items-center justify-between md:justify-start w-full md:w-auto gap-3 sm:gap-6">
           {/* DieToRemoval Brand (Clickable to Home) */}
           <button
             type="button"
             onClick={() => onSelectTab('home')}
             title="Go to Home"
-            className="flex items-center gap-2.5 group cursor-pointer text-left transition hover:opacity-95 focus:outline-none"
+            className="flex items-center gap-2.5 group cursor-pointer text-left transition hover:opacity-95 focus:outline-none flex-shrink-0"
           >
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-rose-500 via-amber-600 to-rose-700 flex items-center justify-center shadow-lg shadow-rose-500/25 border border-rose-300/40 group-hover:scale-105 transition-transform">
               <Crown className="w-4 h-4 text-slate-950 font-bold" />
@@ -79,7 +79,7 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
           </button>
 
           {/* Primary View Pills: Home vs Deck Builder vs Card Library vs My Collection vs My Decks */}
-          <div className="flex items-center bg-[#0d1017]/90 p-1 rounded-xl border border-white/5 gap-1">
+          <div className="flex items-center bg-[#0d1017]/90 p-1 rounded-xl border border-white/5 gap-1 overflow-x-auto no-scrollbar max-w-full">
             <button
               onClick={() => onSelectTab('home')}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold transition ${
@@ -213,7 +213,7 @@ export const ArenaNavbar: React.FC<ArenaNavbarProps> = ({
 
       {/* Sub-Pill Menu for Deck Builder Formats */}
       {currentTab === 'deck_builder' && (
-        <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto pt-2 mt-2 border-t border-white/5 flex items-center justify-between">
+        <div className="max-w-7xl xl:max-w-[1536px] 2xl:max-w-[1680px] mx-auto pt-2 mt-2 border-t border-white/5 flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2.5">
             <span className="text-[10px] font-bold uppercase tracking-wider text-stone-400">
               Format:

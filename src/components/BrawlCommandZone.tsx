@@ -178,13 +178,13 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
   const currentActiveImg = faceData.imageUrl;
 
   return (
-    <div className="relative arena-panel rounded-3xl p-6 md:p-8 transition-colors shadow-2xl">
+    <div className="relative arena-panel rounded-3xl p-4 sm:p-6 md:p-8 transition-colors shadow-2xl">
       {/* Radiant Planeswalker Spark Aura Behind Commander (safely clipped) */}
       <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
         <div className="absolute -top-20 -left-12 w-96 h-96 spark-aura rounded-full" />
       </div>
 
-      <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-8">
+      <div className="relative z-10 flex flex-col lg:flex-row items-center lg:items-start gap-6 lg:gap-8">
         {/* Commander Presentation (Large, Celebratory, Hero Card Art) */}
         <div className="flex-shrink-0 flex flex-col items-center relative">
           {/* Subtle Decorative Aura Rings */}
@@ -195,7 +195,7 @@ export const BrawlCommandZone: React.FC<BrawlCommandZoneProps> = ({
             <div className="flex flex-col items-center w-full">
               {/* Hero Card Pedestal */}
               <div
-                className="relative group z-20 w-64 sm:w-72 lg:w-80 aspect-[5/7] rounded-2xl overflow-hidden altar-pedestal bg-black p-1 transition-all duration-300 shadow-2xl ring-1 ring-amber-400/40 hover:ring-amber-400/80 hover:shadow-[0_20px_50px_rgba(245,158,11,0.25)] flex items-center justify-center"
+                className="relative group z-20 w-52 sm:w-72 lg:w-80 aspect-[5/7] rounded-2xl overflow-hidden altar-pedestal bg-black p-1 transition-all duration-300 shadow-2xl ring-1 ring-amber-400/40 hover:ring-amber-400/80 hover:shadow-[0_20px_50px_rgba(245,158,11,0.25)] flex items-center justify-center"
               >
                 <div className="w-full h-full">
                   <CardImage

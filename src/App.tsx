@@ -31,7 +31,7 @@ import { getMaxCardCopies } from './utils/cardRules';
 import { ARENA_CARDS } from './data/arenaCards';
 import { parsePlayerLogDecks } from './utils/arenaParser';
 import { fetchCardByArenaId } from './services/scryfallService';
-import { Layers } from 'lucide-react';
+import { Layers, Search } from 'lucide-react';
 import { supabase, isSupabaseConfigured } from './services/supabaseClient';
 import { deckCloudService } from './services/deckCloudService';
 import { AuthModal } from './components/AuthModal';
@@ -49,6 +49,7 @@ export const App: React.FC = () => {
     const saved = localStorage.getItem('arenaforge_deck_tray_open');
     return saved !== null ? saved === 'true' : true;
   });
+  const [mobileConstructedTab, setMobileConstructedTab] = useState<'search' | 'decklist'>('search');
 
   // User Auth & Cloud State
   const [user, setUser] = useState<any>(null);
@@ -989,7 +990,7 @@ export const App: React.FC = () => {
                 )}
               </div>
 
-              {/* Side-by-Side Decklist (Desktop) */}
+              {/* Side-by-Side Decklist (Desktop - 100% Unchanged) */}
               {isDeckDrawerOpen && (
                 <aside className="hidden lg:block w-[360px] xl:w-[400px] flex-shrink-0 sticky top-20 z-20">
                   <DeckDrawer
@@ -1009,45 +1010,136 @@ export const App: React.FC = () => {
                   />
                 </aside>
               )}
+
+              {/* Mobile Slide-Over Decklist Drawer (< lg only) */}
+              {isDeckDrawerOpen && (
+                <div className="block lg:hidden">
+                  <DeckDrawer
+                    isOpen={true}
+                    variant="drawer"
+                    onClose={() => setIsDeckDrawerOpen(false)}
+                    deck={activeDeck}
+                    onUpdateDeck={handleUpdateDeck}
+                    onSelectCardDetail={setSelectedCardDetail}
+                    onOpenExport={() => setExportImportMode('export')}
+                    onOpenImport={() => setIsImportDeckModalOpen(true)}
+                    onOpenSync={() => setIsWildcardModalOpen(true)}
+                    wildcardCost={wildcardCost}
+                    userCollection={userCollection}
+                    onAddCard={card => handleAddCard(card, false)}
+                    onClearDeck={handleClearDeck}
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Mobile Floating Bottom Dock Pill (< lg only) */}
+            <div className="fixed bottom-4 left-4 right-4 z-30 lg:hidden flex items-center justify-between p-2 rounded-2xl bg-[#0d1017]/95 border border-amber-500/40 backdrop-blur-xl shadow-2xl">
+              <div className="flex items-center gap-2 pl-2">
+                <span className="text-xs font-bold text-stone-300">Deck:</span>
+                <span className={`text-xs font-black px-2 py-0.5 rounded-lg border font-mono ${
+                  activeDeck.mainboard.reduce((acc, c) => acc + c.quantity, 0) + (activeDeck.commander ? 1 : 0) === 100
+                    ? 'bg-emerald-950 text-emerald-300 border-emerald-500/40'
+                    : 'bg-amber-950/80 text-amber-300 border-amber-500/40'
+                }`}>
+                  {activeDeck.mainboard.reduce((acc, c) => acc + c.quantity, 0) + (activeDeck.commander ? 1 : 0)} / 100
+                </span>
+                {wildcardCost.canCraftWithAvailableWildcards ? (
+                  <span className="text-[10px] font-bold text-emerald-400">⚡ Craftable</span>
+                ) : (
+                  <span className="text-[10px] font-bold text-amber-400">
+                    Need {wildcardCost.missing.rare}R / {wildcardCost.missing.mythic}M
+                  </span>
+                )}
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsDeckDrawerOpen(true)}
+                className="btn-mythic-spark px-3.5 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-md"
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>View Deck ▴</span>
+              </button>
             </div>
           </div>
         ) : (
           /* Constructed Formats (Standard / Pioneer) Dual Panel */
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-            <div className="lg:col-span-5 h-[calc(100vh-180px)] sticky top-20">
-              <CardSearchPanel
-                currentFormat={activeDeck.format}
-                deckCardCounts={deckCardCounts}
-                sideboardCardCounts={sideboardCardCounts}
-                deckColors={activeDeckColors}
-                activeRoleFilter={standardRoleFilter}
-                onClearRoleFilter={() => setStandardRoleFilter(null)}
-                onAddCard={handleAddCard}
-                onRemoveCard={handleRemoveCard}
-                onSelectCardDetail={setSelectedCardDetail}
-                userCollection={userCollection}
-                onUpdateCollection={setUserCollection}
-              />
+          <div>
+            {/* Mobile View Switcher (< lg only, completely hidden on desktop) */}
+            <div className="flex items-center gap-1.5 p-1 rounded-xl bg-[#0d1017]/90 border border-white/5 lg:hidden mb-4">
+              <button
+                type="button"
+                onClick={() => setMobileConstructedTab('search')}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  mobileConstructedTab === 'search'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                <Search className="w-3.5 h-3.5" />
+                <span>Card Explorer</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setMobileConstructedTab('decklist')}
+                className={`flex-1 py-2 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1.5 ${
+                  mobileConstructedTab === 'decklist'
+                    ? 'bg-amber-500/20 text-amber-300 border border-amber-500/40 shadow-sm'
+                    : 'text-stone-400 hover:text-stone-200'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Decklist</span>
+                <span className={`text-[10px] px-1.5 py-0.2 rounded-full font-mono font-bold ${
+                  activeDeck.mainboard.reduce((acc, c) => acc + c.quantity, 0) >= 60
+                    ? 'bg-emerald-950 text-emerald-300'
+                    : 'bg-white/10 text-stone-300'
+                }`}>
+                  {activeDeck.mainboard.reduce((acc, c) => acc + c.quantity, 0)}/60
+                </span>
+              </button>
             </div>
-            <div className="lg:col-span-7 h-[calc(100vh-180px)] sticky top-20">
-              <DeckListWorkspace
-                deck={activeDeck}
-                userCollection={userCollection}
-                wildcardInventory={wildcardInventory}
-                onOpenWildcardModal={() => setIsWildcardModalOpen(true)}
-                onUpdateCollection={setUserCollection}
-                onUpdateDeck={handleUpdateDeck}
-                onSelectCardDetail={setSelectedCardDetail}
-                activeRoleFilter={standardRoleFilter}
-                onSelectRoleFilter={(role) => setStandardRoleFilter(prev => prev === role ? null : role)}
-                onOpenManaOptimizer={() => setIsManaModalOpen(true)}
-                onOpenSynergyMatrix={() => setIsSynergyMatrixOpen(true)}
-                onSaveDeck={handleSaveActiveDeck}
-                onOpenImport={() => setIsImportDeckModalOpen(true)}
-                onOpenExport={() => setExportImportMode('export')}
-                onOpenMetaDecks={() => setIsStandardMetaOpen(true)}
-                onClearDeck={handleClearDeck}
-              />
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              <div className={`lg:col-span-5 lg:h-[calc(100vh-180px)] lg:sticky lg:top-20 ${
+                mobileConstructedTab === 'search' ? 'block' : 'hidden lg:block'
+              }`}>
+                <CardSearchPanel
+                  currentFormat={activeDeck.format}
+                  deckCardCounts={deckCardCounts}
+                  sideboardCardCounts={sideboardCardCounts}
+                  deckColors={activeDeckColors}
+                  activeRoleFilter={standardRoleFilter}
+                  onClearRoleFilter={() => setStandardRoleFilter(null)}
+                  onAddCard={handleAddCard}
+                  onRemoveCard={handleRemoveCard}
+                  onSelectCardDetail={setSelectedCardDetail}
+                  userCollection={userCollection}
+                  onUpdateCollection={setUserCollection}
+                />
+              </div>
+              <div className={`lg:col-span-7 lg:h-[calc(100vh-180px)] lg:sticky lg:top-20 ${
+                mobileConstructedTab === 'decklist' ? 'block' : 'hidden lg:block'
+              }`}>
+                <DeckListWorkspace
+                  deck={activeDeck}
+                  userCollection={userCollection}
+                  wildcardInventory={wildcardInventory}
+                  onOpenWildcardModal={() => setIsWildcardModalOpen(true)}
+                  onUpdateCollection={setUserCollection}
+                  onUpdateDeck={handleUpdateDeck}
+                  onSelectCardDetail={setSelectedCardDetail}
+                  activeRoleFilter={standardRoleFilter}
+                  onSelectRoleFilter={(role) => setStandardRoleFilter(prev => prev === role ? null : role)}
+                  onOpenManaOptimizer={() => setIsManaModalOpen(true)}
+                  onOpenSynergyMatrix={() => setIsSynergyMatrixOpen(true)}
+                  onSaveDeck={handleSaveActiveDeck}
+                  onOpenImport={() => setIsImportDeckModalOpen(true)}
+                  onOpenExport={() => setExportImportMode('export')}
+                  onOpenMetaDecks={() => setIsStandardMetaOpen(true)}
+                  onClearDeck={handleClearDeck}
+                />
+              </div>
             </div>
           </div>
         )}
