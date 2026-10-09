@@ -23,7 +23,9 @@ import {
   Layers,
   Check,
   Loader2,
-  Clock
+  Clock,
+  Coffee,
+  ExternalLink
 } from 'lucide-react';
 
 interface HomeViewProps {
